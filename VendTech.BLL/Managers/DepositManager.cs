@@ -2422,7 +2422,7 @@ namespace VendTech.BLL.Managers
                 dbDeposit.CheckNumberOrSlipId = depositAuditModel.DepositRef != null ? depositAuditModel.DepositRef : "";
                 dbDeposit.UpdatedAt = DateTime.UtcNow;
 
-                dbDeposit.ValueDate = depositAuditModel.ValueDateModel;
+                dbDeposit.ValueDate = DateTime.UtcNow.ToString("dd/MM/yyyy hh:mm");
 
                 if (dbDeposit.NextReminderDate == null)
                     dbDeposit.NextReminderDate = dbDeposit.CreatedAt.AddDays(15);
