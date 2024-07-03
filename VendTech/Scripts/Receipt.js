@@ -38,13 +38,10 @@ function GetRequestANDResponse(transactionId) {
             type: "POST",
             success: function (data) {
 
-
                 DisableAndEnablelinks(false, transactionId);
 
                 var request = data.Data.Request;
                 var respone = data.Data.Response;
-
-                console.log(data);
 
                 document.getElementById("Request").textContent = JSON.stringify(request, undefined, 2);
                 document.getElementById("Response").textContent = JSON.stringify(respone, undefined, 2);
@@ -87,7 +84,6 @@ function fetchAirtimeDetailsByTransactionId(traxId) {
             type: "POST",
             success: function (data) {
 
-                
                 const response = JSON.parse(data)
                 DisableAndEnablelinks(false, traxId);
 
@@ -169,11 +165,23 @@ function fetchVoucherStatus(trxId, isAdmin = false) {
                     $("#re-cost_of_units").html(data.Data.UnitCost);
                     $("#re-units").html(data.Data.Unit);
                     $("#re-pin1").html(data.Data.Pin1);
-                    if (data.Data.Pin1.length > 0) $("#re-pin1_section").show();
+                    if (data.Data.Pin1.length > 0) {
+                        $("#re-pin1_section").show();
+                    } else {
+                        $("#re-pin1_section").hide();
+                    }
                     $("#re-pin2").html(data.Data.Pin2);
-                    if (data.Data.Pin2.length > 0) $("#re-pin2_section").show();
+                    if (data.Data.Pin2.length > 0) {
+                        $("#re-pin2_section").show();
+                    } else {
+                        $("#re-pin2_section").hide();
+                    }
                     $("#re-pin3").html(data.Data.Pin3);
-                    if (data.Data.Pin3.length > 0) $("#re-pin3_section").show();
+                    if (data.Data.Pin3.length > 0) {
+                        $("#re-pin3_section").show();
+                    } else {
+                        $("#re-pin3_section").hi();
+                    }
                     $("#re-edsa_serial").html(data.Data.EDSASerial);
                     $("#re-barcode").html(data.Data.DeviceNumber);
                     $("#re-vendtech_serial_code").html(data.Data.VTECHSerial);
@@ -239,11 +247,23 @@ function fetchVoucherDetailsByToken(token, isAdmin = false) {
                     $("#re-cost_of_units").html(data.Data.UnitCost);
                     $("#re-units").html(data.Data.Unit);
                     $("#re-pin1").html(data.Data.Pin1);
-                    if (data.Data.Pin1.length > 0) $("#re-pin1_section").show();
+                    if (data.Data.Pin1.length > 0) {
+                        $("#re-pin1_section").show();
+                    } else {
+                        $("#re-pin1_section").hide();
+                    }
                     $("#re-pin2").html(data.Data.Pin2);
-                    if (data.Data.Pin2.length > 0) $("#re-pin2_section").show();
+                    if (data.Data.Pin2.length > 0) {
+                        $("#re-pin2_section").show();
+                    } else {
+                        $("#re-pin2_section").hide();
+                    }
                     $("#re-pin3").html(data.Data.Pin3);
-                    if (data.Data.Pin3.length > 0) $("#re-pin3_section").show();
+                    if (data.Data.Pin3.length > 0) {
+                        $("#re-pin3_section").show();
+                    } else {
+                        $("#re-pin3_section").hide();
+                    }
                     $("#re-edsa_serial").html(data.Data.EDSASerial);
                     $("#re-barcode").html(data.Data.DeviceNumber);
                     $("#re-vendtech_serial_code").html(data.Data.VTECHSerial);

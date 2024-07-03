@@ -1,31 +1,21 @@
-﻿using iTextSharp.tool.xml.html;
-using Newtonsoft.Json;
-using Patagames.Pdf.Enums;
+﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Entity;
-using System.Data.Entity.Core.Metadata.Edm;
 using System.Data.Entity.Migrations;
-using System.Data.Entity.Validation;
 using System.Data.SqlClient;
 using System.Diagnostics;
-using System.IdentityModel.Protocols.WSTrust;
 using System.Linq;
 using System.Linq.Dynamic;
 using System.Net;
 using System.Net.Http;
-using System.Net.PeerToPeer;
-using System.Runtime.Remoting.Contexts;
-using System.Security.Cryptography;
 using System.Threading.Tasks;
 using System.Web.Configuration;
 using System.Web.Mvc;
-using System.Web.Util;
 using VendTech.BLL.Common;
 using VendTech.BLL.Interfaces;
 using VendTech.BLL.Models;
-using VendTech.BLL.PlatformApi;
 using VendTech.DAL;
 
 namespace VendTech.BLL.Managers
@@ -882,13 +872,6 @@ namespace VendTech.BLL.Managers
             }
         }
 
-        void NotifyAdmin()
-        {
-            var body = $"Hello Victor" +
-                $"This is to notify you that VENDTECH IS OUT ON FUNDS";
-            Utilities.SendEmail("vblell@gmail.com", "[URGENT] VENDTECH OUT ON FUNDS", body);
-        }
-
         void NotifyAdmin1()
         {
             var body = $"Hello Victor</br></br>" +
@@ -1049,6 +1032,8 @@ namespace VendTech.BLL.Managers
             trans.CurrentDealerBalance = response_data.DealerBalance;
             trans.CostOfUnits = response_data.PowerHubVoucher.CostOfUnits;
             trans.MeterToken1 = response_data?.PowerHubVoucher.Pin1?.ToString() ?? string.Empty;
+            trans.MeterToken2 = response_data?.PowerHubVoucher?.Pin2?.ToString() ?? string.Empty;
+            trans.MeterToken3 = response_data?.PowerHubVoucher?.Pin3?.ToString() ?? string.Empty;
             trans.Status = (int)RechargeMeterStatusEnum.Success;
             trans.AccountNumber = response_data.PowerHubVoucher?.AccountNumber ?? string.Empty;
             trans.Customer = response_data.PowerHubVoucher?.Customer ?? string.Empty;
