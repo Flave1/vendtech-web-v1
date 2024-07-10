@@ -888,6 +888,50 @@ namespace VendTech.BLL.Common
 
             return input;
         }
+
+        public static bool IsEmailValid(string email)
+        {
+            string pattern = @"^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$";
+            return Regex.IsMatch(email, pattern);
+        }
+
+        public static string SendDepositViaEmailContent(string vendor, string transactionId)
+        {
+            return $"Greetings {vendor}" +
+                        $"<p style='font-weight: bold; background-color: yellow'>Please find invoice INV-{transactionId} attached to this email </p>" +
+                        $"<p>You can print a PDF copy for your records</p>" +
+                        $"<p>If you have any problem please let us know</p>" +
+                                 $"{Environment.NewLine}" +
+                        $"<p>Thank you</p>" +
+                        $"{Environment.NewLine}" +
+                        $"{Environment.NewLine}" +
+                        $"{EMAILFOOTERTEMPLATE}";
+        }
+
+
+        public static string SendSaleViaSMSContent(TransactionDetail td)
+        {
+            string pin2 = "";
+            string pin3 = "";
+            if (!string.IsNullOrEmpty(td.MeterToken2))
+                pin2 = $"PIN:{FormatThisToken(td.MeterToken2)}\n";
+            if (!string.IsNullOrEmpty(td.MeterToken3))
+                pin3 = $"PIN:{FormatThisToken(td.MeterToken3)}\n";
+
+            return $"UID#:{td.SerialNumber}\n" +
+                            $"{td.CreatedAt.ToString("dd/MM/yyyy")}\n" +
+                            $"POSID:{td.POS.SerialNumber}\n" +
+                            $"Meter:{td.MeterNumber1}\n" +
+                            $"Amt:{FormatAmount(td.Amount)}\n" +
+                            $"GST:{FormatAmount(Convert.ToDecimal(td.TaxCharge))}\n" +
+                            $"Chg:{FormatAmount(Convert.ToDecimal(td.ServiceCharge))}\n" +
+                            $"COU:{FormatAmount(Convert.ToDecimal(td.CostOfUnits))} \n" +
+                            $"Units:{FormatAmount(Convert.ToDecimal(td.Units))}\n" +
+                            $"PIN:{FormatThisToken(td.MeterToken1)}\n" +
+                            pin2 +
+                            pin3 +
+                            "VENDTECH";
+        }
     }
 }
 

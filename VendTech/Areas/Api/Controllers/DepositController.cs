@@ -2,12 +2,17 @@
 using iTextSharp.text.pdf;
 using System;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Web;
 using System.Web.Http;
 using System.Web.Http.Description;
+using System.Windows.Interop;
+using VendTech.Attributes;
 using VendTech.BLL.Interfaces;
+using VendTech.BLL.Managers;
 using VendTech.BLL.Models;
+using VendTech.BLL.PlatformApi;
 using VendTech.DAL;
 using VendTech.Framework.Api;
 
@@ -322,6 +327,77 @@ namespace VendTech.Areas.Api.Controllers
         {
             var result = _paymentTypeManager.GetPaymentTypeSelectList();
             return new JsonContent("Payment types fetched successfully.", Status.Success, result).ConvertToHttpResponseOK();
+        }
+
+        [HttpPost, CheckAuthorizationAttribute.SkipAuthentication, CheckAuthorizationAttribute.SkipAuthorization]
+        [ResponseType(typeof(ResponseBase))]
+        public HttpResponseMessage SendDepositEmail(SendViaEmail model)
+        {
+
+            try
+            {
+                if (!BLL.Common.Utilities.IsEmailValid(model.Email))
+                {
+                    return new JsonContent("Email you provided is invalid", Status.Failed, model).ConvertToHttpResponseOK();
+                }
+
+                var td = _depositManager.GetSingleTransaction(long.Parse(model.TransactionId));
+                if (td == null)
+                    return new JsonContent("Not found", Status.Failed, model).ConvertToHttpResponseOK();
+
+
+                var vendor = _userManager.GetUserDetailsByUserId(td.UserId);
+                var emailTemplate = _templateManager.GetEmailTemplateByTemplateType(TemplateTypes.DepositReceiptTemplate);
+                if (emailTemplate.TemplateStatus)
+                {
+                    var body = emailTemplate.TemplateContent;
+                    body = body.Replace("%ValueDate%", td.ValueDate);
+                    body = body.Replace("%CreatedAt%", td.CreatedAt.ToString("dd/MM/yyyy"));
+                    body = body.Replace("%VendorName%", td.User.Vendor);
+                    body = body.Replace("%PosNumber%", td.POS.SerialNumber);
+                    body = body.Replace("%TransactionId%", td.TransactionId);
+                    body = body.Replace("%Type%", td.PaymentType1.Name);
+                    body = body.Replace("%VendorName%", td.NameOnCheque);
+                    body = body.Replace("%Amount%", BLL.Common.Utilities.FormatAmount(td.Amount));
+                    body = body.Replace("%IssuingBank%", td.ChequeBankName);
+                    body = body.Replace("%ChkNoOrSlipId%", td.CheckNumberOrSlipId);
+                    body = body.Replace("%Bank%", td.ChequeBankName);
+                    body = body.Replace("%PercentageAmount%", BLL.Common.Utilities.FormatAmount(td.PercentageAmount));
+                    if (td.PercentageAmount != td.Amount)
+                    {
+                        body = body.Replace("%Commission%", BLL.Common.Utilities.FormatAmount(td.PercentageAmount - td.Amount));
+                    }
+                    body = body.Replace("%date%", td.CreatedAt.ToString("dd/MM/yyyy"));
+
+                    string img1 = "<img src=\"https://vendtechsl.com/Content/images/ventech.png\" style=\"width:90px\" />";
+                    string img2 = "<img src=\"https://vendtechsl.com/Images/ProfileImages/invoice.png\" style=\"width:200px\" />";
+                    string modifiedContent = "";
+                    if (td.PercentageAmount == td.Amount)
+                        modifiedContent = BLL.Common.Utilities.RemoveTableRow(body, 11);
+                    else
+                        modifiedContent = body;
+
+
+                    modifiedContent = modifiedContent.Replace("%img1%", img1);
+                    modifiedContent = modifiedContent.Replace("%img2%", img2);
+                    modifiedContent = modifiedContent.Replace("<br>", " ");
+
+                    var file = BLL.Common.Utilities.CreatePdf(modifiedContent, td.TransactionId + "_invoice.pdf");
+                    var subject = $"VENDTECH INVOICE - INV-{td.TransactionId} for {vendor.Vendor}";
+                    var content = BLL.Common.Utilities.SendDepositViaEmailContent(vendor.Vendor, td.TransactionId);
+
+
+                    BLL.Common.Utilities.SendPDFEmail(model.Email, subject, content, file.FirstOrDefault().Value, "VENDTECH_INVOICE-INV-" + td.TransactionId + ".pdf");
+
+                }
+
+                return new JsonContent("Email successfully sent", Status.Success).ConvertToHttpResponseOK();
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
         }
     }
 }

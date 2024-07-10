@@ -1149,7 +1149,7 @@ namespace VendTech.BLL.Managers
         {
             var recharge = _context.TransactionDetails.FirstOrDefault(p => p.TransactionDetailsId == rechargeId);
             if (recharge == null)
-                return ReturnError<MeterRechargeApiListingModelMobile>("Recharge not exist.");
+                return ReturnError<MeterRechargeApiListingModelMobile>("Recharge does not exist.");
             var data = new MeterRechargeApiListingModelMobile();
             data.Amount = recharge.Amount;
             data.CreatedAt = recharge.CreatedAt.ToString();
@@ -1159,6 +1159,8 @@ namespace VendTech.BLL.Managers
             data.VendorName = recharge.POS == null || recharge.POS.User == null ? "" : recharge.POS.User.Vendor;
             data.VendorId = recharge.POS == null || recharge.POS.User == null ? 0 : recharge.POS.VendorId.Value;
             data.RechargePin = Utilities.FormatThisToken(recharge.MeterToken1);
+            data.RechargePin2 = !string.IsNullOrEmpty(recharge.MeterToken2) ? Utilities.FormatThisToken(recharge.MeterToken2): "";
+            data.RechargePin3 = !string.IsNullOrEmpty(recharge.MeterToken3) ? Utilities.FormatThisToken(recharge.MeterToken3) : "";
             data.TransactionId = recharge.TransactionId;
             data.MeterId = recharge.MeterId;
             data.PlatformId = recharge.PlatFormId;

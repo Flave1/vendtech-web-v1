@@ -1996,7 +1996,7 @@ namespace VendTech.Areas.Admin.Controllers
 
             try
             {
-                if (!IsValidEmail(request.Email))
+                if (!BLL.Common.Utilities.IsEmailValid(request.Email))
                 {
                     return Json(new { message = "Email you provided is invalid", status = "failed" });
                 }
@@ -2049,15 +2049,7 @@ namespace VendTech.Areas.Admin.Controllers
 
                     var file = BLL.Common.Utilities.CreatePdf(modifiedContent, td.TransactionId + "_invoice.pdf");
                     var subject = $"VENDTECH INVOICE - INV-{td.TransactionId} for {vendor.Vendor}";
-                    var content = $"Greetings {vendor.Vendor}" +
-                        $"<p style='font-weight: bold; background-color: yellow'>Please find invoice INV-{td.TransactionId} attached to this email </p>" +
-                        $"<p>You can print a PDF copy for your records</p>" +
-                        $"<p>If you have any problem please let us know</p>" +
-                                 $"{Environment.NewLine}" +
-                        $"<p>Thank you</p>" +
-                        $"{Environment.NewLine}" +
-                        $"{Environment.NewLine}" +
-                        $"{BLL.Common.Utilities.EMAILFOOTERTEMPLATE}"; ;
+                    var content = BLL.Common.Utilities.SendDepositViaEmailContent(vendor.Vendor, td.TransactionId);
 
 
                     BLL.Common.Utilities.SendPDFEmail(request.Email, subject, content, file.FirstOrDefault().Value, "VENDTECH_INVOICE-INV-"+td.TransactionId + ".pdf");
@@ -2073,14 +2065,7 @@ namespace VendTech.Areas.Admin.Controllers
             }
         }
 
-        private static bool IsValidEmail(string email)
-        {
-            // Define a regular expression pattern for a valid email address
-            string pattern = @"^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$";
-
-            // Use Regex.IsMatch to check if the email matches the pattern
-            return Regex.IsMatch(email, pattern);
-        }
+       
 
     }
 }

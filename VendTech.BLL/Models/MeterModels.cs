@@ -270,6 +270,8 @@ namespace VendTech.BLL.Models
         public string MeterNumber { get; set; }
         public string ProductShortName { get; set; }
         public string RechargePin { get; set; }
+        public string RechargePin2 { get; set; }
+        public string RechargePin3 { get; set; }
         public string POSId { get; set; }
         public string UserName { get; set; }
         public string VendorName { get; set; }

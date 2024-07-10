@@ -1813,17 +1813,7 @@ namespace VendTech.Controllers
             var requestmsg = new SendSMSRequest
             {
                 Recipient = $"232{request.PhoneNo}",
-                Payload = $"UID#:{td.SerialNumber}\n" +
-                            $"{td.CreatedAt.ToString("dd/MM/yyyy")}\n" +
-                            $"POSID:{td.POS.SerialNumber}\n" +
-                            $"Meter:{td.MeterNumber1}\n" +
-                            $"Amt:{BLL.Common.Utilities.FormatAmount(td.Amount)}\n" +
-                            $"GST:{BLL.Common.Utilities.FormatAmount(Convert.ToDecimal(td.TaxCharge))}\n" +
-                            $"Chg:{BLL.Common.Utilities.FormatAmount(Convert.ToDecimal(td.ServiceCharge))}\n" +
-                            $"COU:{BLL.Common.Utilities.FormatAmount(Convert.ToDecimal(td.CostOfUnits))} \n" +
-                            $"Units:{BLL.Common.Utilities.FormatAmount(Convert.ToDecimal(td.Units))}\n" +
-                            $"PIN:{BLL.Common.Utilities.FormatThisToken(td.MeterToken1)}\n" +
-                            "VENDTECH"
+                Payload = BLL.Common.Utilities.SendSaleViaSMSContent(td)
             };
 
             var json = JsonConvert.SerializeObject(requestmsg);

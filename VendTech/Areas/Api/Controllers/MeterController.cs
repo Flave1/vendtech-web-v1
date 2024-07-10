@@ -214,17 +214,7 @@ namespace VendTech.Areas.Api.Controllers
             var requestmsg = new SendSMSRequest
             {
                 Recipient = $"232{request.PhoneNo}",
-                Payload = $"UID#:{td.SerialNumber}\n" +
-                            $"{td.CreatedAt.ToString("dd/MM/yyyy")}\n" +
-                            $"POSID:{td.POS.SerialNumber}\n" +
-                            $"Meter:{td.MeterNumber1}\n" +
-                            $"Amt:{BLL.Common.Utilities.FormatAmount(td.Amount)}\n" +
-                            $"GST:{BLL.Common.Utilities.FormatAmount(Convert.ToDecimal(td.TaxCharge))}\n" +
-                            $"Chg:{BLL.Common.Utilities.FormatAmount(Convert.ToDecimal(td.ServiceCharge))}\n" +
-                            $"COU:{BLL.Common.Utilities.FormatAmount(Convert.ToDecimal(td.CostOfUnits))} \n" +
-                            $"Units:{BLL.Common.Utilities.FormatAmount(Convert.ToDecimal(td.Units))}\n" +
-                            $"PIN:{BLL.Common.Utilities.FormatThisToken(td.MeterToken1)}\n" +
-                            "VENDTECH"
+                Payload = BLL.Common.Utilities.SendSaleViaSMSContent(td)
             };
 
 
@@ -276,7 +266,26 @@ namespace VendTech.Areas.Api.Controllers
                     body = body.Replace("%debitRecovery%", td.DebitRecovery);
                     body = body.Replace("%costOfUnits%", td.CostOfUnits);
                     body = body.Replace("%units%", td.Units);
-                    body = body.Replace("%pin%", BLL.Common.Utilities.FormatThisToken(td.MeterToken1));
+
+                    if (!string.IsNullOrEmpty(td.MeterToken1) && string.IsNullOrEmpty(td.MeterToken2) && string.IsNullOrEmpty(td.MeterToken3))
+                    {
+                        var pin = $" {BLL.Common.Utilities.FormatThisToken(td.MeterToken1)} ";
+                        body = body.Replace("%pin%", pin);
+                    }
+                    else if (!string.IsNullOrEmpty(td.MeterToken1) && !string.IsNullOrEmpty(td.MeterToken2) && string.IsNullOrEmpty(td.MeterToken3))
+                    {
+                        var pins = $" <p>{BLL.Common.Utilities.FormatThisToken(td.MeterToken1)} </p>" +
+                            $" <p>{BLL.Common.Utilities.FormatThisToken(td.MeterToken2)} </p>";
+                        body = body.Replace("%pin%", pins);
+                    }
+                    else if (!string.IsNullOrEmpty(td.MeterToken1) && !string.IsNullOrEmpty(td.MeterToken2) && !string.IsNullOrEmpty(td.MeterToken3))
+                    {
+                        var pins = $" <p>{BLL.Common.Utilities.FormatThisToken(td.MeterToken1)} </p>" +
+                           $" <p>{BLL.Common.Utilities.FormatThisToken(td.MeterToken2)} </p>" +
+                           $" <p>{BLL.Common.Utilities.FormatThisToken(td.MeterToken3)} </p>";
+                        body = body.Replace("%pin%", pins);
+                    }
+
                     body = body.Replace("%edsaSerial%", td.SerialNumber);
                     body = body.Replace("%vendtechSerial%", td.TransactionId);
                     body = body.Replace("%barcode%", td.MeterNumber1);
