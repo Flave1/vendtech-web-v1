@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using iTextSharp.text.pdf.parser;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -1851,5 +1852,45 @@ namespace VendTech.BLL.Managers
 
         }
 
+        string IMeterManager.BuildElectricityEmailBody(string body, UserModel vendor, TransactionDetail td)
+        {
+            body = body.Replace("%vendor%", vendor.Vendor);
+            body = body.Replace("%posid%", td.User.POS.FirstOrDefault().SerialNumber);
+            body = body.Replace("%customerName%", td.Customer);
+            body = body.Replace("%account%", td.AccountNumber);
+            body = body.Replace("%address%", td.CustomerAddress);
+            body = body.Replace("%meterNumber%", td.MeterNumber1);
+            body = body.Replace("%tarrif%", td.Tariff);
+            body = body.Replace("%amount%", Utilities.FormatAmount(td.TenderedAmount));
+            body = body.Replace("%gst%", Utilities.FormatAmount(Convert.ToDecimal(td.ServiceCharge)));
+            body = body.Replace("%serviceCharge%", BLL.Common.Utilities.FormatAmount(Convert.ToDecimal(td.TaxCharge)));
+            body = body.Replace("%debitRecovery%", td.DebitRecovery);
+            body = body.Replace("%costOfUnits%", td.CostOfUnits);
+            body = body.Replace("%units%", td.Units);
+            body = body.Replace("%edsaSerial%", td.SerialNumber);
+            body = body.Replace("%vendtechSerial%", td.TransactionId);
+            body = body.Replace("%barcode%", td.MeterNumber1);
+            body = body.Replace("%date%", td.CreatedAt.ToString("dd/MM/yyyy"));
+
+            if (!string.IsNullOrEmpty(td.MeterToken1) && string.IsNullOrEmpty(td.MeterToken2) && string.IsNullOrEmpty(td.MeterToken3))
+            {
+                var pin = $" {Utilities.FormatThisToken(td.MeterToken1)} ";
+                body = body.Replace("%pin%", pin);
+            }
+            else if (!string.IsNullOrEmpty(td.MeterToken1) && !string.IsNullOrEmpty(td.MeterToken2) && string.IsNullOrEmpty(td.MeterToken3))
+            {
+                var pins = $" <p>{Utilities.FormatThisToken(td.MeterToken1)} </p>" +
+                    $" <p>{Utilities.FormatThisToken(td.MeterToken2)} </p>";
+                body = body.Replace("%pin%", pins);
+            }
+            else if (!string.IsNullOrEmpty(td.MeterToken1) && !string.IsNullOrEmpty(td.MeterToken2) && !string.IsNullOrEmpty(td.MeterToken3))
+            {
+                var pins = $" <p>{Utilities.FormatThisToken(td.MeterToken1)} </p>" +
+                   $" <p>{Utilities.FormatThisToken(td.MeterToken2)} </p>" +
+                   $" <p>{Utilities.FormatThisToken(td.MeterToken3)} </p>";
+                body = body.Replace("%pin%", pins);
+            }
+            return body;
+        }
     }
 }

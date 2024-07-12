@@ -47,6 +47,7 @@ namespace VendTech.BLL.Interfaces
         bool IsModuleLocked(int moduleId, long userId);
         Task<ReceiptModel> RechargeMeterReturnIMPROVED(RechargeMeterModel model);
         Task<ReceiptModel> ReturnTraxStatusReceiptAsync(string trxId);
+        string BuildElectricityEmailBody(string body, UserModel vendor, TransactionDetail td);
     }
     
 }

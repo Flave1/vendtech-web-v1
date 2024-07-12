@@ -528,3 +528,7 @@ c:\Users\thispc\Desktop\FLAVETECH\Vendtech\vendtech-web\VendTech\Areas\Admin\Vie
 
 
 
+Error during serialization or deserialization using the JSON JavaScriptSerializer. The length of the string exceeds the value set on the maxJsonLength property.
+
+
+

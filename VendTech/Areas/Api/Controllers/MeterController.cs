@@ -253,43 +253,9 @@ namespace VendTech.Areas.Api.Controllers
                 if (emailTemplate.TemplateStatus)
                 {
                     string body = emailTemplate.TemplateContent;
-                    body = body.Replace("%vendor%", vendor.Vendor);
-                    body = body.Replace("%posid%", td.User.POS.FirstOrDefault().SerialNumber);
-                    body = body.Replace("%customerName%", td.Customer);
-                    body = body.Replace("%account%", td.AccountNumber);
-                    body = body.Replace("%address%", td.CustomerAddress);
-                    body = body.Replace("%meterNumber%", td.MeterNumber1);
-                    body = body.Replace("%tarrif%", td.Tariff);
-                    body = body.Replace("%amount%", BLL.Common.Utilities.FormatAmount(td.TenderedAmount));
-                    body = body.Replace("%gst%", BLL.Common.Utilities.FormatAmount(Convert.ToDecimal(td.ServiceCharge)));
-                    body = body.Replace("%serviceCharge%", BLL.Common.Utilities.FormatAmount(Convert.ToDecimal(td.TaxCharge)));
-                    body = body.Replace("%debitRecovery%", td.DebitRecovery);
-                    body = body.Replace("%costOfUnits%", td.CostOfUnits);
-                    body = body.Replace("%units%", td.Units);
+                    
+                    body = _meterManager.BuildElectricityEmailBody(body, vendor, td);
 
-                    if (!string.IsNullOrEmpty(td.MeterToken1) && string.IsNullOrEmpty(td.MeterToken2) && string.IsNullOrEmpty(td.MeterToken3))
-                    {
-                        var pin = $" {BLL.Common.Utilities.FormatThisToken(td.MeterToken1)} ";
-                        body = body.Replace("%pin%", pin);
-                    }
-                    else if (!string.IsNullOrEmpty(td.MeterToken1) && !string.IsNullOrEmpty(td.MeterToken2) && string.IsNullOrEmpty(td.MeterToken3))
-                    {
-                        var pins = $" <p>{BLL.Common.Utilities.FormatThisToken(td.MeterToken1)} </p>" +
-                            $" <p>{BLL.Common.Utilities.FormatThisToken(td.MeterToken2)} </p>";
-                        body = body.Replace("%pin%", pins);
-                    }
-                    else if (!string.IsNullOrEmpty(td.MeterToken1) && !string.IsNullOrEmpty(td.MeterToken2) && !string.IsNullOrEmpty(td.MeterToken3))
-                    {
-                        var pins = $" <p>{BLL.Common.Utilities.FormatThisToken(td.MeterToken1)} </p>" +
-                           $" <p>{BLL.Common.Utilities.FormatThisToken(td.MeterToken2)} </p>" +
-                           $" <p>{BLL.Common.Utilities.FormatThisToken(td.MeterToken3)} </p>";
-                        body = body.Replace("%pin%", pins);
-                    }
-
-                    body = body.Replace("%edsaSerial%", td.SerialNumber);
-                    body = body.Replace("%vendtechSerial%", td.TransactionId);
-                    body = body.Replace("%barcode%", td.MeterNumber1);
-                    body = body.Replace("%date%", td.CreatedAt.ToString("dd/MM/yyyy"));
                     var file = BLL.Common.Utilities.CreatePdf(body, td.TransactionId);
 
                     var emailTemplate2 = _emailTemplateManager.GetEmailTemplateByTemplateType(TemplateTypes.SendReceiptViaEmailContent);

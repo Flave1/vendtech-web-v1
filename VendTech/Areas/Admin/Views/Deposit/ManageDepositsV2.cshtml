@@ -40,15 +40,14 @@
                     </div>
 
 
-                    <div class="form-group row d-flex justify-content-between" style="margin-bottom:10px;">
-                        <div class="col-6">
-                            <label>CHX/CASH</label>
-                            @Html.DropDownList("DepositType", new SelectList(ViewBag.DepositTypes, "value", "text"), null, new { @class = "col-md-12  form-control", @onchange = "onPaymentTypeChange()", @id = "paymentType" })
-                        </div>
-                        <div class="col-6">
-                            <label>VALUE DATE</label>
-                            <input type="text" style="font-weight:bold;  text-align:right;" autocomplete="off" name="ValueDate" id="ValueDate" class="form-control chkBankDiv col-md-12">
-                        </div>
+                    <div class="form-group row">
+                        <label class="col-xs-4 col-sm-4 col-md-4">CHX/CASH</label>
+                        @Html.DropDownList("DepositType", new SelectList(ViewBag.DepositTypes, "value", "text"), null, new { @class = "col-md-8  form-control", @onchange = "onPaymentTypeChange()", @id = "paymentType" })
+                    </div>
+
+                    <div class="form-group row chkBankDiv">
+                        <label class="col-xs-4 col-sm-4 col-md-4">VALUE DATE</label>
+                        <input type="text" style="font-weight:bold;  text-align:right;" autocomplete="off" name="ValueDate" id="ValueDate" class="form-control col-md-8">
                     </div>
 
                     <div class="form-group row chkBankDiv" style="display:none">

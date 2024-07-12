@@ -932,6 +932,11 @@ namespace VendTech.BLL.Common
                             pin3 +
                             "VENDTECH";
         }
+
+        public static string formatDate(DateTime date)
+        {
+            return date.ToString("dd/MM/yyyy hh:mm");
+        }
     }
 }
 

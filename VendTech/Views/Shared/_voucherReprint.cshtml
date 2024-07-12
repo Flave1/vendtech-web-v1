@@ -4,7 +4,7 @@
 <div class="modal-dialog modal-md">
     <div class="modal-content modal-md">
         <div class="modal-body" id="re-printSection">
-            <div class="row" style=" margin:18px; margin-left:-10px;" id="re-gen-invoice">
+            <div class="row" style=" width: 100%; margin:18px; margin-left:-10px;" id="re-gen-invoice">
                 <div style="width:29%; float:left;">
                     <img src="~/Content/images/ventech.png" height="100" width="100" />
                 </div>
@@ -24,23 +24,25 @@
                     <strong><a style="color: black;  font-weight: bold; font-size: 17px">x</a></strong>
                 </div>
             </div>
-            <hr class="bg-dark" style="border:1px solid grey; background: grey; ">
-            <div class="row">
-                <div class="col-md-6 col-sm-12 col-xs-12 text-left">
-                    <strong>Date : <span id="re-sales_date"></span></strong>
-                </div>
-                <div class="col-md-6 col-sm-12 col-xs-12 " style="text-align:right;">
-                    <div style="text-align: right;">
+            <hr class="bg-dark" style="border:1px solid grey; background: grey; width: 100%">
+          
 
-                        <strong>Vendor Name :</strong>  <span id="re-vendorId">Office Coporate</span>
-                    </div>
+            <div class="row" style="width: 100%;">
+            <div class="col-md-6 col-sm-12 col-xs-12 text-left">
+                <strong>Date : <span id="re-sales_date"></span></strong>
+            </div>
+            <div class="col-md-6 col-sm-12 col-xs-12 " style="text-align:right;">
+                <div style="text-align: right;">
+
+                    <strong>Vendor Name :</strong>  <span id="re-vendorId">Office Coporate</span>
                 </div>
             </div>
-            <div class="row">
-                <div class=" text-right" style="margin:20px; text-align: right;">
-                    <strong>POS ID :</strong>  <span id="re-pos_id">12345</span>
-                </div>
+        </div>
+        <div class="row">
+            <div class=" text-right" style="margin:20px; text-align: right;">
+                <strong>POS ID :</strong>  <span id="re-pos_id">12345</span>
             </div>
+        </div>
             <div class="separator" style="margin:5px;"><strong>Customer Information</strong></div>
             <div class="row ">
                 <div class="col-md-12" style="display:flex; padding: 0;">
@@ -149,7 +151,7 @@
                 </div>
 
             </div>
-         
+
             <div class="d-flex justify-content-end" id="re-print_section" style="text-align: right;">
                 <button type="button" class="btn cancelBtn waves-effect waves-light" id="re-showsms_btn" onclick="smsHandler.openSmsModal2(true)" style="display: none;">SMS</button>
                 <button type="button" class="btn cancelBtn waves-effect waves-light" id="re-showemail_btn" onclick="smsHandler.openEmailModal2(true)" style="display: none;">EMAIL</button>

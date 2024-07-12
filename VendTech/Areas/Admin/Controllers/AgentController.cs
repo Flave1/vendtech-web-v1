@@ -114,7 +114,7 @@ namespace VendTech.Areas.Admin.Controllers
             if (result.Status == ActionStatus.Successfull)
             {
                 if (request.ValueDate == null)
-                    request.ValueDate = DateTime.UtcNow.ToString("MM/dd/yyyy hh:mm");
+                    request.ValueDate = Utilities.formatDate(DateTime.UtcNow);
                 else
                     request.ValueDate = request.ValueDate;
 
@@ -179,7 +179,7 @@ namespace VendTech.Areas.Admin.Controllers
             try
             {
                 if (request.ValueDate == null)
-                    request.ValueDate = DateTime.UtcNow.ToString("MM/dd/yyyy hh:mm");
+                    request.ValueDate = Utilities.formatDate(DateTime.UtcNow);
                 else
                     request.ValueDate = request.ValueDate;
 
