@@ -1891,6 +1891,7 @@ namespace VendTech.BLL.Managers
                     dbDeposit = ProcessTransaction(dbpendingDeposit, status);
                     //Send push to all devices where this user logged in when admin released deposit
                     PushNotificationToMobile(dbDeposit);
+                    PushNotification.UpdateUserBalanceOnTheWeb(dbDeposit.UserId);
                 }
             }
 
@@ -1983,46 +1984,9 @@ namespace VendTech.BLL.Managers
             {
                 obj.DeviceToken = item.DeviceToken;
                 obj.DeviceType = item.AppType.Value;
-                PushNotification.SendNotification(obj);
+                PushNotification.SendNotificationTOMobile(obj);
             }
         }
-
-        private async Task PushNotificationToWeb(long UserId)
-        {
-            var url = WebConfigurationManager.AppSettings["SignaRServer"]+ "/Update";
-            var request = new SignalRMessageBody { UserId = UserId.ToString() };
-            var payload = JsonConvert.SerializeObject(request);
-            var resp = await SendHttpRequestAsync(url, HttpMethod.Post, payload);
-        }
-
-        public static async Task<string> SendHttpRequestAsync(string requestUrl, HttpMethod httpMethod, string requestBody = null)
-        {
-            try
-            {
-                using (var httpClient = new HttpClient())
-                {
-                    var request = new HttpRequestMessage
-                    {
-                        RequestUri = new Uri(requestUrl),
-                        Method = httpMethod,
-                        Content = !string.IsNullOrEmpty(requestBody) ? new StringContent(requestBody, Encoding.UTF8, "application/json") : null
-                    };
-
-                    var response = httpClient.SendAsync(request).Result;
-                    response.EnsureSuccessStatusCode();
-
-                    var responseContent = await response.Content.ReadAsStringAsync();
-
-                    return responseContent;
-                }
-            }
-            catch (Exception)
-            {
-                return "";
-                //throw;
-            }
-        }
-
         private void GenerateReferenceIfUserIsUnderAnyAgency(Deposit dbDeposit, User user)
         {
             if (user.AgentId != Utilities.VENDTECH) 
@@ -2111,7 +2075,7 @@ namespace VendTech.BLL.Managers
             {
                 obj.DeviceToken = item.DeviceToken;
                 obj.DeviceType = item.AppType.Value;
-                PushNotification.SendNotification(obj);
+                PushNotification.SendNotificationTOMobile(obj);
             }
             return ReturnSuccess("Deposit status changed successfully.");
         }
@@ -2725,7 +2689,7 @@ namespace VendTech.BLL.Managers
                 {
                     obj.DeviceToken = item.DeviceToken;
                     obj.DeviceType = item.AppType.Value;
-                    PushNotification.SendNotification(obj);
+                    PushNotification.SendNotificationTOMobile(obj);
                 }
                 return ReturnSuccess("TRANSFER SUCCESSFUL");
             }
@@ -2868,7 +2832,7 @@ namespace VendTech.BLL.Managers
                 {
                     obj.DeviceToken = item.DeviceToken;
                     obj.DeviceType = item.AppType.Value;
-                    PushNotification.SendNotification(obj);
+                    PushNotification.SendNotificationTOMobile(obj);
                 }
                 return ReturnSuccess("DEPOSIT TRANSFER SUCCESSFUL");
             }

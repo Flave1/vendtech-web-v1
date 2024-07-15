@@ -186,8 +186,8 @@ namespace VendTech.Areas.Admin.Controllers
 
             if (model.ReleaseDepositIds != null && model.ReleaseDepositIds.Any())
             {
-                SendEmailOnDeposit(model.ReleaseDepositIds);
-                SendSmsOnDeposit(model.ReleaseDepositIds);
+                //SendEmailOnDeposit(model.ReleaseDepositIds);
+                //SendSmsOnDeposit(model.ReleaseDepositIds);
             }
             return JsonResult(new ActionOutput { Message = result.Message, Status = result.Status });
         }

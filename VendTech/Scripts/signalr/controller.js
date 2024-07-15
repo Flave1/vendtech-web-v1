@@ -1,62 +1,40 @@
 ﻿"use strict";
-const local = "https://localhost:7280/hub";
+
 const live = "https://www.vendtechsl.com:459/hub";
+const local = "https://localhost:7246/hub";
 const dev = "http://subs.vendtechsl.net/hub";
-
-//var connection = new signalR.HubConnectionBuilder().withUrl(live).configureLogging(signalR.LogLevel.Information).build();
-
-
-const connection = new signalR.HubConnectionBuilder()
-    .withUrl(live, options => {
-        // Skip server negotiation (optional, might be needed for non-standard ports)
-        options.skipNegotiation = true;
-
-        // Configure transport to handle certificate validation
-        options.configureTransport(transport => {
-            // Replace with your own certificate validation logic
-            transport.onBeforeAbort = () => {
-                // Implement your custom certificate validation logic here
-                // You can use libraries like `https` or browser APIs to validate
-                return true; // Allow connection for demonstration purposes
-            };
-        });
-    })
-    .build();
-
 
 const userId = userBalanceHandler.userId;
 
-connection.on("SendBalanceUpdate", function (message, user) {
-    if (userId == user.toString()) {
-        updateBalnce(true);
+var connection = new signalR.HubConnectionBuilder()
+    .withUrl(live, {
+        skipNegotiation: true,
+        transport: signalR.HttpTransportType.WebSockets
+    })
+    .configureLogging(signalR.LogLevel.Information)
+    .build();
+
+connection.on("SendBalanceUpdate", function (user) {
+    if (userId === user.toString()) {
+        updateBalance(true);
     }
-})
+});
 
-connection.start().catch(function (err) {
-    //console.log("start error", err as HttpError)
-    return;
-})
+connection.start().then(function () {
+    console.log("SignalR connected.");
+}).catch(function (err) {
+    console.error("SignalR connection error: ", err);
+});
 
+window.onload = function () {
+    updateBalance(false);
+};
 
-window.onload = function () { 
-    //testSignalServer()
-    updateBalnce(false);
-}
-
-//document.getElementById("sendButton").addEventListener("click", function (event) {
-//    var message = document.getElementById("message").value;
-//    connection.invoke("SendBalanceUpdate", user, message).catch(function (err) {
-//        return console.error(err);
-//    });
-//    event.preventDefault()
-//})
-
-function updateBalnce(animate = false) {
+function updateBalance(animate = false) {
     $.ajax({
         url: `/Api/User/GetWalletBalance2?userId=${userBalanceHandler.userId}`,
         success: function (res) {
-            if (res.status == "true") {
-
+            if (res.status === "true") {
                 const balancebox = document.getElementById('balancebox');
                 const userBalance = document.getElementById('userBalance');
                 const userBalanceBar = document.getElementById('userBalanceBar');
@@ -65,32 +43,32 @@ function updateBalnce(animate = false) {
 
                 if (userBalance) userBalance.innerHTML = res.result.stringBalance;
                 if (userBalanceBar) userBalanceBar.innerHTML = res.result.stringBalance;
+
                 if (res.result.isDepositPending) {
-                    if (pendingBalancebox) pendingBalancebox.style.display = "block"
+                    if (pendingBalancebox) pendingBalancebox.style.display = "block";
                     if (pendingBalance) pendingBalance.innerHTML = res.result.pendingDepositBalance;
                 } else {
-                    if (pendingBalancebox) pendingBalancebox.style.display = "none"
+                    if (pendingBalancebox) pendingBalancebox.style.display = "none";
                 }
+
                 updateBalanceIfOnSalesScreen(res.result.balance);
+
                 if (animate && balancebox) {
                     balancebox.classList.add('animatorstyle');
                     setTimeout(() => {
-                        if (balancebox.classList.contains('animatorstyle')) {
-                            balancebox.classList.remove('animatorstyle');
-                        }
-                    }, 10000)
+                        balancebox.classList.remove('animatorstyle');
+                    }, 10000);
                 }
             }
-
         },
         error: function (err) {
-            console.log('err', err)
+            console.error('Error:', err);
         }
-    })
+    });
 }
 
-function testSignalServer() {     
-    var url = "https://www.vendtechsl.com:459/Balance/update";  
+function testSignalServer() {
+    var url = "https://www.vendtechsl.com:459/Balance/update";
     $.ajax({
         url: url,
         type: 'POST',
@@ -100,17 +78,13 @@ function testSignalServer() {
             console.log("Response", response);
         },
         error: function (xhr, status, error) {
-            console.error("Error", xhr.responseText);
+            console.error("Error:", xhr.responseText);
         }
     });
 }
 
-
 function updateBalanceIfOnSalesScreen(amount) {
-    if (location.pathname == "/Meter/Recharge") {
-        salesHandler.amount = amount;
-    }
-    if (location.pathname == "/Airtime/Recharge") {
+    if (location.pathname === "/Meter/Recharge" || location.pathname === "/Airtime/Recharge") {
         salesHandler.amount = amount;
     }
 }

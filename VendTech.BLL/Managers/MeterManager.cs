@@ -996,7 +996,7 @@ namespace VendTech.BLL.Managers
             {
                 obj.DeviceToken = item.DeviceToken;
                 obj.DeviceType = item.AppType.Value;
-                Common.PushNotification.SendNotification(obj);
+                Common.PushNotification.SendNotificationTOMobile(obj);
             }
         }
 

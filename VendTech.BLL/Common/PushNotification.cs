@@ -2,7 +2,9 @@
 using System;
 using System.IO;
 using System.Net;
+using System.Net.Http;
 using System.Text;
+using System.Web.Configuration;
 using VendTech.BLL.Models;
 using VendTech.DAL;
 
@@ -10,7 +12,7 @@ namespace VendTech.BLL.Common
 {
     public static class PushNotification
     {
-        public static string SendNotification(PushNotificationModel model)
+        public static string SendNotificationTOMobile(PushNotificationModel model)
         {
             try
             {
@@ -128,5 +130,43 @@ namespace VendTech.BLL.Common
             db.SaveChanges();
             return true;
         }
+
+
+        public static bool UpdateUserBalanceOnTheWeb(long UserId)
+        {
+            var url = WebConfigurationManager.AppSettings["SignaRServer"] + "/Update";
+            var request = new SignalRMessageBody { UserId = UserId.ToString() };
+            var payload = JsonConvert.SerializeObject(request);
+            SendHttpRequest(url, HttpMethod.Post, payload);
+            return true;
+        }
+
+
+        public static string SendHttpRequest(string requestUrl, HttpMethod httpMethod, string requestBody = null)
+        {
+            try
+            {
+                using (var httpClient = new HttpClient())
+                {
+                    var request = new HttpRequestMessage
+                    {
+                        RequestUri = new Uri(requestUrl),
+                        Method = httpMethod,
+                        Content = !string.IsNullOrEmpty(requestBody) ? new StringContent(requestBody, Encoding.UTF8, "application/json") : null
+                    };
+
+                    var response = httpClient.SendAsync(request).Result;
+                    response.EnsureSuccessStatusCode();
+                    var responseContent = response.Content.ReadAsStringAsync().Result;
+                    return responseContent;
+                }
+            }
+            catch (Exception)
+            {
+                return "";
+            }
+        }
+
+
     }
 }

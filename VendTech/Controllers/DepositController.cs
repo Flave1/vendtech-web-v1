@@ -132,9 +132,9 @@ namespace VendTech.Controllers
                 ActionOutput result = _depositManager.ChangeDepositStatus(pd.Object.PendingDepositId, DepositPaymentStatusEnum.Released, true);
 
                 var deposit = _depositManager.GetDeposit(pd.Object.PendingDepositId);
-                SendEmailOnDepositApproval(deposit);
-                SendEmailToAdminOnDepositApproval(deposit, result.ID);
-                SendSmsOnDepositApproval(deposit);
+                //SendEmailOnDepositApproval(deposit);
+                //SendEmailToAdminOnDepositApproval(deposit, result.ID);
+                //SendSmsOnDepositApproval(deposit);
 
                 _depositManager.DeletePendingDeposits(deposit);
             }
@@ -159,8 +159,8 @@ namespace VendTech.Controllers
                                 body = body.Replace("%REF%", pd.Object.CheckNumberOrSlipId);
                                 body = body.Replace("%Amount%", Utilities.FormatAmount(pd.Object.Amount));
                                 body = body.Replace("%CurrencyCode%", Utilities.GetCountry().CurrencyCode);
-                                Utilities.SendEmail(admin.Email, emailTemplate.EmailSubject, body);
-                                Utilities.SendEmail("vblell@gmail.com", emailTemplate.EmailSubject, body);
+                                //Utilities.SendEmail(admin.Email, emailTemplate.EmailSubject, body);
+                                //Utilities.SendEmail("vblell@gmail.com", emailTemplate.EmailSubject, body);
                             }
 
                         }

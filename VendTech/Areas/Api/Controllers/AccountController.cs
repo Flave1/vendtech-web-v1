@@ -544,7 +544,7 @@ namespace VendTech.Areas.Api.Controllers
             obj.Title = "Test Title";
             obj.NotificationType = NotificationTypeEnum.DepositStatusChange;
             obj.UserId = 1;
-            PushNotification.SendNotification(obj);
+            PushNotification.SendNotificationTOMobile(obj);
             return new JsonContent("Privacy policy fetched successfully.", Status.Success).ConvertToHttpResponseOK();
         }
 
