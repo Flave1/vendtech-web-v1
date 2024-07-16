@@ -32,6 +32,8 @@ using Newtonsoft.Json;
 using System.Net.Http.Headers;
 using System.Net.Http;
 using iTextSharp.text.pdf;
+using System.Data.Entity;
+using System.Runtime.Remoting.Contexts;
 
 namespace VendTech.BLL.Common
 {
@@ -40,7 +42,7 @@ namespace VendTech.BLL.Common
         public static decimal MinimumDepositAmount = 50;
         public static decimal MaximumDepositAmount = 500;
         private static Random random = new Random();
-       
+
         public static string RandomString(int length)
         {
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -60,7 +62,7 @@ namespace VendTech.BLL.Common
         public static string GetLastMeterRechardeId()
         {
             VendtechEntities context = new VendtechEntities();
-            var lastRecord = context.TransactionDetails.OrderByDescending(d =>  d.TransactionDetailsId).FirstOrDefault();
+            var lastRecord = context.TransactionDetails.OrderByDescending(d => d.TransactionDetailsId).FirstOrDefault();
             var trId = lastRecord != null ? Convert.ToInt64(lastRecord.TransactionId) + 1 : 1;
             return trId.ToString();
         }
@@ -115,13 +117,13 @@ namespace VendTech.BLL.Common
 
         public static long VENDTECH
         {
-            get{  return 20; }
+            get { return 20; }
         }
 
         public static string EMAILFOOTERTEMPLATE
         {
             get {
-                return $"VENDTECH MANAGEMENT" + 
+                return $"VENDTECH MANAGEMENT" +
                         $"</br></br>" +
                         $"Phone: +232 79 990990" +
                         $"</br>" +
@@ -282,8 +284,8 @@ namespace VendTech.BLL.Common
             Random _rdm = new Random();
             result = _rdm.Next(_min, _max);
             var db = new VendtechEntities();
-            if (db.POS.Any(e => e.PassCode == result.ToString())) 
-                GenerateFiveRandomNo(); 
+            if (db.POS.Any(e => e.PassCode == result.ToString()))
+                GenerateFiveRandomNo();
             return result;
         }
 
@@ -381,7 +383,7 @@ namespace VendTech.BLL.Common
             int port = 587;//;
             try
             {
-               
+
                 var mimeMsg = new MimeMessage();
                 var frms = new List<MailboxAddress>
                 {
@@ -394,17 +396,17 @@ namespace VendTech.BLL.Common
                 mimeMsg.From.AddRange(frms);
                 mimeMsg.To.AddRange(tos);
                 mimeMsg.Subject = sub;
-                
+
                 mimeMsg.Body = new TextPart("html")
                 {
                     Text = body
                 };
-                
+
                 using (var client = new MailKit.Net.Smtp.SmtpClient())
                 {
                     client.ServerCertificateValidationCallback += (o, c, ch, er) => true;
                     ServicePointManager.SecurityProtocol = SecurityProtocolType.Ssl3;
-                    
+
                     try
                     {
                         client.Connect(smtp, port);
@@ -417,7 +419,7 @@ namespace VendTech.BLL.Common
                     }
                     client.Send(mimeMsg);
                     client.Disconnect(true);
-                    
+
                 }
             }
             catch (Exception x)
@@ -513,7 +515,7 @@ namespace VendTech.BLL.Common
         }
 
 
-    
+
 
         public static void LogProcessToDatabase(string Message, object data)
         {
@@ -556,7 +558,7 @@ namespace VendTech.BLL.Common
                               select t).ToArray();
             return string.Join("", getNumbers.Take(20));// getNumbers.Split(',').Select(Int32.Parse).ToList();// getNumbers;
         }
-          
+
         public static string FormatThisToken(string token_item)
         {
             if (token_item != null && token_item.Length >= 2 && token_item.Length <= 12)
@@ -564,12 +566,12 @@ namespace VendTech.BLL.Common
             else if (token_item != null && token_item.Length >= 12 && token_item.Length <= 16)
                 token_item = token_item.Insert(4, " ").Insert(9, " ").Insert(14, " ");
             else if (token_item != null && token_item.Length >= 16 && token_item.Length <= 21)
-                token_item = token_item.Insert(4, " ").Insert(9, " ").Insert(14, " ").Insert(19, " "); 
+                token_item = token_item.Insert(4, " ").Insert(9, " ").Insert(14, " ").Insert(19, " ");
 
 
             return token_item;
         }
-       
+
         //public async static Task<bool> Execute(string email, string subject, string message)
         //{
         //    try
@@ -623,7 +625,7 @@ namespace VendTech.BLL.Common
             if (amt.ToString().Contains('.'))
             {
                 var splitedAmt = amt.ToString().Split('.');
-                var d =  "." + splitedAmt[1];
+                var d = "." + splitedAmt[1];
                 var result = amt == null ? "0" : string.Format("{0:N0}", Convert.ToDecimal(splitedAmt[0])) + "" + d;
                 return result;
             }
@@ -665,7 +667,7 @@ namespace VendTech.BLL.Common
             {
                 string rootDirectory = AppDomain.CurrentDomain.BaseDirectory;
                 iTextSharp.text.pdf.PdfWriter writer = null;
-                string fileName =  transctionId;
+                string fileName = transctionId;
                 string directoryPath = rootDirectory + "/Receipts/";
                 string path = Path.Combine(directoryPath + "/" + fileName);
                 var relativePath = DomainUrl + "/Receipts/" + fileName;
@@ -731,7 +733,7 @@ namespace VendTech.BLL.Common
 
                     // Save the bitmap as an image file
                     bitmap.Save(outputImagePath12, ImageFormat.Jpeg);
-                  
+
                 }
                 return outputImagePath1;
             }
@@ -756,7 +758,7 @@ namespace VendTech.BLL.Common
             {
                 throw;
             }
-            
+
         }
         public static DateTime ConvertEpochTimeToDate(long epochTime)
         {
@@ -807,7 +809,7 @@ namespace VendTech.BLL.Common
             {
                 // Read the file content
                 string content = File.ReadAllText(filePath);
-                return content; 
+                return content;
             }
             catch (FileNotFoundException ex)
             {
@@ -936,6 +938,39 @@ namespace VendTech.BLL.Common
         public static string formatDate(DateTime date)
         {
             return date.ToString("dd/MM/yyyy hh:mm");
+        }
+
+        public static string GetSalesBalance()
+        {
+            using (var Context = new VendtechEntities())
+            {
+                return FormatAmount(Context.TransactionDetails
+                        .Where(d => DbFunctions.TruncateTime(d.CreatedAt) == DbFunctions.TruncateTime(DateTime.UtcNow)
+                        && d.Status == (int)RechargeMeterStatusEnum.Success && d.User.Status == (int)UserStatusEnum.Active
+                        ).AsEnumerable().Sum(s => s.Amount));
+            }
+
+        }
+
+        public static string GetWalletBalance()
+        {
+            using (var Context = new VendtechEntities())
+            {
+                var posTotalBalance = Context.POS.Where(p => p.Enabled == true && p.User.Status == (int)UserStatusEnum.Active).ToList().Sum(p => p.Balance);
+                return FormatAmount(posTotalBalance);
+            }
+
+        }
+
+        public static string GetDepositBalance()
+        {
+            using(var Context = new VendtechEntities())
+            {
+               return FormatAmount(Context.Deposits
+                        .Where(d => DbFunctions.TruncateTime(d.CreatedAt) == DbFunctions.TruncateTime(DateTime.UtcNow)
+                    && d.Status == (int)DepositPaymentStatusEnum.Released && d.User.Status == (int)UserStatusEnum.Active
+                    && d.IsDeleted == false).AsEnumerable().Sum(s => s.Amount));
+            }
         }
     }
 }

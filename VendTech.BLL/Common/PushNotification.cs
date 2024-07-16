@@ -1,17 +1,101 @@
 ﻿using Newtonsoft.Json;
 using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Linq.Dynamic;
+using System.Linq.Expressions;
 using System.Net;
 using System.Net.Http;
+using System.Security.Policy;
 using System.Text;
+using System.Threading.Tasks;
 using System.Web.Configuration;
 using VendTech.BLL.Models;
+using VendTech.BLL.PlatformApi;
 using VendTech.DAL;
 
 namespace VendTech.BLL.Common
 {
-    public static class PushNotification
+    public class PushNotification
     {
+        private static readonly Lazy<PushNotification> _instance = new Lazy<PushNotification>(() => new PushNotification());
+
+        private static List<string> notification_urls { get; set; }
+
+        public PushNotification()
+        {
+            notification_urls = new List<string>();
+        }
+
+        public static PushNotification Instance => _instance.Value;
+
+
+        public PushNotification IncludeUserBalanceOnTheWeb()
+        {
+            var url = WebConfigurationManager.AppSettings["SignaRServer"] + "Balance/update";
+            notification_urls.Add(url);
+            return this;
+        }
+
+        public PushNotification IncludeAdminWidgetSales()
+        {
+            var url = WebConfigurationManager.AppSettings["SignaRServer"] + "Widgets/updatewigdetsales";
+            notification_urls.Add(url);
+            return this;
+        }
+
+        public PushNotification IncludeAdminWidgetDeposits()
+        {
+            var url = WebConfigurationManager.AppSettings["SignaRServer"] + "Widgets/updatewigdetdeposit";
+            notification_urls.Add(url);
+            return this;
+        }
+        public PushNotification IncludeAdminNotificationCount()
+        {
+            var url = WebConfigurationManager.AppSettings["SignaRServer"] + "Notifications/admin_notification_count";
+            notification_urls.Add(url);
+            return this;
+        }
+        public PushNotification IncludeAdminUnreleasedDepsoits()
+        {
+            var url = WebConfigurationManager.AppSettings["SignaRServer"] + "Widgets/updateunreleaseddeposit";
+            notification_urls.Add(url);
+            return this;
+        }
+        public void Send()
+        {
+            using (HttpClient client = new HttpClient())
+            {
+                try
+                {
+
+                    var urls = notification_urls.Where(url => !string.IsNullOrEmpty(url));
+
+                    var responses = new ConcurrentBag<string>();
+                    var requestBody = new SignalRMessageBody { UserId = "user", Message = "message" };
+                    string jsonPayload = JsonConvert.SerializeObject(requestBody);
+
+
+                    Parallel.ForEach(urls, (url) =>
+                    {
+                        var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+                        HttpResponseMessage response = client.PostAsync(url, content).Result;
+                        string responseBody = response.Content.ReadAsStringAsync().Result;
+                        responses.Add(responseBody);
+                    });
+
+                    foreach (var response in responses)
+                    {
+                        Console.WriteLine(response);
+                    }
+                }
+                catch (Exception) { }
+            }
+
+        }
+
         public static string SendNotificationTOMobile(PushNotificationModel model)
         {
             try
@@ -26,7 +110,7 @@ namespace VendTech.BLL.Common
                 tRequest.Headers.Add(string.Format("Authorization: key={0}", GoogleAppID));
 
                 tRequest.Headers.Add(string.Format("Sender: id={0}", SENDER_ID));
-            
+
 
                 if (model.DeviceType == (int)AppTypeEnum.IOS)
                 {
@@ -39,9 +123,9 @@ namespace VendTech.BLL.Common
                         {
                             title = model.Title,
                             body = model.Message,
-                            type =(int) model.NotificationType,
+                            type = (int)model.NotificationType,
                             sound = "default",
-                            id=model.Id
+                            id = model.Id
 
                         }
                     };
@@ -115,7 +199,7 @@ namespace VendTech.BLL.Common
             }
         }
 
-        public static bool SaveNotificationToDB(PushNotificationModel model, int status)
+        private static bool SaveNotificationToDB(PushNotificationModel model, int status)
         {
             var db = new VendtechEntities();
             var dbNotification = new Notification();
@@ -130,43 +214,6 @@ namespace VendTech.BLL.Common
             db.SaveChanges();
             return true;
         }
-
-
-        public static bool UpdateUserBalanceOnTheWeb(long UserId)
-        {
-            var url = WebConfigurationManager.AppSettings["SignaRServer"] + "/Update";
-            var request = new SignalRMessageBody { UserId = UserId.ToString() };
-            var payload = JsonConvert.SerializeObject(request);
-            SendHttpRequest(url, HttpMethod.Post, payload);
-            return true;
-        }
-
-
-        public static string SendHttpRequest(string requestUrl, HttpMethod httpMethod, string requestBody = null)
-        {
-            try
-            {
-                using (var httpClient = new HttpClient())
-                {
-                    var request = new HttpRequestMessage
-                    {
-                        RequestUri = new Uri(requestUrl),
-                        Method = httpMethod,
-                        Content = !string.IsNullOrEmpty(requestBody) ? new StringContent(requestBody, Encoding.UTF8, "application/json") : null
-                    };
-
-                    var response = httpClient.SendAsync(request).Result;
-                    response.EnsureSuccessStatusCode();
-                    var responseContent = response.Content.ReadAsStringAsync().Result;
-                    return responseContent;
-                }
-            }
-            catch (Exception)
-            {
-                return "";
-            }
-        }
-
 
     }
 }

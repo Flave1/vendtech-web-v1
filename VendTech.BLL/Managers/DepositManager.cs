@@ -1891,7 +1891,11 @@ namespace VendTech.BLL.Managers
                     dbDeposit = ProcessTransaction(dbpendingDeposit, status);
                     //Send push to all devices where this user logged in when admin released deposit
                     PushNotificationToMobile(dbDeposit);
-                    PushNotification.UpdateUserBalanceOnTheWeb(dbDeposit.UserId);
+                    PushNotification.Instance
+                       .IncludeUserBalanceOnTheWeb()
+                       .IncludeAdminWidgetDeposits()
+                       .Send();
+
                 }
             }
 

@@ -766,6 +766,10 @@ namespace VendTech.BLL.Managers
                 else
                 {
                     tx = await UpdateTransaction(vendResponseData, tx, tx.User.POS.FirstOrDefault(d => d.POSId == tx.POSId));
+                    Common.PushNotification.Instance
+                        .IncludeAdminWidgetSales()
+                        .IncludeUserBalanceOnTheWeb()
+                        .Send();
                 }
 
                 tx.MeterId = await UpdateMeterOrSaveAsNewIMPROVED(model);

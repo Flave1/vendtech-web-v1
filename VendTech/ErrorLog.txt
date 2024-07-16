@@ -532,3 +532,27 @@ Error during serialization or deserialization using the JSON JavaScriptSerialize
 
 
 
+Method not found: 'System.String VendTech.BLL.Common.Utilities.GetSalesBalance()'.
+
+
+
+Method not found: 'System.String VendTech.BLL.Common.Utilities.GetSalesBalance()'.
+
+
+
+Method not found: 'System.String VendTech.BLL.Common.Utilities.GetSalesBalance()'.
+
+
+
+Method not found: 'System.String VendTech.BLL.Common.Utilities.GetSalesBalance()'.
+
+
+
+Method not found: 'System.String VendTech.BLL.Common.Utilities.GetSalesBalance()'.
+
+
+
+The underlying provider failed on Open.
+
+
+

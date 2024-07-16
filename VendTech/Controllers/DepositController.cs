@@ -126,22 +126,26 @@ namespace VendTech.Controllers
                 }
             }
             pd = _depositManager.SaveDepositRequest(model);
+
+
             string mesg = pd.Message;
             if (pd.Object.User.AutoApprove.Value)
             {
                 ActionOutput result = _depositManager.ChangeDepositStatus(pd.Object.PendingDepositId, DepositPaymentStatusEnum.Released, true);
 
                 var deposit = _depositManager.GetDeposit(pd.Object.PendingDepositId);
-                //SendEmailOnDepositApproval(deposit);
-                //SendEmailToAdminOnDepositApproval(deposit, result.ID);
-                //SendSmsOnDepositApproval(deposit);
+                SendEmailOnDepositApproval(deposit);
+                SendEmailToAdminOnDepositApproval(deposit, result.ID);
+                SendSmsOnDepositApproval(deposit);
 
                 _depositManager.DeletePendingDeposits(deposit);
             }
             else
             {
-                var adminUsers = _userManager.GetAllAdminUsersByDepositRelease();
 
+                PushNotification.Instance.IncludeAdminNotificationCount()
+                    .IncludeAdminUnreleasedDepsoits().Send();
+                var adminUsers = _userManager.GetAllAdminUsersByDepositRelease();
                 var pos = _posManager.GetSinglePos(pd.Object.POSId);
                 if (pos != null)
                 {
@@ -159,8 +163,8 @@ namespace VendTech.Controllers
                                 body = body.Replace("%REF%", pd.Object.CheckNumberOrSlipId);
                                 body = body.Replace("%Amount%", Utilities.FormatAmount(pd.Object.Amount));
                                 body = body.Replace("%CurrencyCode%", Utilities.GetCountry().CurrencyCode);
-                                //Utilities.SendEmail(admin.Email, emailTemplate.EmailSubject, body);
-                                //Utilities.SendEmail("vblell@gmail.com", emailTemplate.EmailSubject, body);
+                                Utilities.SendEmail(admin.Email, emailTemplate.EmailSubject, body);
+                                Utilities.SendEmail("vblell@gmail.com", emailTemplate.EmailSubject, body);
                             }
 
                         }

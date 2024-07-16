@@ -15,6 +15,7 @@ using System.Web.Configuration;
 using System.Reflection;
 using System.Linq;
 using VendTech.Framework.Api;
+using VendTech.DAL;
 #endregion
 
 namespace VendTech.Areas.Admin.Controllers
@@ -355,16 +356,17 @@ namespace VendTech.Areas.Admin.Controllers
         }
 
         [HttpGet, Public]
-        public JsonResult ReturnDealerBalance()
+        public JsonResult UpdateBalances()
         {
             try
             {
                 var lastTransaction = _meterManager.GetLastTransaction();
-                
                 var result = new LastMeterTransaction
                 { 
                     LastDealerBalance = Utilities.FormatAmount(lastTransaction.CurrentDealerBalance),
-                    RequestDate = lastTransaction.CreatedAt.ToString("dd/MM/yyyy hh:mm"),  
+                    RequestDate = Utilities.formatDate(lastTransaction.CreatedAt),
+                    TotalSales = Utilities.GetSalesBalance(),
+                    WalletBalance = Utilities.GetWalletBalance()
                 }; 
 
                 return Json(new { result = result }, JsonRequestBehavior.AllowGet);
@@ -373,7 +375,40 @@ namespace VendTech.Areas.Admin.Controllers
             {
                 return null;
             }
-            
+        }
+
+        [HttpGet, Public]
+        public JsonResult UpdateDepositToday()
+        {
+            try
+            {
+                var lastTransaction = _meterManager.GetLastTransaction();
+                var resp = new
+                {
+                    DepositBalanceToday = Utilities.GetDepositBalance()
+                };
+
+                return Json(new { result = resp }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        [HttpGet, Public]
+        public JsonResult GetNotification()
+        {
+            try
+            {
+                var res = _userManager.GetNotificationUsersCount(LOGGEDIN_USER.UserID);
+
+                return Json(new { result = res }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception)
+            {
+                return null;
+            }
         }
 
         [HttpGet, Public]
@@ -420,9 +455,7 @@ namespace VendTech.Areas.Admin.Controllers
 
             try
             {
-
                 var vendorStatus = _meterManager.RunStoredProcParams();
-
                 result.Status = ActionStatus.Successfull;
                 result.Message = "Successfully.";
                 return PartialView("Partials/_BSReportListing", vendorStatus);

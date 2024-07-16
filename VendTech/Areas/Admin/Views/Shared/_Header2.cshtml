@@ -1,27 +1,8 @@
 ﻿
 @{
     var user = (UserDetails)ViewBag.LOGGEDIN_USER;
-    var data = ViewBag.Data;
     var assignerModules = (List<ModulesModel>)ViewBag.USER_PERMISSONS;
-    if (data.RemainingAppUser != null)
-    {
-        data.RemainingAppUser = Convert.ToInt16(data.RemainingAppUser);
-    }
-    else
-    {
-        data.RemainingAppUser = 0;
-    }
-
-    if (data.RemainingDepositRelease != null)
-    {
-        data.RemainingDepositRelease = Convert.ToInt16(data.RemainingDepositRelease);
-    }
-    else
-    {
-        data.RemainingDepositRelease = 0;
-    }
-
-    var notificationCount = (data.RemainingAppUser + data.RemainingDepositRelease);
+  
 }
 
 <style>
@@ -74,28 +55,35 @@
         <ul class="navbar-nav ml-auto">
             <li class="nav-item dropdown" id="notification_menu" onclick="toggleNotification()">
 
-                <a class="nav-link dropdown-toggle text-light" href="#" id="notificationDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <a class="nav-link dropdown-toggle text-light" href="#" id="notificationDropdown" role="button" 
+                   data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                     @*<i class="fa fa-solid fa-bell fa-2x text-light"></i>*@
                     <img class="profilepictureclass" src="~/Content/images/notification.png" width="45" />
-                    <span class="badge icon_not" style=" font-size: 20px; position: relative; right: 20px; border-radius: 100%; border: none; color: white; text-align: center; background-color: red; bottom: 19px; padding-top:5px; width: 30px; ">@notificationCount</span>
+                    <span class="badge icon_not" 
+                          style=" font-size: 20px; position: relative; right: 20px; border-radius: 100%; border: none; 
+                            color: white; text-align: center; background-color: red; bottom: 19px; padding-top:5px; width: 30px; "
+                          id="notificationCount"></span>
                 </a>
                 <div class="dropdown-menu dropdown-menu-right text-light" aria-labelledby="notificationDropdown" style="background-color: #282828">
                     @if (assignerModules.Where(X => X.ControllerName == "24").ToList().Count() > 0)
                     {
                         <a class="dropdown-item" href="@Url.Action("ManageAppUsers","AppUser",new { status = "Pending"})">
-                            @if (!string.IsNullOrEmpty(data.AppUserMessage))
-                            {
-                                <span class="d-flex justify-content-between " style="color: white;">@data.AppUserMessage <span class="badge " style="background: red; color: white; border-radius: 100%; border: none;">@data.RemainingAppUser</span></span>
-                            }
-                        </a>
+                            <span id="newusers_span" class="d-flex justify-content-between " style="color: white;">
+                                NEW APP USERS APPROVAL
+                                <span class="badge "
+                                      style="background: red; color: white; border-radius: 100%; border: none;"
+                                      id="remainingAppUser"></span>
+                                </span>
+                            </a>
                     }
                     @if (assignerModules.Where(X => X.ControllerName == "25").ToList().Count() > 0)
                     {
                         <a class="dropdown-item" href="@Url.Action("ManageDepositRelease","ReleaseDeposit",new { status = "Pending"})">
-                            @if (!string.IsNullOrEmpty(data.DepositReleaseMessage))
-                            {
-                                <span class="d-flex justify-content-between " style="color: white;">@data.DepositReleaseMessage <span class="badge" style="background: red; color: white; border-radius: 100%; border: none;">@data.RemainingDepositRelease</span></span>
-                            }
+                            <span id="newdeposits_span" class="d-flex justify-content-between " style="color: white;">
+                                NEW DEPOSITS RELEASE
+                                <span class="badge" style="background: red; color: white; border-radius: 100%; border: none;"
+                                      id="remainingDepositRelease"></span>
+                                </span>
                         </a>
                     }
 

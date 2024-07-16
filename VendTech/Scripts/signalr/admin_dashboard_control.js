@@ -1,0 +1,79 @@
+﻿"use strict";
+
+import { connection } from './admin_connection.js';
+
+connection.on("UpdateWigdetSales", function (message) {
+    refreshBalances();
+    refreshVendStatus();
+    refreshSalesStatus();
+});
+
+connection.on("UpdateWigdetDeposits", function (message) {
+    refreshDeposits();
+    refreshUnreleasedDeposits();
+});
+
+connection.on("UpdateAdminUnreleasedDeposits", function (message) {
+    refreshUnreleasedDeposits();
+});
+
+refreshBalances();
+refreshVendStatus();
+refreshSalesStatus();
+refreshUnreleasedDeposits();
+
+
+
+function refreshVendStatus() {
+    $.ajax({
+        url: '/Admin/Home/GetVendorBalanceSheetReports',
+        success: function (data) {
+            $('#bsListing').html(data);
+        }
+    })
+}
+function refreshUnreleasedDeposits() {
+    $.ajax({
+        url: '/Admin/Home/GetUnreleasedDeposits',
+        success: function (data) {
+            $('#unreleasedDepositListing').html(data);
+        }
+    })
+}
+function refreshSalesStatus() {
+    const salesRefresh = document.getElementById('salesRefresh');
+    if (salesRefresh) {
+        salesRefresh.style.display = 'block';
+    }
+    $.ajax({
+        url: '/Admin/Home/GetSalesHistory',
+        success: function (data) {
+            $('#saleListing').html(data);
+            if (salesRefresh) {
+                salesRefresh.style.display = 'none';
+            }
+
+        }
+    })
+}
+function refreshBalances() {
+    $.ajax({
+        url: '/Admin/Home/UpdateBalances',
+        success: function (data) {
+            $("#rtsBalance").text(data.result.LastDealerBalance);
+            $("#transDate").text(data.result.RequestDate);
+            $("#salesBalance").text(data.result.Balance);
+            $("#walletBalance").text(data.result.WalletBalance);
+        }
+    })
+}
+function refreshDeposits() {
+    $.ajax({
+        url: '/Admin/Home/UpdateDepositToday',
+        success: function (data) {
+            $("#depositBalanceToday").text(data.result.DepositBalanceToday);
+        }
+    })
+}
+
+

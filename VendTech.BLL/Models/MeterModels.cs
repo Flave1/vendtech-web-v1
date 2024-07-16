@@ -200,6 +200,8 @@ namespace VendTech.BLL.Models
     {
         public string RequestDate { get; set; }
         public string LastDealerBalance { get; set; }
+        public string TotalSales { get; set; }
+        public string WalletBalance { get; set; }
     }
     public class MeterRechargeApiListingModel
     {

@@ -1,30 +1,16 @@
 ﻿"use strict";
+import { connection } from './customer_connection.js';
 
-const live = "https://www.vendtechsl.com:459/hub";
-const local = "https://localhost:7246/hub";
-const dev = "http://subs.vendtechsl.net/hub";
 
 const userId = userBalanceHandler.userId;
 
-var connection = new signalR.HubConnectionBuilder()
-    .withUrl(live, {
-        skipNegotiation: true,
-        transport: signalR.HttpTransportType.WebSockets
-    })
-    .configureLogging(signalR.LogLevel.Information)
-    .build();
 
 connection.on("SendBalanceUpdate", function (user) {
-    if (userId === user.toString()) {
+    if (userId.toString() === user) {
         updateBalance(true);
     }
 });
 
-connection.start().then(function () {
-    console.log("SignalR connected.");
-}).catch(function (err) {
-    console.error("SignalR connection error: ", err);
-});
 
 window.onload = function () {
     updateBalance(false);
@@ -63,22 +49,6 @@ function updateBalance(animate = false) {
         },
         error: function (err) {
             console.error('Error:', err);
-        }
-    });
-}
-
-function testSignalServer() {
-    var url = "https://www.vendtechsl.com:459/Balance/update";
-    $.ajax({
-        url: url,
-        type: 'POST',
-        contentType: 'application/json',
-        data: JSON.stringify({ userId: '40251' }),
-        success: function (response) {
-            console.log("Response", response);
-        },
-        error: function (xhr, status, error) {
-            console.error("Error:", xhr.responseText);
         }
     });
 }

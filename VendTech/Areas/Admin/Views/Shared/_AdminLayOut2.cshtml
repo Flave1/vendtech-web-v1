@@ -20,8 +20,10 @@
     <link href='https://fonts.googleapis.com/css?family=Open+Sans+Condensed:300,700' rel='stylesheet' type='text/css'>
 
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet"> 
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
 
+    <script src="~/Scripts/signalr/signalr.js"></script>
+    <script type="module" src="~/Scripts/signalr/admin_connection.js"></script>
     @Styles.Render("~/Content/adminLayoutCSS")
     @RenderSection("styles", required: false)
     @Scripts.Render("~/bundles/modernizr")
@@ -33,6 +35,7 @@
             -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
             -webkit-text-size-adjust: 100%;
         }
+
         body {
             font-family: 'Open Sans', sans-serif;
         }
@@ -126,10 +129,12 @@
             font-size: 20px;
             margin-bottom: 10px;
         }
-        .text-white{
+
+        .text-white {
             color: white;
             font-weight: bold
         }
+
         .btn-action-sidebar {
             font-weight: bold;
             color: white !important;
@@ -138,17 +143,21 @@
             border-radius: 5px;
             padding: 10px;
         }
+
         .m_content {
             background: none repeat scroll 0 0 #FFF;
             margin-top: 20px;
             padding: 20px;
         }
+
         .s_content {
             margin-top: 70px;
         }
+
         .table-bordered {
             border: 1px solid #dee2e6 !important;
         }
+
         .navbar-nav > .open > a:focus {
             background-color: #343a40;
             /*color: #FFF;*/
@@ -163,7 +172,7 @@
 
     <!-- Offcanvas for mobile -->
     <div class="offcanvas offcanvas-start d-lg-none " tabindex="-1" id="offcanvasSidebar" aria-labelledby="offcanvasSidebarLabel" style="background: rgb(40 40 40) ">
-        <div class="offcanvas-header" >
+        <div class="offcanvas-header">
             <h5 class="offcanvas-title text-white" id="offcanvasSidebarLabel">Menu</h5>
             <button type="button" style="background:none; border:none;" id="mob-menu2">
                 <span class="btn-action-sidebar">X</span>
@@ -184,8 +193,8 @@
                         <div class="modal-header" style="border-bottom: 2px solid gray;">
                             <h2 class="modal-title" style="font-weight:bold" id="exampleModalLabel">Timeout Warning</h2>
                             @*<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>*@
+                                    <span aria-hidden="true">&times;</span>
+                                </button>*@
                         </div>
                         <div class="modal-body123">
                             <p>Your session has been idle for <span id="idleTime">2</span> minutes. If you do not respond, the system will disconnect you in 30 seconds.</p>
@@ -248,14 +257,12 @@
     @Scripts.Render("~/bundles/custom")
     @RenderSection("scripts", required: false)
 
-    @*<script src="https://code.jquery.com/jquery-1.10.2.min.js"></script>*@
-    @*<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>*@
-    @*<script src="~/Scripts/popper.js"></script>*@
-    @*<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>*@
+
+    <script type="module" src="~/Scripts/signalr/admin_layout_control.js"></script>
 
 
     <script>
-        $(document).on("ready", function () { 
+        $(document).on("ready", function () {
             // Toggle offcanvas sidebar
             $('[data-toggle="offcanvas"]').on('click', function () {
                 $('#offcanvasSidebar').toggleClass('show');
@@ -265,7 +272,7 @@
                 $('#offcanvasSidebar').removeClass('show');
             });
 
-            $('#mob-menu').on('click', function () { 
+            $('#mob-menu').on('click', function () {
                 $('#offcanvasSidebar').toggleClass('show');
             });
 
@@ -306,7 +313,6 @@
                 $.ajax({
                     url: '/Home/AutoLogout',
                     success: function (data) {
-                        console.log("data", data);
                         homehandler.idleTime = parseInt(parseInt(data.ID) / 60);
                         if (data.Message == "aboutTo") {
                             //$("#logoutModal").modal('show');
@@ -329,15 +335,15 @@
         }
 
 
-        setInterval(function () {
-            $.ajax({
-                url: '/Admin/Home/CheckForUnClearedDeposits',
-                success: function (data) {
-                    //$("#dealerBal").text(data.result.LastDealerBalance);
-                    //$("#transDate").text(data.result.RequestDate);
-                }
-            })
-        }, 120000);
+        //setInterval(function () {
+        //    $.ajax({
+        //        url: '/Admin/Home/CheckForUnClearedDeposits',
+        //        success: function (data) {
+        //            //$("#dealerBal").text(data.result.LastDealerBalance);
+        //            //$("#transDate").text(data.result.RequestDate);
+        //        }
+        //    })
+        //}, 120000);
 
         setTimeout(function () {
             $.ajax({

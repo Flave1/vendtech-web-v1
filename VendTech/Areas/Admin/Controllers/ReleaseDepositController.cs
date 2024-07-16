@@ -182,12 +182,12 @@ namespace VendTech.Areas.Admin.Controllers
             if (result.Status == ActionStatus.Error)
             {
                 return JsonResult(new ActionOutput { Message = result.Message, Status = result.Status });
-            } 
+            }
 
             if (model.ReleaseDepositIds != null && model.ReleaseDepositIds.Any())
             {
-                //SendEmailOnDeposit(model.ReleaseDepositIds);
-                //SendSmsOnDeposit(model.ReleaseDepositIds);
+                SendEmailOnDeposit(model.ReleaseDepositIds);
+                SendSmsOnDeposit(model.ReleaseDepositIds);
             }
             return JsonResult(new ActionOutput { Message = result.Message, Status = result.Status });
         }
@@ -235,8 +235,6 @@ namespace VendTech.Areas.Admin.Controllers
                 return JsonResult(new ActionOutput { Message = ex.Message, Status = ActionStatus.Error });
             }
         }
-
-
 
         private void  SendEmailOnDeposit(List<long> depositIds)
         {
