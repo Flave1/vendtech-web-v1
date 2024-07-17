@@ -12,9 +12,10 @@ connection.on("SendBalanceUpdate", function (user) {
 });
 
 
-window.onload = function () {
+
+$(document).ready(function () {
     updateBalance(false);
-};
+});
 
 function updateBalance(animate = false) {
     $.ajax({

@@ -1894,6 +1894,7 @@ namespace VendTech.BLL.Managers
                     PushNotification.Instance
                        .IncludeUserBalanceOnTheWeb()
                        .IncludeAdminWidgetDeposits()
+                       .IncludeAdminUnreleasedDeposits()
                        .Send();
 
                 }

@@ -7,12 +7,10 @@ using System.Net.Http;
 using System.Web;
 using System.Web.Http;
 using System.Web.Http.Description;
-using System.Windows.Interop;
 using VendTech.Attributes;
+using VendTech.BLL.Common;
 using VendTech.BLL.Interfaces;
-using VendTech.BLL.Managers;
 using VendTech.BLL.Models;
-using VendTech.BLL.PlatformApi;
 using VendTech.DAL;
 using VendTech.Framework.Api;
 
@@ -74,6 +72,9 @@ namespace VendTech.Areas.Api.Controllers
             }
             else
             {
+                PushNotification.Instance.IncludeAdminNotificationCount()
+                    .IncludeAdminUnreleasedDeposits()
+                    .IncludeUserBalanceOnTheWeb().Send();
                 var adminUsers = _userManager.GetAllAdminUsersByDepositRelease();
 
                 var pos = _posManager.GetSinglePos(pd.Object.POSId);

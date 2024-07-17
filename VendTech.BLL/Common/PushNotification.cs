@@ -58,7 +58,7 @@ namespace VendTech.BLL.Common
             notification_urls.Add(url);
             return this;
         }
-        public PushNotification IncludeAdminUnreleasedDepsoits()
+        public PushNotification IncludeAdminUnreleasedDeposits()
         {
             var url = WebConfigurationManager.AppSettings["SignaRServer"] + "Widgets/updateunreleaseddeposit";
             notification_urls.Add(url);

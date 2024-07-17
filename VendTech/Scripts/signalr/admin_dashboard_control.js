@@ -17,10 +17,14 @@ connection.on("UpdateAdminUnreleasedDeposits", function (message) {
     refreshUnreleasedDeposits();
 });
 
-refreshBalances();
-refreshVendStatus();
-refreshSalesStatus();
-refreshUnreleasedDeposits();
+
+
+$(document).ready(function () {
+    refreshBalances();
+    refreshVendStatus();
+    refreshSalesStatus();
+    refreshUnreleasedDeposits();
+});
 
 
 
@@ -28,6 +32,7 @@ function refreshVendStatus() {
     $.ajax({
         url: '/Admin/Home/GetVendorBalanceSheetReports',
         success: function (data) {
+            console.log('GetVendorBalanceSheetReports', data)
             $('#bsListing').html(data);
         }
     })
@@ -48,6 +53,7 @@ function refreshSalesStatus() {
     $.ajax({
         url: '/Admin/Home/GetSalesHistory',
         success: function (data) {
+            console.log('GetSalesHistory', data)
             $('#saleListing').html(data);
             if (salesRefresh) {
                 salesRefresh.style.display = 'none';
@@ -60,9 +66,10 @@ function refreshBalances() {
     $.ajax({
         url: '/Admin/Home/UpdateBalances',
         success: function (data) {
+            console.log('UpdateBalances', data)
             $("#rtsBalance").text(data.result.LastDealerBalance);
             $("#transDate").text(data.result.RequestDate);
-            $("#salesBalance").text(data.result.Balance);
+            $("#salesBalance").text(data.result.TotalSales);
             $("#walletBalance").text(data.result.WalletBalance);
         }
     })

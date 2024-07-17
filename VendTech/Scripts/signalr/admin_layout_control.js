@@ -6,10 +6,10 @@ connection.on("UpdateAdminNotificationCount", function (message) {
     updateNotification();
 });
 
-
-window.onload = function () {
+$(document).ready(function () {
     updateNotification();
-}
+});
+
 function updateNotification() {
     $.ajax({
         url: '/Admin/Home/GetNotification',
