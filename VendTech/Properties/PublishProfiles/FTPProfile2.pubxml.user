@@ -222,7 +222,7 @@ https://go.microsoft.com/fwlink/?LinkID=208121.
       <publishTime>07/16/2024 10:30:22</publishTime>
     </File>
     <File Include="Scripts/signalr/admin_dashboard_control.js">
-      <publishTime>07/17/2024 14:37:29</publishTime>
+      <publishTime>07/17/2024 17:24:54</publishTime>
     </File>
     <File Include="Scripts/signalr/admin_layout_control.js">
       <publishTime>07/16/2024 15:57:20</publishTime>
@@ -241,6 +241,9 @@ https://go.microsoft.com/fwlink/?LinkID=208121.
     </File>
     <File Include="Scripts/signalr/customer_control.js">
       <publishTime>07/16/2024 10:18:28</publishTime>
+    </File>
+    <File Include="Scripts/signalr/layout_admin_control.js">
+      <publishTime>07/17/2024 17:31:08</publishTime>
     </File>
     <File Include="Scripts/signalr/signalr.js">
       <publishTime>05/09/2024 17:49:21</publishTime>

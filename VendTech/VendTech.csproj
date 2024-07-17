@@ -5532,7 +5532,7 @@
     <Content Include="Scripts\respond.js" />
     <Content Include="Scripts\respond.min.js" />
     <Content Include="Scripts\signalr\customer_connection.js" />
-    <Content Include="Scripts\signalr\admin_layout_control.js" />
+    <Content Include="Scripts\signalr\layout_admin_control.js" />
     <Content Include="Scripts\signalr\admin_dashboard_control.js" />
     <Content Include="Scripts\signalr\admin_connection.js" />
     <Content Include="Scripts\signalr\customer_control.js" />
