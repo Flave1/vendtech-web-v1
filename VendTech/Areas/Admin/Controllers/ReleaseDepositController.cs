@@ -202,8 +202,7 @@ namespace VendTech.Areas.Admin.Controllers
                 return JsonResult(new ActionOutput { Message = result.Message, Status = result.Status });
             }
             PushNotification.Instance.IncludeAdminNotificationCount()
-                    .IncludeAdminUnreleasedDeposits()
-                    .IncludeUserBalanceOnTheWeb().Send();
+                    .IncludeAdminUnreleasedDeposits().Send();
 
             return JsonResult(new ActionOutput { Message = result.Message, Status = result.Status });
         }

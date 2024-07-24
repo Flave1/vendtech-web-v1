@@ -119,7 +119,7 @@ namespace VendTech.BLL.Managers
 
         bool IMeterManager.IsModuleLocked(int moduleId, long userId)
         {
-            return _context.UserAssignedModules.FirstOrDefault(p => p.ModuleId == moduleId && p.UserId == userId) != null;
+            return _context.UserAssignedModules.Any(p => p.ModuleId == moduleId && p.UserId == userId) != false;
 
         }
 
@@ -762,13 +762,17 @@ namespace VendTech.BLL.Managers
                     {
                         tx = await UpdateTransactionOnStatusSuccessIMPROVED(vendStatus.FirstOrDefault().Value, tx);
                     }
+                    Common.PushNotification.Instance
+                        .IncludeAdminWidgetSales()
+                        .IncludeUserBalanceOnTheWeb(tx.UserId)
+                        .Send();
                 }
                 else
                 {
                     tx = await UpdateTransaction(vendResponseData, tx, tx.User.POS.FirstOrDefault(d => d.POSId == tx.POSId));
                     Common.PushNotification.Instance
                         .IncludeAdminWidgetSales()
-                        .IncludeUserBalanceOnTheWeb()
+                        .IncludeUserBalanceOnTheWeb(tx.UserId)
                         .Send();
                 }
 
@@ -797,6 +801,10 @@ namespace VendTech.BLL.Managers
                     tx = await UpdateTransactionOnStatusSuccessIMPROVED(vendStatus.FirstOrDefault().Value, tx);
                 }
 
+                Common.PushNotification.Instance
+                        .IncludeAdminWidgetSales()
+                        .IncludeUserBalanceOnTheWeb(tx.UserId)
+                        .Send();
                 return tx;
             }
         }

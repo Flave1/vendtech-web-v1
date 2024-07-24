@@ -12,7 +12,6 @@ connection.on("SendBalanceUpdate", function (user) {
 });
 
 
-
 $(document).ready(function () {
     updateBalance(false);
 });

@@ -23,18 +23,21 @@ namespace VendTech.BLL.Common
         private static readonly Lazy<PushNotification> _instance = new Lazy<PushNotification>(() => new PushNotification());
 
         private static List<string> notification_urls { get; set; }
+        private static long userId { get; set; }
 
         public PushNotification()
         {
             notification_urls = new List<string>();
+            userId = 0;
         }
 
         public static PushNotification Instance => _instance.Value;
 
 
-        public PushNotification IncludeUserBalanceOnTheWeb()
+        public PushNotification IncludeUserBalanceOnTheWeb(long user)
         {
             var url = WebConfigurationManager.AppSettings["SignaRServer"] + "Balance/update";
+            userId = user;
             notification_urls.Add(url);
             return this;
         }
@@ -74,7 +77,7 @@ namespace VendTech.BLL.Common
                     var urls = notification_urls.Where(url => !string.IsNullOrEmpty(url));
 
                     var responses = new ConcurrentBag<string>();
-                    var requestBody = new SignalRMessageBody { UserId = "user", Message = "message" };
+                    var requestBody = new SignalRMessageBody { UserId = userId.ToString(), Message = "message" };
                     string jsonPayload = JsonConvert.SerializeObject(requestBody);
 
 

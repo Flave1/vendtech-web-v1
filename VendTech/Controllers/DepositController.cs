@@ -145,7 +145,7 @@ namespace VendTech.Controllers
 
                 PushNotification.Instance.IncludeAdminNotificationCount()
                     .IncludeAdminUnreleasedDeposits()
-                    .IncludeUserBalanceOnTheWeb().Send();
+                    .IncludeUserBalanceOnTheWeb(pd.Object.UserId).Send();
                 var adminUsers = _userManager.GetAllAdminUsersByDepositRelease();
                 var pos = _posManager.GetSinglePos(pd.Object.POSId);
                 if (pos != null)

@@ -69,6 +69,7 @@ namespace VendTech.Controllers
             var pageNo = (model.PageNo / model.RecordsPerPage) + (model.PageNo % model.RecordsPerPage > 0 ? 1 : 0);
             var modal = _meterManager.GetMeters(LOGGEDIN_USER.UserID, pageNo, model.RecordsPerPage, model.IsActive);
             List<string> resultString = new List<string>();
+            ViewBag.IsDisable = _meterManager.IsModuleLocked(34, LOGGEDIN_USER.UserID);
             resultString.Add(RenderRazorViewToString("Partials/_meterListing", modal));
             resultString.Add(modal.TotalCount.ToString());
             return JsonResult(resultString);

@@ -198,7 +198,6 @@ var UserMeters = {
                 if (data.Code === 302)
                 {
                     GetLatestRechargesAfterPurchase();
-                    updateBalnce(false);
                     $.ShowMessage($('div.messageAlert'), data.Msg, MessageType.Failed);
                     $("#error_reponse").show(); 
                     $("#error_reponse").html(data.Msg); 
@@ -242,19 +241,10 @@ var UserMeters = {
                     $("#vendorId").html(data.Data.VendorId);
                     $(".currencyCode").html(data.Data.CurrencyCode);
 
-                    GetLatestRechargesAfterPurchase();
-                    //GetPOSBalanceAfterPurchase();
-                    updateBalnce(true);
-                    $("#AmountDisplay").val('');
                     $("#modalCart").modal("show");
-                    /*setTimeout(function () {
-                        if (redirectToAddMeter) {
-                            window.location.href = baseUrl + '/Meter/AddEditMeter?number=' + $("#MeterNumber").val();
-                            return;
-                        }
-    
-                        //window.location.href = baseUrl + '/Home/Index';
-                    }, 100500);*/
+                    GetLatestRechargesAfterPurchase();
+                    $("#AmountDisplay").val('');
+
                 } else {
 
                     $.ShowMessage($('div.messageAlert'), data.Msg, MessageType.Failed);

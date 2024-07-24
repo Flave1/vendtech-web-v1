@@ -1892,7 +1892,7 @@ namespace VendTech.BLL.Managers
                     //Send push to all devices where this user logged in when admin released deposit
                     PushNotificationToMobile(dbDeposit);
                     PushNotification.Instance
-                       .IncludeUserBalanceOnTheWeb()
+                       .IncludeUserBalanceOnTheWeb(dbDeposit.UserId)
                        .IncludeAdminWidgetDeposits()
                        .IncludeAdminUnreleasedDeposits()
                        .Send();
