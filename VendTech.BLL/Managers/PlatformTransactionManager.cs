@@ -260,6 +260,7 @@ namespace VendTech.BLL.Managers
 
                                     transactionDetail.Request = tranxLogs.Request.ToString();
                                     transactionDetail.Response = tranxLogs.Response.ToString();
+                                    transactionDetail.TransactionId = Utilities.NewTransactionId();
 
                                     DbCtx.TransactionDetails.Add(transactionDetail);
                                     PlatformTransaction tranx = DbCtx.PlatformTransactions.Where(t => t.Id == tranxModel.Id).FirstOrDefault();
@@ -452,11 +453,13 @@ namespace VendTech.BLL.Managers
                 {
 
                     TransactionDetail transactionDetail = CreateTransactionDetail(tranxModel, (int)RechargeMeterStatusEnum.Success);
+
                     List<PlatformApiLogModel> logs = GetTransactionLogs(tranxModel.Id);
                     Logs tranxLogs = CreateLogs( logs );
 
                     transactionDetail.Request = tranxLogs.Request.ToString();
                     transactionDetail.Response = tranxLogs.Response.ToString();
+                    transactionDetail.TransactionId = Utilities.NewTransactionId();
 
                     Context.TransactionDetails.Add(transactionDetail);
                     PlatformTransaction tranx = Context.PlatformTransactions.FirstOrDefault(t => t.Id == tranxModel.Id);
@@ -582,7 +585,6 @@ namespace VendTech.BLL.Managers
                 MeterNumber1 = tranxModel.Beneficiary,
                 Amount = tranxModel.Amount,
                 PlatFormId = tranxModel.PlatformId,
-                TransactionId = Utilities.GetLastMeterRechardeId(),
                 IsDeleted = false,
                 Status = status, // (int)RechargeMeterStatusEnum.Success,
                 CreatedAt = now,

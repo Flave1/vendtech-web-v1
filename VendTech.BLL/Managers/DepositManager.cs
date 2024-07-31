@@ -1941,7 +1941,7 @@ namespace VendTech.BLL.Managers
 
                 dbDeposit.NewBalance = dbDeposit.POS.Balance;
                 dbDeposit.CreatedAt = DateTime.UtcNow;
-                dbDeposit.TransactionId = Utilities.GetLastDepositTransactionId();
+                dbDeposit.TransactionId = Utilities.NewDepositTransactionId();
                 dbDeposit.IsDeleted = false;
 
             }
@@ -2642,7 +2642,7 @@ namespace VendTech.BLL.Managers
                 dbDeposit.BankAccountId = 1;
                 dbDeposit.isAudit = false;
                 dbDeposit.PaymentType = (int)DepositPaymentTypeEnum.AdminTransferOut;
-                dbDeposit.TransactionId = Utilities.GetLastDepositTransactionId();
+                dbDeposit.TransactionId = Utilities.NewDepositTransactionId();
                 dbDeposit.IsDeleted = false;
                 dbDeposit.BalanceBefore = fromPos.Balance ?? new decimal();
                 dbDeposit.POS.Balance = dbDeposit.POS.Balance == null ? dbDeposit.Amount : dbDeposit.POS.Balance + dbDeposit.Amount;
@@ -2743,7 +2743,7 @@ namespace VendTech.BLL.Managers
 
                 //Adds to  Reciever Balance
                 dbDeposit.NewBalance = dbDeposit.POS.Balance;
-                dbDeposit.TransactionId = Utilities.GetLastDepositTransactionId();
+                dbDeposit.TransactionId = Utilities.NewDepositTransactionId();
                 dbDeposit.IsDeleted = false;
                 Context.Deposits.Add(dbDeposit);
                 Context.SaveChanges();
@@ -2806,7 +2806,7 @@ namespace VendTech.BLL.Managers
               
                 //Adds to  Reciever Balance
                 dbDeposit.NewBalance = dbDeposit.POS.Balance;
-                dbDeposit.TransactionId = Utilities.GetLastDepositTransactionId();
+                dbDeposit.TransactionId = Utilities.NewDepositTransactionId();
                 dbDeposit.IsDeleted = false;
                 Context.Deposits.Add(dbDeposit);
                 Context.SaveChanges();
@@ -2874,7 +2874,7 @@ namespace VendTech.BLL.Managers
                 dbDeposit.BalanceBefore = toPos.Balance;
                 dbDeposit.NewBalance = (dbDeposit.BalanceBefore + amount) ?? new decimal();
                 dbDeposit.POS.Balance = dbDeposit.POS.Balance + dbDeposit.Amount;
-                dbDeposit.TransactionId = Utilities.GetLastDepositTransactionId();
+                dbDeposit.TransactionId = Utilities.NewDepositTransactionId();
                 dbDeposit.Status = (int)DepositPaymentStatusEnum.Released;
                 Context.Deposits.Add(dbDeposit);
                 Context.SaveChanges();

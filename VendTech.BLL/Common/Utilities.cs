@@ -6,34 +6,24 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
-using System.Threading.Tasks;
 using System.Web.Configuration;
 using MimeKit;
-using System.Net.Mail;
 using System.Net;
 using VendTech.DAL;
 using System.Globalization;
 using iTextSharp.text;
-//using iTextSharp.text.pdf;
 using iTextSharp.tool.xml;
 using System.Text.RegularExpressions;
 using System.Drawing;
 using System.Drawing.Imaging;
-using Patagames.Pdf.Net;
 using VendTech.BLL.Interfaces;
 using VendTech.BLL.Models.CurrencyModel;
-using iTextSharp.tool.xml.html;
-using System.Xml;
 using HtmlAgilityPack;
-using MailKit.Net.Smtp;
-using System.Web.Mail;
 using VendTech.BLL.Models;
 using Newtonsoft.Json;
 using System.Net.Http.Headers;
 using System.Net.Http;
-using iTextSharp.text.pdf;
 using System.Data.Entity;
-using System.Runtime.Remoting.Contexts;
 
 namespace VendTech.BLL.Common
 {
@@ -59,24 +49,35 @@ namespace VendTech.BLL.Common
             return string.Format("{0:x}", i - DateTime.Now.Ticks);
         }
 
-        public static string GetLastMeterRechardeId()
+        public static string NewTransactionId()
         {
-            VendtechEntities context = new VendtechEntities();
-            var lastRecord = context.TransactionDetails.OrderByDescending(d => d.TransactionDetailsId).FirstOrDefault();
-            var trId = lastRecord != null ? Convert.ToInt64(lastRecord.TransactionId) + 1 : 1;
-            return trId.ToString();
+            using (var context = new VendtechEntities())
+            {
+                using (var transaction = context.Database.BeginTransaction(System.Data.IsolationLevel.Serializable))
+                {
+                    try
+                    {
+                        var lastRecord = context.TransactionDetails
+                            .OrderByDescending(d => d.TransactionDetailsId)
+                            .FirstOrDefault();
+
+                        var trId = lastRecord != null ? Convert.ToInt64(lastRecord.TransactionId) + 1 : 1;
+                        context.SaveChanges();
+                        transaction.Commit();
+                        return trId.ToString();
+                    }
+                    catch (Exception ex)
+                    {
+                        transaction.Rollback();
+                        Console.WriteLine("Transaction rolled back at: " + DateTime.Now);
+                        Console.WriteLine("Error: " + ex.Message);
+                        throw;
+                    }
+                }
+            }
         }
 
-        //public static string GetLastDepositTransactionId()
-        //{
-        //    VendtechEntities context = new VendtechEntities();
-        //    var existing_details = context.Deposits.Where(p => p.IsDeleted == false).AsEnumerable();
-        //    long max = existing_details.Any() ? existing_details.Max(p => Convert.ToInt64(p.TransactionId)) : 1;
-        //    max = max + 1;
-        //    return max.ToString();
-        //}
-
-        public static string GetLastDepositTransactionId()
+        public static string NewDepositTransactionId()
         {
             using (VendtechEntities context = new VendtechEntities())
             {
@@ -91,28 +92,6 @@ namespace VendTech.BLL.Common
                 }
                 return "1";
             }
-        }
-
-        private static string GenerateTransStanNo()
-        {
-            string transRef = "";
-            VendtechEntities context = new VendtechEntities();
-            StanTable stanTable = null;
-            stanTable = context.StanTables.FirstOrDefault();
-            if (stanTable == null)
-            {
-                stanTable = new StanTable();
-                stanTable.Stan = 1;
-                context.StanTables.Add(stanTable);
-                context.SaveChanges();
-            }
-
-            stanTable.Stan += 1;// stanValue;
-            int stanValue = stanTable.Stan;
-            //context.StanTables.Add(stanTable);
-            context.SaveChanges();
-            transRef = Convert.ToString(stanValue); ;// PadLeft(11, '0');
-            return transRef;
         }
 
         public static long VENDTECH

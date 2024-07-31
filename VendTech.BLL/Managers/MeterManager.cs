@@ -924,8 +924,10 @@ namespace VendTech.BLL.Managers
             }
             else if (statusResponse.Content.StatusDescription == "Transaction completed with error")
             {
-                var newTraxid = Utilities.GetLastMeterRechardeId();
+                var newTraxid = Utilities.NewTransactionId();
                 model.TransactionId = Convert.ToInt64(newTraxid);
+                transDetail.TransactionId = model.TransactionId.ToString();
+                Context.SaveChanges();
                 //await ProcessTransaction(false, model, transDetail, false);
                 //response.Add("newtranx", statusResponse);
                 response.Add("failed", statusResponse);
@@ -1093,7 +1095,6 @@ namespace VendTech.BLL.Managers
             trans.MeterNumber1 = model.MeterNumber;
             trans.MeterToken1 = model.MeterToken1;
             trans.Amount = model.Amount;
-            trans.TransactionId = Utilities.GetLastMeterRechardeId().ToString();
             trans.IsDeleted = false;
             trans.Status = (int)RechargeMeterStatusEnum.Pending;
             trans.CreatedAt = DateTime.UtcNow;
@@ -1123,6 +1124,7 @@ namespace VendTech.BLL.Managers
             trans.StatusResponse = "";
             trans.DebitRecovery = "0";
             trans.CostOfUnits = "0";
+            trans.TransactionId = Utilities.NewTransactionId();
 
             _context.TransactionDetails.Add(trans);
             await _context.SaveChangesAsync();
@@ -1206,6 +1208,7 @@ namespace VendTech.BLL.Managers
 
         private async Task<IceKloudResponse> MakeRechargeRequest(RechargeMeterModel model)
         {
+            LogExceptionToDatabase(new Exception($"MakeRechargeRequest START {DateTime.UtcNow} for traxId {model.TransactionId}"));
             IceKloudResponse response = new IceKloudResponse();
             string strings_result = "";
             IcekloudRequestmodel request_model = null;
@@ -1223,6 +1226,7 @@ namespace VendTech.BLL.Managers
                 response = JsonConvert.DeserializeObject<IceKloudResponse>(strings_result);
                 response.RequestModel = request_model;
 
+                LogExceptionToDatabase(new Exception($"MakeRechargeRequest END {DateTime.UtcNow} for traxId {model.TransactionId}"));
                 return response;
             }
             catch (AggregateException err)
