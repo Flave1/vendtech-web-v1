@@ -12,6 +12,7 @@ using System.Linq.Dynamic;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
+using System.Web;
 using System.Web.Configuration;
 using System.Web.Mvc;
 using VendTech.BLL.Common;
@@ -751,6 +752,12 @@ namespace VendTech.BLL.Managers
                     ReadErrorMessage(vendResponse.Content?.Data?.Error, tx);
 
                     var vendStatus = await QueryVendStatus(model, tx);
+                    
+                    if(vendStatus.FirstOrDefault().Value == null)
+                    {
+                        FlagTransaction(tx, RechargeMeterStatusEnum.Pending);
+                        throw new ArgumentException("Unable to reach EDSA Services");
+                    }
 
                     if (vendStatus.FirstOrDefault().Key != "success" && vendStatus.FirstOrDefault().Key != "newtranx")
                     {
@@ -785,10 +792,20 @@ namespace VendTech.BLL.Managers
 
                 var vendStatus = await QueryVendStatus(model, tx);
 
+                var response = vendStatus.FirstOrDefault().Value;
+                //tx.Request = JsonConvert.SerializeObject(model);
+                //tx.Response = JsonConvert.SerializeObject(response);
+
+                if (vendStatus.FirstOrDefault().Value == null)
+                {
+                    FlagTransaction(tx, RechargeMeterStatusEnum.Pending);
+                    throw new ArgumentException("Unable to reach EDSA Services");
+                }
+
                 if (vendStatus.FirstOrDefault().Key != "success" && vendStatus.FirstOrDefault().Key != "newtranx")
                 {
                     FlagTransaction(tx, RechargeMeterStatusEnum.Failed);
-                    if (vendResponse == null) throw new ArgumentException("Meter number not valid");
+                    if (vendResponse == null) throw new ArgumentException("Unable to fetch sale");
                     if (string.IsNullOrEmpty(vendResponse.Content.Data?.Error))
                     {
                         throw new ArgumentException("Unable to fetch sale");
@@ -798,7 +815,7 @@ namespace VendTech.BLL.Managers
                 if (vendStatus.FirstOrDefault().Key != "newtranx")
                 {
                     tx.MeterId = await UpdateMeterOrSaveAsNewIMPROVED(model);
-                    tx = await UpdateTransactionOnStatusSuccessIMPROVED(vendStatus.FirstOrDefault().Value, tx);
+                    tx = await UpdateTransactionOnStatusSuccessIMPROVED(response, tx);
                 }
 
                 Common.PushNotification.Instance
@@ -903,59 +920,86 @@ namespace VendTech.BLL.Managers
 
         async Task<Dictionary<string, IcekloudQueryResponse>> QueryVendStatus(RechargeMeterModel model, TransactionDetail transDetail)
         {
+
             LogExceptionToDatabase(new Exception($"QueryVendStatus starts at {DateTime.UtcNow} for traxId {model.TransactionId}"));
             Dictionary<string, IcekloudQueryResponse> response = new Dictionary<string, IcekloudQueryResponse>();
-            var queryRequest = model.StackStatusRequestModel(model);
-            var url = WebConfigurationManager.AppSettings["IcekloudURL"].ToString();
-
-            var icekloud_response = await _client.PostAsJsonAsync(url, queryRequest);
-
-            var strings_result = await icekloud_response.Content.ReadAsStringAsync();
-
-            var statusResponse = JsonConvert.DeserializeObject<IcekloudQueryResponse>(strings_result);
-
-            if (statusResponse.Content.StatusDescription == "The specified Transaction does not exist.")
+            try
             {
-                //await ProcessTransaction(false, model, transDetail, true);
-                response.Add("failed", statusResponse);
+                var queryRequest = model.StackStatusRequestModel(model);
+                var url = WebConfigurationManager.AppSettings["IcekloudURL"].ToString();
 
-                LogExceptionToDatabase(new Exception($"QueryVendStatus 1 ends at {DateTime.UtcNow} for traxId {model.TransactionId}"));
-                return response;
-            }
-            else if (statusResponse.Content.StatusDescription == "Transaction completed with error")
-            {
-                var newTraxid = Utilities.NewTransactionId();
-                model.TransactionId = Convert.ToInt64(newTraxid);
-                transDetail.TransactionId = model.TransactionId.ToString();
-                Context.SaveChanges();
-                //await ProcessTransaction(false, model, transDetail, false);
-                //response.Add("newtranx", statusResponse);
-                response.Add("failed", statusResponse);
-                LogExceptionToDatabase(new Exception($"QueryVendStatus 2 ends at {DateTime.UtcNow} for traxId {model.TransactionId}"));
-                return response;
-            }
-            else if (!statusResponse.Content.Finalised && statusResponse.Content.StatusRequestCount <= 5)
-            {
-                LogExceptionToDatabase(new Exception($"QueryVendStatus 3 ends at {DateTime.UtcNow} for traxId {model.TransactionId}"));
-                return await QueryVendStatus(model, transDetail);
-            }
-            else
-            {
-                transDetail.QueryStatusCount = (int)statusResponse.Content.StatusRequestCount;
-                if (string.IsNullOrEmpty(statusResponse.Content.VoucherPin))
+                var icekloudResponse = await _client.PostAsJsonAsync(url, queryRequest);
+
+                var stringsResult = await icekloudResponse.Content.ReadAsStringAsync();
+
+                var statusResponse = JsonConvert.DeserializeObject<IcekloudQueryResponse>(stringsResult);
+
+                transDetail.Request = JsonConvert.SerializeObject(queryRequest);
+                transDetail.Response = stringsResult;
+
+                if (statusResponse.Content.StatusDescription == "The specified Transaction does not exist.")
                 {
-                    LogExceptionToDatabase(new Exception($"QueryVendStatus 4 ends at {DateTime.UtcNow} for traxId {model.TransactionId}"));
-                    await _context.SaveChangesAsync();
+                    //await ProcessTransaction(false, model, transDetail, true);
                     response.Add("failed", statusResponse);
+
+                    LogExceptionToDatabase(new Exception($"QueryVendStatus 1 ends at {DateTime.UtcNow} for traxId {model.TransactionId}"));
                     return response;
+                }
+                if (statusResponse.Content.StatusDescription == "The specified Transaction does not exist.")
+                {
+                    //await ProcessTransaction(false, model, transDetail, true);
+                    response.Add("failed", statusResponse);
+
+                    LogExceptionToDatabase(new Exception($"QueryVendStatus 1 ends at {DateTime.UtcNow} for traxId {model.TransactionId} "));
+                    return response;
+                }
+                else if (statusResponse.Content.StatusDescription == "Transaction completed with error")
+                {
+                    //var newTraxid = Utilities.NewTransactionId();
+                    //model.TransactionId = Convert.ToInt64(newTraxid);
+                    //transDetail.TransactionId = newTraxid;
+                    Context.SaveChanges();
+                    //await ProcessTransaction(false, model, transDetail, false);
+                    //response.Add("newtranx", statusResponse);
+                    response.Add("failed", statusResponse);
+                    LogExceptionToDatabase(new Exception($"QueryVendStatus 2 ends at {DateTime.UtcNow} for traxId {model.TransactionId} "));
+                    return response;
+                }
+                else if (!statusResponse.Content.Finalised && statusResponse.Content.StatusRequestCount <= 5)
+                {
+                    LogExceptionToDatabase(new Exception($"QueryVendStatus 3 ends at {DateTime.UtcNow} for traxId {model.TransactionId}"));
+                    return await QueryVendStatus(model, transDetail);
                 }
                 else
                 {
-                    await _context.SaveChangesAsync();
-                    LogExceptionToDatabase(new Exception($"QueryVendStatus 5 ends at {DateTime.UtcNow} for traxId {model.TransactionId}"));
-                    response.Add("success", statusResponse);
-                    return response;
+                    transDetail.QueryStatusCount = (int)statusResponse.Content.StatusRequestCount;
+                    if (string.IsNullOrEmpty(statusResponse.Content.VoucherPin))
+                    {
+                        LogExceptionToDatabase(new Exception($"QueryVendStatus 4 ends at {DateTime.UtcNow} for traxId {model.TransactionId} "));
+                        await _context.SaveChangesAsync();
+                        response.Add("failed", statusResponse);
+                        return response;
+                    }
+                    else
+                    {
+                        await _context.SaveChangesAsync();
+                        //LogExceptionToDatabase(new Exception($"QueryVendStatus 5 ends at {DateTime.UtcNow} for traxId {model.TransactionId} "));
+                        response.Add("success", statusResponse);
+                        return response;
+                    }
                 }
+            }
+            catch (HttpException ex)
+            {
+                LogExceptionToDatabase(new Exception($"QueryVendStatus 6 ends at {DateTime.UtcNow} for traxId {model.TransactionId} see: {ex}"));
+                response.Add("failed", null);
+                return response;
+            }
+            catch (Exception ex)
+            {
+                LogExceptionToDatabase(new Exception($"QueryVendStatus 7 ends at {DateTime.UtcNow} for traxId {model.TransactionId} see: {ex}"));
+                response.Add("failed", null);
+                return response;
             }
         }
 
@@ -1020,7 +1064,10 @@ namespace VendTech.BLL.Managers
             trans.AccountNumber = response_data.Content?.CustomerAccNo ?? string.Empty;
             trans.Customer = response_data.Content?.Customer ?? string.Empty;
             trans.ReceiptNumber = response_data.Content?.VoucherSerialNumber ?? string.Empty;
-            trans.RTSUniqueID = "00";
+            trans.RTSUniqueID = response_data.Content?.RTSUniqueID ?? string.Empty;
+            trans.MeterToken1 = response_data.Content?.VoucherPin ?? string.Empty;
+            trans.MeterToken2 = response_data.Content?.VoucherPin2 ?? string.Empty;
+            trans.MeterToken3 = response_data.Content?.VoucherPin3 ?? string.Empty;
             trans.SerialNumber = response_data?.Content?.SerialNumber ?? string.Empty;
             trans.ServiceCharge = response_data?.Content?.ServiceCharge;
             trans.Tariff = response_data.Content?.Tariff;
@@ -1035,7 +1082,7 @@ namespace VendTech.BLL.Managers
             trans.VoucherSerialNumber = response_data?.Content?.VoucherSerialNumber;
             trans.VendStatus = response_data.Content?.Status;
             trans.VendStatusDescription = response_data?.Content?.StatusDescription;
-            trans.StatusResponse = JsonConvert.SerializeObject(response_data);
+            trans.StatusResponse = response_data.Content?.StatusDescription;
             trans.DebitRecovery = "0";
             //BALANCE DEDUCTION
             await Deductbalace(trans, trans.User.POS.FirstOrDefault(s => s.POSId == trans.POSId));

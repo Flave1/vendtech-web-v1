@@ -83,7 +83,7 @@ namespace VendTech.Areas.Api.Controllers
                     return new JsonContent("INVALID CREDENTIALS \n\n PLEASE RESET YOUR PASSCODE OR \n CONTACT VENDTECH MANAGEMENT", Status.Failed).ConvertToHttpResponseOK();
                 else
                 {
-                    if (model.AppVersion != CurrentAppVersion && model.AppVersion != "2.4.6")
+                    if (model.AppVersion != CurrentAppVersion)
                     {
                         //return new JsonContent("UPDATE_APP", Status.Success).ConvertToHttpResponseOK(); Will update later
                         return new JsonContent("APP VERSION IS OUT OF DATE, PLEASE UPDATE APP FROM PLAYSTORE", Status.Success).ConvertToHttpResponseOK();
@@ -126,64 +126,74 @@ namespace VendTech.Areas.Api.Controllers
         [ActionName("SignInV2")]
         public HttpResponseMessage SignInV2(LoginAPIPassCodeModel model)
         {
-            if (string.IsNullOrEmpty(model.DeviceToken))
+            try
             {
-                return new JsonContent(ApiCodes.RESET_PASSCODE, Status.Success).ConvertToHttpResponseOK();
-            }
+                if (string.IsNullOrEmpty(model.DeviceToken))
+                {
+                    return new JsonContent(ApiCodes.RESET_PASSCODE, Status.Success).ConvertToHttpResponseOK();
+                }
 
-            if (!ModelState.IsValid)
-                return new JsonContent("Passcode is required.", Status.Failed).ConvertToHttpResponseOK();
-            else
-            {
-
-                var userDetails = _authenticateManager.GetUserDetailByPassCode(model.PassCode);
-                if (userDetails == null)
-                    return new JsonContent("YOUR ACCOUNT IS DISABLED! \n PLEASE CONTACT VENDTECH MANAGEMENT", Status.Failed).ConvertToHttpResponseOK();
-                else if (userDetails.UserId == 0)
-                    return new JsonContent("Invalid Passcode.", Status.Failed).ConvertToHttpResponseOK();
-
-                else if (!userDetails.IsPasscodeNew  && !string.IsNullOrEmpty(userDetails.DeviceToken) && userDetails.DeviceToken != model.DeviceToken.Trim() && model.PassCode != "73086")//
-                    return new JsonContent("INVALID CREDENTIALS \n\n PLEASE RESET YOUR PASSCODE OR \n CONTACT VENDTECH MANAGEMENT", Status.Failed).ConvertToHttpResponseOK();
+                if (!ModelState.IsValid)
+                    return new JsonContent(ApiCodes.PASSCODE_REQUIRED, Status.Failed).ConvertToHttpResponseOK();
                 else
                 {
-                    if (model.AppVersion != CurrentAppVersion && model.AppVersion != "2.4.5" && model.AppVersion != "2.4.6") 
-                    {
-                        //return new JsonContent("UPDATE_APP", Status.Success).ConvertToHttpResponseOK(); Will update later
-                        return new JsonContent("APP VERSION IS OUT OF DATE, PLEASE UPDATE APP FROM PLAYSTORE", Status.Success).ConvertToHttpResponseOK();
-                    }
-                    var isEnabled = _authenticateManager.IsUserAccountORPosBlockedORDisabled(userDetails.UserId);
-                    if (isEnabled)
-                    {
-                        return new JsonContent("YOUR ACCOUNT IS DISABLED! \n PLEASE CONTACT VENDTECH MANAGEMENT", Status.Failed).ConvertToHttpResponseOK();
-                    }
 
-                    var pos = _posManager.GetPosDetails(model.PassCode);
-                    if (pos == null)
-                    {
-                        return new JsonContent("POS NOT AVAILABLE! \n PLEASE CONTACT VENDTECH MANAGEMENT", Status.Failed).ConvertToHttpResponseOK();
-                    }
-                    if (pos.Enabled)
-                    {
-                        userDetails.Percentage = _vendorManager.GetVendorPercentage(userDetails.UserId);
-                        _authenticateManager.AddTokenDevice(model);
-                        _userManager.UpdateUserLastAppUsedTime(pos.VendorId.Value);
-                        if (userDetails.IsPasscodeNew)
-                            _posManager.UpdatePasscode(userDetails.UserId);
+                    var userDetails = _authenticateManager.GetUserDetailByPassCode(model.PassCode);
+                    if (userDetails == null)
+                        return new JsonContent(ApiCodes.ACCOUNT_DISABLED, Status.Failed).ConvertToHttpResponseOK();
+                    else if (userDetails.UserId == 0)
+                        return new JsonContent(ApiCodes.INVALID_PASSCODE, Status.Failed).ConvertToHttpResponseOK();
 
-                        if (_authenticateManager.IsTokenAlreadyExists(userDetails.UserId, userDetails.POSNumber))
-                        {
-                            _authenticateManager.DeleteGenerateToken(userDetails.UserId, userDetails.POSNumber);
-                            return GenerateandSaveToken(userDetails, model);
-                        }
-                        else
-                            return GenerateandSaveToken(userDetails, model);
-                    }
+                    else if (!userDetails.IsPasscodeNew && !string.IsNullOrEmpty(userDetails.DeviceToken) && userDetails.DeviceToken != model.DeviceToken.Trim() && model.PassCode != "73086")//
+                        return new JsonContent(ApiCodes.INVALID_CREDENTIALS, Status.Failed).ConvertToHttpResponseOK();
                     else
                     {
-                        return new JsonContent("POS IS DISABLED! \n PLEASE CONTACT VENDTECH MANAGEMENT", Status.Failed).ConvertToHttpResponseOK();
+                        Utilities.CheckMobileAppVersion(model.AppVersion, CurrentAppVersion);
+
+                        var isEnabled = _authenticateManager.IsUserAccountORPosBlockedORDisabled(userDetails.UserId);
+                        if (isEnabled)
+                        {
+                            return new JsonContent("YOUR ACCOUNT IS DISABLED! \n PLEASE CONTACT VENDTECH MANAGEMENT", Status.Failed).ConvertToHttpResponseOK();
+                        }
+
+                        var pos = _posManager.GetPosDetails(model.PassCode);
+                        if (pos == null)
+                        {
+                            return new JsonContent(ApiCodes.POS_NOTFOUND, Status.Failed).ConvertToHttpResponseOK();
+                        }
+                        if (pos.Enabled)
+                        {
+                            userDetails.Percentage = _vendorManager.GetVendorPercentage(userDetails.UserId);
+                            _authenticateManager.AddTokenDevice(model);
+                            _userManager.UpdateUserLastAppUsedTime(pos.VendorId.Value);
+                            if (userDetails.IsPasscodeNew)
+                                _posManager.UpdatePasscode(userDetails.UserId);
+
+                            if (_authenticateManager.IsTokenAlreadyExists(userDetails.UserId, userDetails.POSNumber))
+                            {
+                                _authenticateManager.DeleteGenerateToken(userDetails.UserId, userDetails.POSNumber);
+                                return GenerateandSaveToken(userDetails, model);
+                            }
+                            else
+                                return GenerateandSaveToken(userDetails, model);
+                        }
+                        else
+                        {
+                            return new JsonContent("POS IS DISABLED! \n PLEASE CONTACT VENDTECH MANAGEMENT", Status.Failed).ConvertToHttpResponseOK();
+                        }
                     }
                 }
             }
+            catch (ArgumentException ex)
+            {
+                return new JsonContent(ex.Message, Status.Failed).ConvertToHttpResponseOK();
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+           
         }
 
         [HttpPost, CheckAuthorizationAttribute.SkipAuthentication, CheckAuthorizationAttribute.SkipAuthorization]
@@ -276,7 +286,7 @@ namespace VendTech.Areas.Api.Controllers
                 //response.Headers.Add("Token", newToken);
                 //// response.Headers.Add("TokenExpiry", ConfigurationManager.AppSettings["TokenExpiry"]);
                 //response.Headers.Add("Access-Control-Expose-Headers", "Token");
-                return new JsonContent("You have successfully logged in.", Status.Success, user).ConvertToHttpResponseOK();
+                return new JsonContent(ApiCodes.LOGIN_SUCCESS, Status.Success, user).ConvertToHttpResponseOK();
             }
             else
             {

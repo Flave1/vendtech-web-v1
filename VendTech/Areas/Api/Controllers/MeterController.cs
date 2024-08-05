@@ -187,7 +187,7 @@ namespace VendTech.Areas.Api.Controllers
 
             if (platf.MinimumAmount > model.Amount)
             {
-                return new JsonContent($"PLEASE TENDER NLe: {platf.MinimumAmount} & ABOVE", Status.Failed).ConvertToHttpResponseOK();
+                return new JsonContent($"PLEASE TENDER SLe: {platf.MinimumAmount} & ABOVE", Status.Failed).ConvertToHttpResponseOK();
             }
             model.UserId = LOGGEDIN_USER.UserId;
             var result = await _meterManager.RechargeMeterReturnIMPROVED(model);

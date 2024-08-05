@@ -42,6 +42,9 @@ namespace VendTech.BLL.Models
         public string Denomination { get; set; }
 
         public string VoucherPin { get; set; }
+        public string VoucherPin2 { get; set; }
+        public string VoucherPin3 { get; set; }
+        public string RTSUniqueID { get; set; }
 
         public string MeterNumber { get; set; }
 

@@ -180,7 +180,7 @@ function fetchVoucherStatus(trxId, isAdmin = false) {
                     if (data.Data.Pin3.length > 0) {
                         $("#re-pin3_section").show();
                     } else {
-                        $("#re-pin3_section").hi();
+                        $("#re-pin3_section").hide();
                     }
                     $("#re-edsa_serial").html(data.Data.EDSASerial);
                     $("#re-barcode").html(data.Data.DeviceNumber);
@@ -322,7 +322,6 @@ function JsonPrint() {
 
 
 function Reprint() {
-
     $("#re-print_section").hide();
     var prtContent = document.getElementById("re-printSection");
     var WinPrint = window.open('', '', 'left=0,top=0,width=800,height=900,toolbar=0,scrollbars=0,status=0');
@@ -334,7 +333,8 @@ function Reprint() {
     WinPrint.document.close();
     WinPrint.focus();
     WinPrint.print();
-    WinPrint.close();
+
+    
 }
 
 function depositReprint() {
@@ -359,12 +359,12 @@ function Print() {
     WinPrint.document.write('<link href="~/Content/pos_receipt.css" rel="stylesheet" />');
     WinPrint.document.write('<link href="https://fonts.googleapis.com/css2?family=Libre+Barcode+39+Text&display=swap" rel="stylesheet">');
     WinPrint.document.write('<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css" integrity="sha384-HSMxcRTRxnN+Bdg0JdbxYKrThecOKuH5zCYotlSAcp1+c8xmyTe9GYg1l9a69psu" crossorigin="anonymous">');
-    window.location.reload();
+
     WinPrint.document.write(prtContent.innerHTML);
     WinPrint.document.close();
     WinPrint.focus();
     WinPrint.print();
-    WinPrint.close();
+
 }
 
 

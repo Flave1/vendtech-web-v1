@@ -24,6 +24,7 @@ using Newtonsoft.Json;
 using System.Net.Http.Headers;
 using System.Net.Http;
 using System.Data.Entity;
+using System.IdentityModel.Protocols.WSTrust;
 
 namespace VendTech.BLL.Common
 {
@@ -949,6 +950,17 @@ namespace VendTech.BLL.Common
                         .Where(d => DbFunctions.TruncateTime(d.CreatedAt) == DbFunctions.TruncateTime(DateTime.UtcNow)
                     && d.Status == (int)DepositPaymentStatusEnum.Released && d.User.Status == (int)UserStatusEnum.Active
                     && d.IsDeleted == false).AsEnumerable().Sum(s => s.Amount));
+            }
+        }
+   
+        public static void CheckMobileAppVersion(string appVersion, string currentAppVersion)
+        {
+            if (System.Version.TryParse(appVersion, out System.Version modelVersion) && System.Version.TryParse(currentAppVersion, out System.Version currentVersion))
+            {
+                if (modelVersion < currentVersion)
+                {
+                    throw new ArgumentException(ApiCodes.OUTDATED_APP_VERSION);
+                }
             }
         }
     }

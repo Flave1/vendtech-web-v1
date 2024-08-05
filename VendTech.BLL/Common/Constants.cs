@@ -71,5 +71,12 @@ namespace VendTech.BLL.Models
     public static class ApiCodes
     {
         public const string RESET_PASSCODE = "10001";
+        public const string PASSCODE_REQUIRED = "Passcode is required.";
+        public const string INVALID_PASSCODE = "Invalid Passcode.";
+        public const string ACCOUNT_DISABLED = "YOUR ACCOUNT IS DISABLED! \n PLEASE CONTACT VENDTECH MANAGEMENT";
+        public const string INVALID_CREDENTIALS = "INVALID CREDENTIALS \n\n PLEASE RESET YOUR PASSCODE OR \n CONTACT VENDTECH MANAGEMENT";
+        public const string POS_NOTFOUND = "POS NOT AVAILABLE! \n PLEASE CONTACT VENDTECH MANAGEMENT";
+        public const string LOGIN_SUCCESS = "You have successfully logged in.";
+        public const string OUTDATED_APP_VERSION = "APP VERSION IS OUT OF DATE, PLEASE UPDATE APP FROM PLAYSTORE";
     }
 }
