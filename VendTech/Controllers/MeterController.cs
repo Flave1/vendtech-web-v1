@@ -320,11 +320,15 @@ namespace VendTech.Controllers
 
                 if (result != null)
                     return Json(new { Success = true, Code = 200, Msg = "Meter recharged successfully.", Data = result });
-                return Json(new { Success = false, Code = 302, Msg = "Meter recharged not successful.", Data = result });
+                else
+                {
+                    Utilities.LogExceptionToDatabase(new Exception($"Result is null {DateTime.UtcNow} for traxId {model.TransactionId}"), $"result null: {JsonConvert.SerializeObject(model)}");
+                    return Json(new { Success = false, Code = 302, Msg = "Meter recharged not successful.", Data = result });
+                }
             }
             catch (Exception ex)
             {
-                LogExceptionToFile(ex.ToString(), DateTime.UtcNow.ToString());
+                Utilities.LogExceptionToDatabase(new Exception($"Exception on contoller at {DateTime.UtcNow} for traxId {model.TransactionId}", ex), $"Exception: {JsonConvert.SerializeObject(model)}");
                 return Json(new { Success = false, Code = 302, Msg = "Meter recharge not successful." });
             }
 
@@ -343,11 +347,15 @@ namespace VendTech.Controllers
                 }
 
                 if (result != null)
+                {
                     return Json(new { Success = true, Code = 200, Msg = "Meter recharged successfully.", Data = result });
+                }
+                Utilities.LogExceptionToDatabase(new Exception($"Result is null {DateTime.UtcNow} for traxId {model.TransactionId}"), $"result null: {JsonConvert.SerializeObject(model)}");
                 return Json(new { Success = false, Code = 302, Msg = "Meter recharged not successful.", Data = result });
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Utilities.LogExceptionToDatabase(new Exception($"Exception on contoller at {DateTime.UtcNow} for traxId {model.TransactionId}", ex), $"Exception: {JsonConvert.SerializeObject(model)}");
                 return Json(new { Success = false, Code = 302, Msg = "Meter recharged not successful." });
             }
 
