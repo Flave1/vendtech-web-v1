@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using System.Web.Configuration;
 using System.Web.Mvc;
 using System.Web.UI.WebControls;
+using VendTech.BLL.Common;
 using VendTech.BLL.Interfaces;
 using VendTech.BLL.Models;
 using VendTech.DAL;
@@ -39,8 +40,10 @@ namespace VendTech.BLL.Managers
             var list = JsonConvert.DeserializeObject<RtsedsaTransactionResp>(resp); 
 
             result.List = list.Data;
+            var sum = Utilities.FormatAmount(list.Data.Sum(d => d.TotalAmount));
             result.Status = ActionStatus.Successfull;
-            result.Message = "Meter recharges fetched successfully.";
+            //result.Message = "Meter recharges fetched successfully.";
+            result.Message = sum;
             return result;
 
         }

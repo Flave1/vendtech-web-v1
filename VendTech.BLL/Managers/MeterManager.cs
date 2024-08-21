@@ -968,6 +968,12 @@ namespace VendTech.BLL.Managers
                 response.Add("failed", null);
                 return response;
             }
+            catch (NullReferenceException ex)
+            {
+                Utilities.LogExceptionToDatabase(ex, $"model: {JsonConvert.SerializeObject(model)}");
+                response.Add("failed", null);
+                return response;
+            }
             catch (Exception ex)
             {
                 Utilities.LogExceptionToDatabase(new Exception($"QueryVendStatus 7 ends at {DateTime.UtcNow} for traxId {model.TransactionId} see: {ex}"), $"Exception: {JsonConvert.SerializeObject(model)}");
@@ -1353,7 +1359,9 @@ namespace VendTech.BLL.Managers
         }
         ReceiptModel IMeterManager.ReturnVoucherReceipt(string token)
         {
-            token = BLL.Common.Utilities.ReplaceWhitespace(token, "");
+            token = Utilities.ReplaceWhitespace(token, "");
+            if (token.EndsWith("(+2)"))
+                token = token.Replace("(+2)", "");
             var transaction_by_token = Context.TransactionDetails.Where(e => e.MeterToken1 == token).ToList().FirstOrDefault();
             if (transaction_by_token != null)
             {

@@ -1163,7 +1163,7 @@ namespace VendTech.Controllers
                 GridViewRow forbr = new GridViewRow(0, 0, DataControlRowType.Header, DataControlRowState.Normal);
                 var tecbr = new TableHeaderCell
                 {
-                    ColumnSpan = 9,
+                    ColumnSpan = 8,
                     Text = null,
                     HorizontalAlign = HorizontalAlign.Left,
                     BorderStyle = BorderStyle.None
@@ -1177,7 +1177,7 @@ namespace VendTech.Controllers
                 //TableHeaderCell tec3 = new TableHeaderCell();
                 var tec3 = new TableHeaderCell
                 {
-                    ColumnSpan = 9,
+                    ColumnSpan = 8,
                     Text = "PRINT DATE:  " + PrintedDateServer,
                     HorizontalAlign = HorizontalAlign.Left,
                     BorderStyle = BorderStyle.None
@@ -1190,7 +1190,7 @@ namespace VendTech.Controllers
                 GridViewRow forbrafterdate = new GridViewRow(0, 0, DataControlRowType.Header, DataControlRowState.Normal);
                 var tecbrafterdate = new TableHeaderCell
                 {
-                    ColumnSpan = 9,
+                    ColumnSpan = 8,
                     Text = null,
                     HorizontalAlign = HorizontalAlign.Left,
                     BorderStyle = BorderStyle.None
@@ -1202,7 +1202,7 @@ namespace VendTech.Controllers
                 GridViewRow row2 = new GridViewRow(0, 0, DataControlRowType.Header, DataControlRowState.Normal);
                 var tec2 = new TableHeaderCell
                 {
-                    ColumnSpan = 9,
+                    ColumnSpan = 8,
                     Text = "TO DATE:  " + Todate,
                     HorizontalAlign = HorizontalAlign.Left,
                     BorderStyle = BorderStyle.None,
@@ -1214,7 +1214,7 @@ namespace VendTech.Controllers
                 GridViewRow row22 = new GridViewRow(0, 0, DataControlRowType.Header, DataControlRowState.Normal);
                 var tec22 = new TableHeaderCell
                 {
-                    ColumnSpan = 9,
+                    ColumnSpan = 8,
                     Text = "FROM DATE:  " + fromdate,
                     HorizontalAlign = HorizontalAlign.Left,
                     BorderStyle = BorderStyle.None,
@@ -1227,7 +1227,7 @@ namespace VendTech.Controllers
                 //TableHeaderCell tec1 = new TableHeaderCell();
                 var tec1 = new TableHeaderCell
                 {
-                    ColumnSpan = 9,
+                    ColumnSpan = 8,
                     Text = "VENDTECH SALES REPORTS",
                     HorizontalAlign = HorizontalAlign.Left,
                     BorderStyle = BorderStyle.None,
@@ -1243,7 +1243,7 @@ namespace VendTech.Controllers
                 GridViewRow imgRow = new GridViewRow(0, 0, DataControlRowType.Header, DataControlRowState.Normal);
                 var imgHeader = new TableHeaderCell
                 {
-                    ColumnSpan = 9,
+                    ColumnSpan = 8,
                     Text = "<img src='https://vendtechsl.com/Content/images/ventech.png' width='110' height='110' />",
                     HorizontalAlign = HorizontalAlign.NotSet,
                     BorderStyle = BorderStyle.None,
@@ -1260,7 +1260,8 @@ namespace VendTech.Controllers
                 gv.HeaderRow.Cells[3].Text = "METER #"; //METER_NO
                 gv.HeaderRow.Cells[4].Text = "VENDOR NAME"; //VENDORNAME
                 gv.HeaderRow.Cells[5].Text = "POS ID"; //POSID 
-                gv.HeaderRow.Cells[6].Text = "TOKEN"; gv.HeaderRow.Cells[6].ColumnSpan = 2;  //PIN
+                gv.HeaderRow.Cells[6].Text = "TOKEN";
+                gv.HeaderRow.Cells[6].ColumnSpan = 1;  //PIN
                 gv.HeaderRow.Cells[7].Text = "AMOUNT"; //AMOUNT
 
                 foreach (GridViewRow row in gv.Rows)
@@ -1277,8 +1278,7 @@ namespace VendTech.Controllers
                         row.Cells[6].HorizontalAlign = HorizontalAlign.Left;
                         row.Cells[7].HorizontalAlign = HorizontalAlign.Right;
                         var token = row.Cells[6].Text.ToString();
-                        row.Cells[6].Text = token != "&nbsp;" ? BLL.Common.Utilities.FormatThisToken(token) : string.Empty;
-                        row.Cells[6].ColumnSpan = 2;
+                        row.Cells[6].Text = token != "&nbsp;" ? token : string.Empty;
                     }
                 }
             }

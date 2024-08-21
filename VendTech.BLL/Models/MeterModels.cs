@@ -260,6 +260,10 @@ namespace VendTech.BLL.Models
             Status = ((RechargeMeterStatusEnum)x.Status).ToString();
             VendorName = x.POS.User == null ? "" : x.POS.User.Vendor;
             RechargePin = x.Platform.PlatformType == 4 ? Utilities.FormatThisToken(x.MeterToken1) : x.MeterNumber1 + "/" + x.TransactionId;
+            if (!string.IsNullOrEmpty(x.MeterToken1) && !string.IsNullOrEmpty(x.MeterToken2) && !string.IsNullOrEmpty(x.MeterToken3))
+            {
+                RechargePin = x.MeterToken1 + " (+2)";
+            }
             CreatedAtDate = x.CreatedAt.ToString("dd/MM/yyyy hh:mm");
             PlatformName = x.Platform.Title;
             NotType = "sale";
@@ -375,7 +379,13 @@ namespace VendTech.BLL.Models
             Date_TIME = x.CreatedAt.ToString("dd/MM/yyyy HH:mm");
             PRODUCT_TYPE = x.Platform.Title;
             if (x.PlatFormId == 1)
+            {
                 PIN = x.MeterToken1;
+                if(!string.IsNullOrEmpty(x.MeterToken1) && !string.IsNullOrEmpty(x.MeterToken2) && !string.IsNullOrEmpty(x.MeterToken3))
+                {
+                    PIN = x.MeterToken1 + "\n" + x.MeterToken2 + "\n" + x.MeterToken3;
+                }
+            }
             else if (x.PlatFormId == 2)
                 PIN = x.MeterNumber1;
             else if (x.PlatFormId == 3)

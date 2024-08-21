@@ -137,15 +137,21 @@ namespace VendTech.Areas.Api.Controllers
                     return new JsonContent(ApiCodes.PASSCODE_REQUIRED, Status.Failed).ConvertToHttpResponseOK();
                 else
                 {
-
                     var userDetails = _authenticateManager.GetUserDetailByPassCode(model.PassCode);
                     if (userDetails == null)
                         return new JsonContent(ApiCodes.ACCOUNT_DISABLED, Status.Failed).ConvertToHttpResponseOK();
                     else if (userDetails.UserId == 0)
                         return new JsonContent(ApiCodes.INVALID_PASSCODE, Status.Failed).ConvertToHttpResponseOK();
 
-                    else if (!userDetails.IsPasscodeNew && !string.IsNullOrEmpty(userDetails.DeviceToken) && userDetails.DeviceToken != model.DeviceToken.Trim() && model.PassCode != "73086")//
+                    else if (!userDetails.IsPasscodeNew && !string.IsNullOrEmpty(userDetails.DeviceToken) && userDetails.DeviceToken != model.DeviceToken.Trim())// && model.PassCode != "73086"
+                    {
+                        if(model.AppVersion == "2.5.3")//This version has not been published
+                        {
+                            return new JsonContent(ApiCodes.RESET_PASSCODE_2, Status.Success).ConvertToHttpResponseOK();
+                        }
+
                         return new JsonContent(ApiCodes.INVALID_CREDENTIALS, Status.Failed).ConvertToHttpResponseOK();
+                    }
                     else
                     {
                         Utilities.CheckMobileAppVersion(model.AppVersion, CurrentAppVersion);
@@ -190,7 +196,6 @@ namespace VendTech.Areas.Api.Controllers
             }
             catch (Exception)
             {
-
                 throw;
             }
            

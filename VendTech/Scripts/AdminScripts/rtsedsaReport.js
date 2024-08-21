@@ -28,7 +28,6 @@
 
 var RtsEdsaHandler = {
     SearchInquiry: function (dated) {
-        debugger
         var obj = new Object();
         var FromDate = $('#FromDate').val();
         var ToDate = $('#ToDate').val();
@@ -53,7 +52,6 @@ var RtsEdsaHandler = {
         });
     },
     SearchTransactions: function () {
-        debugger
         var obj = new Object();
         var FromDate = $('#FromDate').val();
         obj.date = this.getUnixDate(FromDate);
@@ -63,7 +61,7 @@ var RtsEdsaHandler = {
             data: $.postifyData(obj),
             type: "POST",
             success: function (result, message) {
-                debugger
+                $('#totalAmount').text("SLE :" + result.total)
                 disableSubmit(false);
                 InitTable(result.result);
             },
@@ -73,7 +71,6 @@ var RtsEdsaHandler = {
         });
     },
     getUnixDate: function (dateinput) {
-        debugger
         const splitted = dateinput.split('/');
         const day = splitted[0];
         const month = splitted[1];

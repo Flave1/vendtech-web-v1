@@ -155,7 +155,7 @@ namespace VendTech.Areas.Admin.Controllers
                 Date = date,
             };
             var respponse = await manager.GetTransactionsAsync(model);
-            return Json(new {result = JsonConvert.SerializeObject(respponse.List) });
+            return Json(new {result = JsonConvert.SerializeObject(respponse.List), total = respponse.Message });
         }
         [AjaxOnly, HttpPost]
         public ActionResult GetSalesInquiry(string fromdate, string todate, string meterSerial)

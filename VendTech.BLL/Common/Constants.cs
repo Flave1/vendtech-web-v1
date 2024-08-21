@@ -71,6 +71,7 @@ namespace VendTech.BLL.Models
     public static class ApiCodes
     {
         public const string RESET_PASSCODE = "10001";
+        public const string RESET_PASSCODE_2 = "10002";
         public const string PASSCODE_REQUIRED = "Passcode is required.";
         public const string INVALID_PASSCODE = "Invalid Passcode.";
         public const string ACCOUNT_DISABLED = "YOUR ACCOUNT IS DISABLED! \n PLEASE CONTACT VENDTECH MANAGEMENT";
