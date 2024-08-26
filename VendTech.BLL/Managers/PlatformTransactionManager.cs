@@ -260,9 +260,9 @@ namespace VendTech.BLL.Managers
 
                                     transactionDetail.Request = tranxLogs.Request.ToString();
                                     transactionDetail.Response = tranxLogs.Response.ToString();
-                                    transactionDetail.TransactionId = Utilities.NewTransactionId();
+                                    transactionDetail.TransactionId = Utilities.NewTransactionId(transactionDetail).Result;
 
-                                    DbCtx.TransactionDetails.Add(transactionDetail);
+                                    //DbCtx.TransactionDetails.Add(transactionDetail);
                                     PlatformTransaction tranx = DbCtx.PlatformTransactions.Where(t => t.Id == tranxModel.Id).FirstOrDefault();
                                     tranx.TransactionDetailId = transactionDetail.TransactionDetailsId;
                                     DbCtx.SaveChanges();
@@ -459,9 +459,9 @@ namespace VendTech.BLL.Managers
 
                     transactionDetail.Request = tranxLogs.Request.ToString();
                     transactionDetail.Response = tranxLogs.Response.ToString();
-                    transactionDetail.TransactionId = Utilities.NewTransactionId();
+                    transactionDetail.TransactionId = Utilities.NewTransactionId(transactionDetail).Result;
 
-                    Context.TransactionDetails.Add(transactionDetail);
+                    //Context.TransactionDetails.Add(transactionDetail);
                     PlatformTransaction tranx = Context.PlatformTransactions.FirstOrDefault(t => t.Id == tranxModel.Id);
                     tranx.TransactionDetailId = transactionDetail.TransactionDetailsId;
 

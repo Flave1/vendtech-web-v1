@@ -188,10 +188,6 @@ namespace VendTech.Controllers
             return View(model);
         }
 
-        /// <summary>
-        /// Index View 
-        /// </summary>
-        /// <returns></returns>
         public ActionResult Recharge(long? meterId)
         {
             var platform = _platformManager.GetSinglePlatform(1); //1 is not to be changed
@@ -228,15 +224,6 @@ namespace VendTech.Controllers
             return View(model);
 
         }
-
-        //[HttpPost, AjaxOnly]
-        //public JsonResult Recharge(RechargeMeterModel model)
-        //{
-        //    model.UserId = LOGGEDIN_USER.UserID;
-
-        //    return JsonResult(_meterManager.RechargeMeter(model));
-        //}
-
 
         [AjaxOnly, HttpPost, Public]
         public JsonResult ReturnVoucher(RequestObject tokenobject)
@@ -289,7 +276,6 @@ namespace VendTech.Controllers
             var recharges = deposits.List;
             return PartialView("Partials/_salesListing", recharges);
         }
-
 
         [AjaxOnly, HttpPost, Public]
         public ActionResult GetPOSBalanceAfterPurchase()

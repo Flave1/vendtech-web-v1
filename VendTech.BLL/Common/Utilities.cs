@@ -25,6 +25,7 @@ using System.Net.Http.Headers;
 using System.Net.Http;
 using System.Data.Entity;
 using System.IdentityModel.Protocols.WSTrust;
+using System.Threading.Tasks;
 
 namespace VendTech.BLL.Common
 {
@@ -50,7 +51,7 @@ namespace VendTech.BLL.Common
             return string.Format("{0:x}", i - DateTime.Now.Ticks);
         }
 
-        public static string NewTransactionId()
+        public static async Task<string> NewTransactionId(TransactionDetail trans)
         {
             using (var context = new VendtechEntities())
             {
@@ -58,25 +59,35 @@ namespace VendTech.BLL.Common
                 {
                     try
                     {
-                        var lastRecord = context.TransactionDetails
+                        var lastRecord = await context.TransactionDetails
                             .OrderByDescending(d => d.TransactionDetailsId)
-                            .FirstOrDefault();
+                            .FirstOrDefaultAsync();
 
                         var trId = lastRecord != null ? Convert.ToInt64(lastRecord.TransactionId) + 1 : 1;
-                        context.SaveChanges();
+
+                        trans.TransactionId = trId.ToString();
+
+                        context.TransactionDetails.Add(trans);
+                        await context.SaveChangesAsync();
+
                         transaction.Commit();
-                        return trId.ToString();
+                        return trans.TransactionId;
                     }
                     catch (Exception ex)
                     {
                         transaction.Rollback();
-                        Console.WriteLine("Transaction rolled back at: " + DateTime.Now);
-                        Console.WriteLine("Error: " + ex.Message);
+                        Console.WriteLine(" NewTransactionIdTransaction rolled back at: " + DateTime.Now);
+                        Console.WriteLine("NewTransactionId Error: " + ex.Message);
                         throw;
+                    }
+                    finally
+                    {
+                        transaction.Dispose();
                     }
                 }
             }
         }
+
 
         public static string NewDepositTransactionId()
         {

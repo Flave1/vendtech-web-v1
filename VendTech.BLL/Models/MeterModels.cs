@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Quartz.Impl.AdoJobStore;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -111,6 +112,8 @@ namespace VendTech.BLL.Models
         public void UpdateRequestModel(TransactionDetail trx)
         {
             TransactionId = Convert.ToInt64(trx.TransactionId);
+            MeterNumber = trx.MeterNumber1;
+            Amount = trx.Amount;
         }
 
         public bool IsRequestADuplicate(TransactionDetail trx)

@@ -267,6 +267,12 @@ namespace VendTech.BLL.Models
         PendingCheckRequest = 2,
     }
 
+    public enum VoucherClaimStatus
+    {
+        claimed = 1,
+        unclaimed = 2,
+    }
+
     public class EnumUtils
     {
         public static IEnumerable<T> GetEnumValues<T>()
