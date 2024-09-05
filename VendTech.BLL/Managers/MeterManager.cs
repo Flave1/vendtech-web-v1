@@ -314,9 +314,24 @@ namespace VendTech.BLL.Managers
 
             IQueryable<TransactionDetail> query = null;
             if (!model.IsInitialLoad)
-                query = _context.TransactionDetails.Where(p => !p.IsDeleted && p.POSId != null && p.Finalised == true);
+                query = _context.TransactionDetails.Where(p => !p.IsDeleted && p.POSId != null);
             else
-                query = _context.TransactionDetails.Where(p => !p.IsDeleted && p.POSId != null && p.Finalised == true && DbFunctions.TruncateTime(p.CreatedAt) == DbFunctions.TruncateTime(DateTime.UtcNow));
+                query = _context.TransactionDetails.Where(p => !p.IsDeleted && p.POSId != null && DbFunctions.TruncateTime(p.CreatedAt) == DbFunctions.TruncateTime(DateTime.UtcNow));
+
+            var status = string.IsNullOrEmpty(model.Status) ? 1 : Convert.ToInt16(model.Status);
+           
+            if(status == -1)
+            {
+                query = query.OrderBy(d => d.CreatedAt);
+            }
+            else
+            {
+                query = query.Where(p => p.Status == status);
+            }
+            if (status == (int)RechargeMeterStatusEnum.Success)
+            {
+                query = query.Where(p => p.Status == status);
+            }
 
             if (model.VendorId > 0)
             {
@@ -694,6 +709,12 @@ namespace VendTech.BLL.Managers
                 response.ReceiptStatus.Status = "unsuccessful";
                 return response;
             }
+            catch (Exception ex)
+            {
+                response.ReceiptStatus.Message = ex.Message;
+                response.ReceiptStatus.Status = "unsuccessful";
+                return response;
+            }
 
             var receipt = BuildRceipt(isDuplicate ? pendingTrx : trax);
             PushNotification(user, model, trax.TransactionDetailsId);
@@ -701,7 +722,8 @@ namespace VendTech.BLL.Managers
             return receipt;
         }
 
-        public async Task<TransactionDetail> ProcessTransaction(bool isDuplicate, RechargeMeterModel model, TransactionDetail transactionDetail, bool treatAsPending = false)
+        public async Task<TransactionDetail> ProcessTransaction(bool isDuplicate, RechargeMeterModel model, 
+            TransactionDetail transactionDetail, bool treatAsPending = false, bool billVendor = true)
         {
             IceKloudResponse vendResponse = null;
             Datum vendResponseData;
@@ -797,7 +819,7 @@ namespace VendTech.BLL.Managers
                 if (vendStatus.FirstOrDefault().Key != "newtranx")
                 {
                     transactionDetail.MeterId = await UpdateMeterOrSaveAsNewIMPROVED(model);
-                    transactionDetail = await UpdateTransactionOnStatusSuccessIMPROVED(response, transactionDetail);
+                    transactionDetail = await UpdateTransactionOnStatusSuccessIMPROVED(response, transactionDetail, billVendor);
                 }
 
                 Common.PushNotification.Instance
@@ -933,7 +955,7 @@ namespace VendTech.BLL.Managers
                 }
                 else if (statusResponse.Content.StatusDescription == "Transaction completed with error")
                 {
-                    Context.SaveChanges();
+                    _context.SaveChanges();
                     response.Add("failed", statusResponse);
                     Utilities.LogExceptionToDatabase(new Exception($"QueryVendStatus failed 3 ends at {DateTime.UtcNow} for traxId {model.TransactionId}"), $"statusResponse :{JsonConvert.SerializeObject(statusResponse)}");
                     return response;
@@ -1037,7 +1059,7 @@ namespace VendTech.BLL.Managers
             }
         }
 
-        private async Task<TransactionDetail> UpdateTransactionOnStatusSuccessIMPROVED(IcekloudQueryResponse response_data, TransactionDetail trans)
+        private async Task<TransactionDetail> UpdateTransactionOnStatusSuccessIMPROVED(IcekloudQueryResponse response_data, TransactionDetail trans, bool billVendor = true)
         {
             trans.Status = response_data.Content.Finalised ? (int)RechargeMeterStatusEnum.Success : 0;
             trans.AccountNumber = response_data.Content?.CustomerAccNo ?? string.Empty;
@@ -1064,7 +1086,7 @@ namespace VendTech.BLL.Managers
             trans.StatusResponse = response_data.Content?.StatusDescription;
             trans.DebitRecovery = "0";
             //BALANCE DEDUCTION
-            await Deductbalace(trans, trans.User.POS.FirstOrDefault(s => s.POSId == trans.POSId));
+            await Deductbalace(trans, trans.User.POS.FirstOrDefault(s => s.POSId == trans.POSId), billVendor);
             return trans;
 
         }
@@ -1099,12 +1121,15 @@ namespace VendTech.BLL.Managers
             return trans;
         }
 
-        async Task Deductbalace(TransactionDetail trans, POS pos)
+        async Task Deductbalace(TransactionDetail trans, POS pos, bool billVendor = true)
         {
             //BALANCE DEDUCTION
-            trans.BalanceBefore = pos.Balance ?? 0;
-            pos.Balance = (pos.Balance - trans.Amount);
-            trans.CurrentVendorBalance = pos.Balance ?? 0;
+            if (billVendor)
+            {
+                trans.BalanceBefore = pos.Balance ?? 0;
+                pos.Balance = (pos.Balance - trans.Amount);
+                trans.CurrentVendorBalance = pos.Balance ?? 0;
+            }
 
             _context.TransactionDetails.AddOrUpdate(trans);
             _context.POS.AddOrUpdate(pos);
@@ -1362,7 +1387,7 @@ namespace VendTech.BLL.Managers
             token = Utilities.ReplaceWhitespace(token, "");
             if (token.EndsWith("(+2)"))
                 token = token.Replace("(+2)", "");
-            var transaction_by_token = Context.TransactionDetails.Where(e => e.MeterToken1 == token).ToList().FirstOrDefault();
+            var transaction_by_token = _context.TransactionDetails.Where(e => e.MeterToken1 == token).ToList().FirstOrDefault();
             if (transaction_by_token != null)
             {
                 var receipt = Build_receipt_model_from_dbtransaction_detail(transaction_by_token);
@@ -1375,7 +1400,7 @@ namespace VendTech.BLL.Managers
             return new ReceiptModel { ReceiptStatus = new ReceiptStatus { Status = "unsuccessful", Message = "Unable to find voucher" } };
         }
 
-        async Task<ReceiptModel> IMeterManager.ReturnTraxStatusReceiptAsync(string trxId)
+        async Task<ReceiptModel> IMeterManager.ReturnTraxStatusReceiptAsync(string trxId, bool billVendor)
         {
             var response = new ReceiptModel { ReceiptStatus = new ReceiptStatus { Status = "", Message = "" } };
             try
@@ -1395,7 +1420,7 @@ namespace VendTech.BLL.Managers
                     TransactionId = Convert.ToInt64(pendingTrax.TransactionId),
                 };
 
-                var verifiedTrax = await ProcessTransaction(true, requestModel, pendingTrax, true);
+                var verifiedTrax = await ProcessTransaction(true, requestModel, pendingTrax, true, billVendor);
 
                 if (verifiedTrax != null)
                 {

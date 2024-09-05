@@ -592,3 +592,413 @@ Object reference not set to an instance of an object.
 
 
 
+c:\Users\thispc\Desktop\FLAVETECH\Vendtech\vendtech-web\VendTech\Areas\Admin\Views\Report\ManageSalesReportsV2.cshtml(153): error CS1928: 'System.Web.Mvc.HtmlHelper<VendTech.BLL.Models.PagingResult<VendTech.BLL.Models.MeterRechargeApiListingModel>>' does not contain a definition for 'DropDownList' and the best extension method overload 'System.Web.Mvc.Html.SelectExtensions.DropDownList(System.Web.Mvc.HtmlHelper, string, System.Collections.Generic.IEnumerable<System.Web.Mvc.SelectListItem>, string, object)' has some invalid arguments
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+c:\Users\thispc\Desktop\FLAVETECH\Vendtech\vendtech-web\VendTech\Areas\Admin\Views\Report\ManageSalesReportsV2.cshtml(153): error CS1928: 'System.Web.Mvc.HtmlHelper<VendTech.BLL.Models.PagingResult<VendTech.BLL.Models.MeterRechargeApiListingModel>>' does not contain a definition for 'DropDownList' and the best extension method overload 'System.Web.Mvc.Html.SelectExtensions.DropDownList(System.Web.Mvc.HtmlHelper, string, System.Collections.Generic.IEnumerable<System.Web.Mvc.SelectListItem>, string, object)' has some invalid arguments
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+c:\Users\thispc\Desktop\FLAVETECH\Vendtech\vendtech-web\VendTech\Areas\Admin\Views\Report\ManageSalesReportsV2.cshtml(153): error CS1928: 'System.Web.Mvc.HtmlHelper<VendTech.BLL.Models.PagingResult<VendTech.BLL.Models.MeterRechargeApiListingModel>>' does not contain a definition for 'DropDownList' and the best extension method overload 'System.Web.Mvc.Html.SelectExtensions.DropDownList(System.Web.Mvc.HtmlHelper, string, System.Collections.Generic.IEnumerable<System.Web.Mvc.SelectListItem>, string, object)' has some invalid arguments
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...HtmlHelper<VendTech.BLL.Models...").
+
+
+
+An error occurred while executing the command definition. See the inner exception for details.
+
+
+
+An error occurred while executing the command definition. See the inner exception for details.
+
+
+
+An error occurred while executing the command definition. See the inner exception for details.
+
+
+
+An error occurred while executing the command definition. See the inner exception for details.
+
+
+
+An error occurred while executing the command definition. See the inner exception for details.
+
+
+
+Object reference not set to an instance of an object.
+
+
+
+Object reference not set to an instance of an object.
+
+
+
+Object reference not set to an instance of an object.
+
+
+
+Object reference not set to an instance of an object.
+
+
+
+Object reference not set to an instance of an object.
+
+
+
+Object reference not set to an instance of an object.
+
+
+
+Object reference not set to an instance of an object.
+
+
+
+Object reference not set to an instance of an object.
+
+
+
+Object reference not set to an instance of an object.
+
+
+
+Value cannot be null.
+Parameter name: items
+
+
+
+Value cannot be null.
+Parameter name: items
+
+
+

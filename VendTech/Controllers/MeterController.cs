@@ -14,6 +14,7 @@ using VendTech.BLL.Common;
 using Newtonsoft.Json;
 using VendTech.BLL.PlatformApi;
 using System.Threading.Tasks;
+using System.Web.Http.Results;
 #endregion
 
 namespace VendTech.Controllers
@@ -252,10 +253,17 @@ namespace VendTech.Controllers
         public async Task<JsonResult> ReturnStatus(RequestObject tokenobject)
         {
 
-            var result = await _meterManager.ReturnTraxStatusReceiptAsync(tokenobject.token_string);
-            if (result.ReceiptStatus.Status == "unsuccessful")
-                return Json(new { Success = false, Code = 302, Msg = result.ReceiptStatus.Message });
-            return Json(new { Success = true, Code = 200, Msg = "Meter recharged successfully.", Data = result });
+            try
+            {
+                var result = await _meterManager.ReturnTraxStatusReceiptAsync(tokenobject.token_string, tokenobject.billVendor);
+                if (result.ReceiptStatus.Status == "unsuccessful")
+                    return Json(new { Success = false, Code = 302, Msg = result.ReceiptStatus.Message });
+                return Json(new { Success = true, Code = 200, Msg = "Meter recharged successfully.", Data = result });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { Success = false, Code = 302, Msg = ex.Message });
+            }
         }
 
         [AjaxOnly, HttpPost, Public]

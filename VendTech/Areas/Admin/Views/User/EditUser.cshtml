@@ -63,6 +63,21 @@
                                             </div>
                                         </div>
 
+                                        <div class="form-group">
+                                            <label for="country" style="text-align:left;" class="col-md-12 control-label">SELECT COUNTRY</label>
+                                            <div class="col-sm-12">
+                                                <select class="form-control" name="CountryId" id="Country">
+                                                    <option value="">Select Country</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="city" style="text-align:left;" class="col-md-12 control-label">SELECT CITY</label>
+                                            <div class="col-sm-12">
+                                                @Html.DropDownListFor(x => x.City, new SelectList(ViewBag.Cities, "value", "text"), "Select City", new { @class = "form-control", @id = "City" })
+                                            </div>
+                                        </div>
+
                                         @Html.HiddenFor(x => x.UserId)
                                         @if (Model.UserType != appUserVal)
                                         {
@@ -95,18 +110,7 @@
 
                                     </div>
                                     <div class="col-md-4">
-                                        @*@if (Model.UserType == appUserVal)
-            {
-                <div class="form-group">
-                    <label for="inputEmail3" style="text-align:left;" class="col-md-12 control-label">PLATFORMS</label>
 
-                    <div class=" col-md-12">
-                        @Html.Partial("Partials/_platformsListing", Model.PlatformList)
-                    </div>
-                </div>
-            }
-            else
-            {*@
                                         <div class="form-group">
                                             <label for="inputEmail3" style="text-align:left;" class="col-md-12 control-label">PERMISSIONS</label>
 
@@ -145,7 +149,7 @@
                                     </div>
                                 </div>
                             </div>
-                            
+
                         </form>
                     </div>
                 </div>
@@ -165,6 +169,9 @@
                 $("#Password").val('@Model.Password');
                 $("#ConfirmPassword").val('@Model.Password');
             }
+
+            $("#Country").change(onCountryChange);
+            loadAllCountries();
 
             var val = $("#UserType").val();
             //if (val == "2") {
@@ -199,5 +206,44 @@
             }
 
         }
+    </script>
+
+    <script>
+         function loadAllCountries() {
+            var array = @Html.Raw(Json.Encode(ViewBag.countries));
+            if (array.length > 0)
+            {
+                for (var i = 0; i < array.length; i++) {
+                    $("#Country").append("<option selected=" + array[i].Selected + " value=" + array[i].Value + ">" + array[i].Text + " </option>")
+                }
+            }
+        }
+        function loadAllCities() {
+            var array = @Html.Raw(Json.Encode(ViewBag.Cities));
+            if (array.length > 0) {
+                for (var i = 0; i < array.length; i++) {
+                    $("#City").append("<option selected=" + array[i].Selected + " value=" + array[i].Value + ">" + array[i].Text + " </option>")
+                }
+            }
+        }
+
+        function onCountryChange() {
+            $("#City").empty();
+            $("#City").append("<option value=''> Select City </option>")
+                var val = $("#Country").val();
+                var array = @Html.Raw(Json.Encode(ViewBag.Cities));
+                if (val) {
+                    var records=   array.filter(p=>p.CountryId==val);
+                    if(records.length>0){
+
+                        for (var i = 0; i < records.length; i++) {
+                            $("#City").append("<option value="+records[i].CityId+">"+records[i].Name+" </option>")
+
+                        }
+                        ////$("#City").val('@Model.City');
+                    }
+                }
+        }
+
     </script>
 }

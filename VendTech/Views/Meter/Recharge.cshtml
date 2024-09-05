@@ -272,18 +272,6 @@
 
             App.init();
 
-             @*$("#userBalance").text('@VendTech.BLL.Common.Utilities.FormatAmount(ViewBag.walletBalance)');*@
-            // setInterval(function () {
-              //$.ajax({
-              //              url: '/Home/ReturnUserBalance',
-              //              success: function (data) {
-              //                  $("#userBalance").text(data.result);
-              //                  salesHandler.amount = data.result;
-              //              }
-              //          })
-              //      }, 3000);
-
-
 
             if ('@ViewBag.IsDisable' === 'True') {
                 var message = '@Html.Raw(ViewBag.DisabledMessage)';

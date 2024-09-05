@@ -1,7 +1,5 @@
 ﻿$(document).ready(function () {
 
-    
-
     $("input[type=button]#btnFilterVersion").live("click", function () {
         return Deposits.ManageDeposits($(this));
     });
@@ -75,6 +73,7 @@ var miniSalesReportHandler = {
         obj.Meter = $('#meterNo').val();
         obj.TransactionId = $('#tranId').val();
         obj.Product = $('#productId').val();
+        obj.Status = $('#status').val();
 
         if (isInitial === true) {
             obj.To = $('#ToDate').val();
@@ -336,7 +335,7 @@ var Deposits = {
             });
         }
 
-    }
+    },
 };
 
 function Paging(sender) {
@@ -352,6 +351,7 @@ function Paging(sender) {
     obj.PosId = $('#pos').val();
     obj.VendorId = $('#vendor').val();
     obj.From = $('#FromDate').val();
+    obj.Status = $('#status').val();
 
     obj.To = $('#ToDate').val();
 
@@ -454,11 +454,15 @@ async function initTable(response) {
     const tableBody = document.getElementById("tableBody");
 
     tableBody.innerHTML = '';
-
+    debugger
     for (var i = 0; i < response.length; i++) {
         const tr = document.createElement("tr");
-        tr.classList.add('odd', 'gradeX')
+        const falseValue = false;
+        const token = response[i].RechargePin
+            ? `<a href="javascript:void(0);" data-token="${response[i].RechargePin}" onclick="fetchSaleInformation('${response[i].RechargePin}', '${response[i].PlatformId}', true)" id="${response[i].RechargePin}">${response[i].RechargePin}</a>`
+            : `<a href="javascript:void(0);" style="color: #ff6a00;" data-token="${response[i].TransactionId}" onclick="fetchVoucherStatusDialog('${response[i].TransactionId}', false, '${response[i].Amount}')" id="${response[i].TransactionId}">Request status for ${response[i].TransactionId}</a>`;
 
+        tr.classList.add('odd', 'gradeX')
         tr.innerHTML = `
             <td style="text-align:right;"> ${response[i].CreatedAtDate}</td>
             <td style="text-align:left;"> ${response[i].ProductShortName}</td>
@@ -474,7 +478,11 @@ async function initTable(response) {
                     </a>
                 </strong>
             </td>
-             <td style="text-align:center;"> <strong> <a href="javascript:void(0);" data-token="${response[i].RechargePin}" onclick="fetchSaleInformation('${response[i].RechargePin}', '${response[i].PlatformId}', true)" id="${response[i].RechargePin}"> '${response[i].RechargePin}' </a></strong></td>
+             <td style="text-align:center;">
+                <strong>
+                   ${token}
+                </strong>
+             </td>
             <td style="text-align:right;"> <strong> ${response[i].Amount}</strong></td>
         `;
         tableBody.appendChild(tr);

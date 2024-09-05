@@ -8,6 +8,8 @@ using System.IO;
 using Newtonsoft.Json;
 using VendTech.BLL.Common;
 using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace VendTech.Areas.Admin.Controllers
 {
@@ -171,7 +173,6 @@ namespace VendTech.Areas.Admin.Controllers
             var respponse = manager.GetSalesInquiry(model).Result;
             return Json(new { result = JsonConvert.SerializeObject(respponse.List) });
         }
-
 
         public async Task ExportRTSEDSATransactions(ReportSearchModel model2, string ExportType, string frmD, string PrintedDateServer)
         {

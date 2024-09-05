@@ -3,7 +3,7 @@
     ViewBag.Title = "Add CMS User Details";
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayOut.cshtml";
 }
-    
+
 <div class="container-fluid" id="pcont">
     <div class="page-head">
         <h2>@ViewBag.Title</h2>
@@ -18,7 +18,7 @@
                     </div>
                     <div class="content people-form-cs">
                         <form class="form-horizontal" role="form" id="UserForm" enctype="multipart/form-data">
-                            
+
                             <div class="row" style="border:0; padding:0;">
                                 <div class="col-md-4 form_rows">
                                     <div class=" form-group my_label">
@@ -82,6 +82,24 @@
                                             @Html.ValidationMessageFor(x => x.Phone)
                                         </div>
                                     </div>
+
+                                    <div class="form-group">
+                                        <label for="country" style="text-align:left;" class="col-md-12 control-label">SELECT COUNTRY</label>
+                                        <div class="col-sm-12">
+                                            <select class="form-control" name="CountryId" id="Country">
+                                                <option value="">Select Country</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="city" style="text-align:left;" class="col-md-12 control-label">SELECT CITY</label>
+                                        <div class="col-sm-12">
+                                            <select id="City" name="City" class="form-control">
+                                                <option value="">Select City</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
                                 </div>
 
                                 <div class="col-md-4 form_rows">
@@ -107,7 +125,7 @@
                             @Html.HiddenFor(x => x.UserId)
                             <div class="form-group">
 
-                               
+
                                 <div class="row" style="text-align:right;">
                                     <div class="col-sm-12 ">
                                         <a href="@Url.Action("ManageUsers", "user", new { area = "Admin" })" class="btn btn-default">Cancel</a>
@@ -131,21 +149,12 @@
     <script type="text/javascript">
         $(document).ready(function () {
             App.init();
-          
+
+
+            $("#Country").change(onCountryChange);
+            onCountryChange();
+            loadAllCountries();
         });
-        //function chanegUserRole() {
-        //    var val = $("#UserType").val();
-        //    if (val == "2") {
-        //        $("input[name='SelectedModules']").prop("checked", true);
-        //        $("input[name='SelectedModules1']").prop("checked", true);
-        //    }
-        //    else {
-        //        $("input[name='SelectedModules']").prop("checked", false);
-        //        $("input[name='SelectedModules1']").prop("checked", false);
-        //    }
-
-        //}
-
 
         var toggleSelectAgent = document.querySelector('.selectAgent');
         $('#10').hide()
@@ -159,5 +168,35 @@
             })
         }, 500)
 
+    </script>
+
+    <script>
+     function loadAllCountries() {
+         var array = @Html.Raw(Json.Encode(ViewBag.countries));
+         if (array.length > 0)
+         {
+                     for (var i = 0; i < array.length; i++) {
+                         $("#Country").append("<option value="+array[i].Value+">"+array[i].Text+" </option>")
+                     }
+         }
+     }
+
+     function onCountryChange() {
+         $("#City").empty();
+         $("#City").append("<option value=''> Select City </option>")
+             var val = $("#Country").val();
+             var array = @Html.Raw(Json.Encode(ViewBag.Cities));
+             if (val) {
+                 var records=   array.filter(p=>p.CountryId==val);
+                 if(records.length>0){
+
+                     for (var i = 0; i < records.length; i++) {
+                         $("#City").append("<option value="+records[i].CityId+">"+records[i].Name+" </option>")
+
+                     }
+                     $("#City").val('@Model.City');
+                 }
+             }
+     }
     </script>
 }
