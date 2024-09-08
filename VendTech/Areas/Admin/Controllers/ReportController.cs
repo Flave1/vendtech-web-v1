@@ -69,8 +69,7 @@ namespace VendTech.Areas.Admin.Controllers
                 ViewBag.Vendors = _vendorManager.GetVendorsSelectList();
                 ViewBag.PosId = _vendorManager.GetPosSelectList();
                 ViewBag.Agencies = _agencyManager.GetAgentsSelectList();
-                var assignedReportModule = _userManager.GetAssignedReportModules(LOGGEDIN_USER.UserID, LOGGEDIN_USER.UserType == UserRoles.Admin);
-
+                
                 ViewBag.DepositTypes = _paymentTypeManager.GetPaymentTypeSelect2List();
                 ViewBag.SelectedTab = SelectedAdminTab.Reports;
 
@@ -98,26 +97,16 @@ namespace VendTech.Areas.Admin.Controllers
                     Meter = meter,
                     TransactionId = transactionId,
                     From = DateTime.Parse(from),
-                    To = DateTime.Parse(to)
-                };
+                    To = to != "undefined"  ?DateTime.Parse(to) : DateTime.UtcNow
+            };
 
                 var deposits = new PagingResult<DepositListingModel>();
                 var depositAudit = new PagingResult<DepositAuditModel>();
 
-                if (assignedReportModule.Any())
-                {
-                    var rtsReport1 = new SelectListItem { Text = "SHIFT ENQUIRY", Value = "-2" };
-                    var rtsReport2 = new SelectListItem { Text = "CUSTOMER ENQUIRIES", Value = "-1" };
-                    var rtsRps = new List<SelectListItem>();
-                    rtsRps.Add(rtsReport1);
-                    rtsRps.Add(rtsReport2);
-                    assignedReportModule.AddRange(rtsRps);
-                }
-
-                ViewBag.AssignedReports = assignedReportModule;
+       
                 var bankAccounts = _bankAccountManager.GetBankAccounts();
                 ViewBag.Banks = bankAccounts.ToList().Select(p => new SelectListItem { Text = p.BankName, Value = p.BankAccountId.ToString() }).ToList();
-
+                var assignedReportModule = AssignedReports();
                 if (assignedReportModule.Count > 0 && (type > 0 ? assignedReportModule.Any(x => x.Value == type.ToString()) : true))
                 {
                     var val = assignedReportModule[0].Value;
@@ -140,7 +129,7 @@ namespace VendTech.Areas.Admin.Controllers
                     if (val == "17")
                     {
                         deposits = _depositManager.GetReportsPagedList(model, true);
-                        return View("ManageReportsV2",deposits);
+                        return View("ManageReportsV2", deposits);
                     }
                     /// This Is Used For Fetching SALES REPORT
                     if (val == "16")
@@ -148,6 +137,14 @@ namespace VendTech.Areas.Admin.Controllers
                         model.IsInitialLoad = true;
 
                         ViewBag.Products = _platformManager.GetActivePlatformsSelectList();
+                        ViewBag.Status = new List<SelectListItem>
+                        {
+                            new SelectListItem { Text = "Success", Value = "1", Selected = true},
+                            new SelectListItem { Text = "ALL", Value = "-1", Selected = false},
+                            new SelectListItem { Text = "Pending", Value = "2", Selected = false },
+                            new SelectListItem { Text = "In Progress", Value = "0", Selected = false },
+                            new SelectListItem { Text = "Failed", Value = "3", Selected = false },
+                        };
 
                         var recharges = _meterManager.GetUserMeterRechargesReportAsync(model, true);  // ??new PagingResult<MeterRechargeApiListingModel>();
                         return View("ManageSalesReportsV2", recharges);
@@ -201,6 +198,23 @@ namespace VendTech.Areas.Admin.Controllers
             {
                 return View(new PagingResult<DepositListingModel>());
             }
+        }
+
+        private List<SelectListItem> AssignedReports()
+        {
+            var assignedReportModule = _userManager.GetAssignedReportModules(LOGGEDIN_USER.UserID, LOGGEDIN_USER.UserType == UserRoles.Admin);
+            if (assignedReportModule.Any())
+            {
+                var rtsReport1 = new SelectListItem { Text = "SHIFT ENQUIRY", Value = "-2" };
+                var rtsReport2 = new SelectListItem { Text = "CUSTOMER ENQUIRIES", Value = "-1" };
+                var rtsRps = new List<SelectListItem>();
+                rtsRps.Add(rtsReport1);
+                rtsRps.Add(rtsReport2);
+                assignedReportModule.AddRange(rtsRps);
+            }
+
+            ViewBag.AssignedReports = assignedReportModule;
+            return assignedReportModule;
         }
 
         [HttpGet]

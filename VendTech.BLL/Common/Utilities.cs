@@ -541,6 +541,8 @@ namespace VendTech.BLL.Common
 
         public static string FormatThisToken(string token_item)
         {
+            if (token_item == null)
+                return "";
             if (token_item != null && token_item.Length >= 2 && token_item.Length <= 12)
                 token_item = token_item.Insert(4, " ").Insert(9, " ");
             else if (token_item != null && token_item.Length >= 12 && token_item.Length <= 16)

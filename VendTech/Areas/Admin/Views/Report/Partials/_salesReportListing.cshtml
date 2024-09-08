@@ -20,17 +20,35 @@
                     </a>
                 </strong>
             </td>
-            <td style="text-align:center;"> 
-            <strong>
-                <a href="javascript:void(0);"
-                        data-token="@item.RechargePin" 
-                   onclick="fetchSaleInformation('@item.RechargePin', '@item.PlatformId', true)" 
-                   id="@item.RechargePin"> @VendTech.BLL.Common.Utilities.FormatThisToken(item.RechargePin) </a>
-                </strong></td>
+            <td style="text-align:center;">
+                @*<strong>
+                    <a href="javascript:void(0);"
+                            data-token="@item.RechargePin"
+                       onclick="fetchSaleInformation('@item.RechargePin', '@item.PlatformId', true)"
+                       id="@item.RechargePin"> @VendTech.BLL.Common.Utilities.FormatThisToken(item.RechargePin)
+                    </a>
+                </strong>*@
+                <strong>
+                    @if (string.IsNullOrEmpty(item.RechargePin))
+                    {
+                        <a href="javascript:void(0);" style="color: #ff6a00;" data-token="@item.TransactionId" onclick="fetchVoucherStatusDialog('@item.TransactionId')" id="@item.TransactionId">
+                            Request status for @item.TransactionId
+                        </a>
+                    }
+                    else
+                    {
+                        <a href="javascript:void(0);" data-token="@item.RechargePin"
+                           onclick="fetchSaleInformation('@item.RechargePin', '@item.PlatformId', true)"
+                           id="@item.RechargePin">
+                            @VendTech.BLL.Common.Utilities.FormatThisToken(item.RechargePin)
+                        </a>
+                    }
+                </strong>
+            </td>
 
             <td style="text-align:right;"> <strong>@item.Amount</strong></td>
         </tr>
-    }//.Insert(4, " ").Insert(9, " ").Insert(14, " ").Insert(19, " ")
+    }
 }
 else
 {

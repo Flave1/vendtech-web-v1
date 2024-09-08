@@ -79,7 +79,7 @@ namespace VendTech.Controllers
 
 
         [AjaxOnly, HttpPost]
-        public  JsonResult TransferCash(CashTransferModel request)
+        public async Task<JsonResult> TransferCash(CashTransferModel request)
         {
             try
             {
@@ -102,7 +102,7 @@ namespace VendTech.Controllers
                     PaymentType = (int)DepositPaymentTypeEnum.AdminTransferOut
             };
 
-                var result1 = _depositManager.CreateDepositDebitTransfer(depositDr, LOGGEDIN_USER.UserID, request.otp, request.ToPosId, frompos);
+                var result1 = await _depositManager.CreateDepositDebitTransfer(depositDr, LOGGEDIN_USER.UserID, request.otp, request.ToPosId, frompos.POSId);
 
                 
                 if(result1.Status == ActionStatus.Successfull)
@@ -112,13 +112,13 @@ namespace VendTech.Controllers
                         Amount = request.Amount,
                         POSId = request.ToPosId,
                         BankAccountId = 0,
-                        CreatedAt = DateTime.UtcNow.AddSeconds(2),
+                        CreatedAt = DateTime.UtcNow.AddSeconds(1),
                         PercentageAmount = request.Amount,
                         CheckNumberOrSlipId = reference,
                         ValueDate = DateTime.UtcNow.ToString(),
                         ValueDateStamp = DateTime.UtcNow
                     };
-                    var result2 = _depositManager.CreateDepositCreditTransfer(depositCr, LOGGEDIN_USER.UserID, frompos, request.otp);
+                    var result2 = await _depositManager.CreateDepositCreditTransfer(depositCr, LOGGEDIN_USER.UserID, frompos, request.otp);
 
                     if (result2.Status == ActionStatus.Successfull)
                     {
@@ -131,11 +131,8 @@ namespace VendTech.Controllers
                 {
                     return JsonResult(new ActionOutput { Message = result1.Message, Status = result1.Status});
                 }
-              
-
-               
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 return JsonResult(new ActionOutput { Message = "Error Occurred!!! please contact administrator", Status = ActionStatus.Error });
             }

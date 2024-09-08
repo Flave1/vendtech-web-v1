@@ -43,7 +43,13 @@ namespace VendTech.Controllers
 
         #endregion
 
-        public DepositController(IUserManager userManager, IErrorLogManager errorLogManager, IAuthenticateManager authenticateManager, ICMSManager cmsManager, IDepositManager depositManager, IMeterManager meterManager, IVendorManager vendorManager, IBankAccountManager bankAccountManager, IPOSManager posManager, IEmailTemplateManager templateManager, IPaymentTypeManager paymentTypeManager)
+        public DepositController(IUserManager userManager, 
+            IErrorLogManager errorLogManager, 
+            IAuthenticateManager authenticateManager, 
+            ICMSManager cmsManager, IDepositManager depositManager, 
+            IMeterManager meterManager, IVendorManager vendorManager, 
+            IBankAccountManager bankAccountManager, IPOSManager posManager, 
+            IEmailTemplateManager templateManager, IPaymentTypeManager paymentTypeManager)
             : base(errorLogManager)
         {
             _userManager = userManager;
@@ -64,48 +70,57 @@ namespace VendTech.Controllers
         /// <returns></returns>
         public ActionResult Index(string posId = "")
         {
-            ViewBag.SelectedTab = SelectedAdminTab.Deposits;
-            var model = new DepositModel();
-            ViewBag.UserId = LOGGEDIN_USER.UserID;
-            ViewBag.IsPlatformAssigned = _platformManager.GetUserAssignedPlatforms(LOGGEDIN_USER.UserID).Count > 0;
-            ViewBag.DepositTypes = _paymentTypeManager.GetPaymentTypeSelectList();
-
-            var history_model = new ReportSearchModel
+            try
             {
-                SortBy = "CreatedAt",
-                SortOrder = "Desc",
-                VendorId = LOGGEDIN_USER.UserID
-            };
+                ViewBag.SelectedTab = SelectedAdminTab.Deposits;
+                var model = new DepositModel();
+                ViewBag.UserId = LOGGEDIN_USER.UserID;
+                ViewBag.IsPlatformAssigned = _platformManager.GetUserAssignedPlatforms(LOGGEDIN_USER.UserID).Count > 0;
+                ViewBag.DepositTypes = _paymentTypeManager.GetPaymentTypeSelectList();
 
-            var deposits = new PagingResult<DepositListingModel>();
-            deposits = _depositManager.GetReportsPagedHistoryList(history_model, false, LOGGEDIN_USER.AgencyId);
-            var depositsPendLIst  = _depositManager.GetPendingDepositForCustomer(LOGGEDIN_USER.UserID, LOGGEDIN_USER.AgencyId);
-            ViewBag.WalletHistory = depositsPendLIst.Concat(deposits.List).ToList();
+                var history_model = new ReportSearchModel
+                {
+                    SortBy = "CreatedAt",
+                    SortOrder = "Desc",
+                    VendorId = LOGGEDIN_USER.UserID
+                };
 
-            ViewBag.ChkBankName = new SelectList(_bankAccountManager.GetBankNames_API().ToList(), "BankName", "BankName");
-            var posList = _posManager.GetPOSWithNameSelectList(LOGGEDIN_USER.UserID, LOGGEDIN_USER.AgencyId);
-            ViewBag.userPos = posList;
-            if (string.IsNullOrEmpty(posId) && posList.Count > 0)
-            {
-                //posId = Convert.ToInt64(posList[0].Value);
-                ViewBag.posId = posId;
+                var deposits = new PagingResult<DepositListingModel>();
+                deposits = _depositManager.GetReportsPagedHistoryList(history_model, false, LOGGEDIN_USER.AgencyId);
+                var depositsPendLIst = _depositManager.GetPendingDepositForCustomer(LOGGEDIN_USER.UserID, LOGGEDIN_USER.AgencyId);
+                ViewBag.WalletHistory = depositsPendLIst.Concat(deposits.List).ToList();
+
+                ViewBag.ChkBankName = new SelectList(_bankAccountManager.GetBankNames_API().ToList(), "BankName", "BankName");
+                var posList = _posManager.GetPOSWithNameSelectList(LOGGEDIN_USER.UserID, LOGGEDIN_USER.AgencyId);
+                ViewBag.userPos = posList;
+                if (string.IsNullOrEmpty(posId) && posList.Count > 0)
+                {
+                    //posId = Convert.ToInt64(posList[0].Value);
+                    ViewBag.posId = posId;
+                }
+                if (!string.IsNullOrEmpty(posId))
+                {
+                    ViewBag.Percentage = _posManager.GetPosCommissionPercentage(long.Parse(posId));
+                    ViewBag.balance = _posManager.GetPosBalance(long.Parse(posId));
+                }
+                else
+                {
+                    ViewBag.Percentage = 0;
+                    ViewBag.balance = 0;
+                }
+                var bankAccounts = _bankAccountManager.GetBankAccounts();
+
+                ViewBag.bankAccounts = bankAccounts.ToList().Select(p => new SelectListItem { Text = "(" + p.BankName + " - " + Utilities.FormatBankAccount(p.AccountNumber) + ")", Value = p.BankAccountId.ToString() }).ToList();
+
+                ViewBag.walletBalance = _userManager.GetUserWalletBalance(LOGGEDIN_USER.UserID, LOGGEDIN_USER.AgencyId);
+
+                return View(model);
             }
-            if (!string.IsNullOrEmpty(posId))
+            catch (NullReferenceException)
             {
-                ViewBag.Percentage = _posManager.GetPosCommissionPercentage(long.Parse(posId));
-                ViewBag.balance = _posManager.GetPosBalance(long.Parse(posId));
+                SignOut();
+                return View();
             }
-            else
-            {
-                ViewBag.Percentage = 0;
-                ViewBag.balance = 0;
-            }
-            var bankAccounts = _bankAccountManager.GetBankAccounts();
-
-            ViewBag.bankAccounts = bankAccounts.ToList().Select(p => new SelectListItem { Text = "(" + p.BankName + " - " + Utilities.FormatBankAccount(p.AccountNumber) + ")", Value = p.BankAccountId.ToString() }).ToList();
-
-            ViewBag.walletBalance = _userManager.GetUserWalletBalance(LOGGEDIN_USER.UserID, LOGGEDIN_USER.AgencyId);
-            return View(model);
         }
     
         [AjaxOnly, HttpPost]

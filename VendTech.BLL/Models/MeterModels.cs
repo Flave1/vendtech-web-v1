@@ -259,11 +259,15 @@ namespace VendTech.BLL.Models
             POSId = x.POSId == null ? "" : x.POS.SerialNumber;
             Status = ((RechargeMeterStatusEnum)x.Status).ToString();
             VendorName = x.POS.User == null ? "" : x.POS.User.Vendor;
-            RechargePin = x.Platform.PlatformType == 4 ? Utilities.FormatThisToken(x.MeterToken1) : x.MeterNumber1 + "/" + x.TransactionId;
+            RechargePin = x.Platform.PlatformType == (int)PlatformTypeEnum.ELECTRICITY ? Utilities.FormatThisToken(x.MeterToken1) : x.MeterNumber1 + "/" + x.TransactionId;
+            
             if (!string.IsNullOrEmpty(x.MeterToken1) && !string.IsNullOrEmpty(x.MeterToken2) && !string.IsNullOrEmpty(x.MeterToken3))
             {
                 RechargePin = x.MeterToken1 + " (+2)";
             }
+            else if (x.Status == (int)RechargeMeterStatusEnum.Pending)
+                    RechargePin = "";
+
             CreatedAtDate = x.CreatedAt.ToString("dd/MM/yyyy hh:mm");
             PlatformName = x.Platform.Title;
             NotType = "sale";
@@ -424,6 +428,7 @@ namespace VendTech.BLL.Models
     {
         public string token_string { get; set; }
         public string active { get; set; } = "active";
+        public bool billVendor { get; set; } = true;
     }
 
     public class RequestObject1

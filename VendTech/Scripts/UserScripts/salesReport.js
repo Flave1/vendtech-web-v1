@@ -85,6 +85,28 @@ var Deposits = {
    
 };
 
+function validateDate(selectedFrmDate, selectedToDate) {
+    //var selectedFrmDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    //var selectedToDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    $("#btnFilterSearch").prop('disabled', false);
+
+    let startDate = new Date(selectedFrmDate.split("/").reverse().join("-"));
+    let endDate = new Date(selectedToDate.split("/").reverse().join("-"));
+
+    // Calculate the time difference in milliseconds
+    let timeDiff = endDate - startDate;
+
+    // Convert the time difference from milliseconds to days
+    let daysDiff = timeDiff / (1000 * 60 * 60 * 24);
+
+    //var daysDifference = Math.floor((selectedToDate - selectedFrmDate) / (1000 * 3600 * 24));
+    if (daysDiff != "NaN" && daysDiff > 30) {
+        $.ShowMessage($('div.messageAlert'), "Date range cannot be more than 30 days", MessageType.Error);
+        return true;
+    }
+    return false;
+}
+
 function Paging(sender) {
     var obj = new Object();
     obj.Search = $('#Search').val();
@@ -124,14 +146,16 @@ function Paging(sender) {
     else
         $("#toSpan").text("_");
 
-   
+    
     const date = new Date();
     const formattedDate = date.toLocaleDateString('en-GB', {
         day: '2-digit', month: '2-digit', year: 'numeric'
     }).replace(/ /g, '-') + " " + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }).replace("AM", "").replace("PM", "");
 
-
-
+    let isGreaterthan30 = validateDate(obj.From, obj.To)
+    if (isGreaterthan30) {
+        return;
+    }
     // $("#printedDate").text(printDt.getDate() + "/" + getMonthName(printDt.getMonth()) + "/" + printDt.getFullYear()+" "+printDt.toLocaleTimeString());
 
     $("#btnFilterSearch").val('DATA LOADING........');

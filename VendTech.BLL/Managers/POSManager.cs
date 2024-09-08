@@ -13,10 +13,15 @@ namespace VendTech.BLL.Managers
 {
     public class POSManager : BaseManager, IPOSManager
     {
+        private readonly VendtechEntities _context;
+        public POSManager(VendtechEntities context)
+        {
+            _context = context;
+        }
 
         KeyValuePair<string, string> IPOSManager.GetVendorDetail(long posId)
         {
-            var pos = Context.POS.FirstOrDefault(d => d.POSId == posId);
+            var pos = _context.POS.FirstOrDefault(d => d.POSId == posId);
             if(pos != null)
             {
                 return new KeyValuePair<string, string>(pos.SerialNumber, pos.User.Vendor);
@@ -27,7 +32,7 @@ namespace VendTech.BLL.Managers
         {
             //model.RecordsPerPage = 1000000;
             var result = new PagingResult<POSListingModel>();
-            IQueryable<POS> query = Context.POS.Where(p => !p.IsDeleted);
+            IQueryable<POS> query = _context.POS.Where(p => !p.IsDeleted);
 
             if (model.SortBy == null)
             {
@@ -78,7 +83,7 @@ namespace VendTech.BLL.Managers
             //}
             if (vendorId > 0)
             {
-                var user = Context.Users.FirstOrDefault(p => p.UserId == vendorId);
+                var user = _context.Users.FirstOrDefault(p => p.UserId == vendorId);
                 if (callForGetVendorPos)
                     query = query.Where(p => p.VendorId == user.UserId);
                 else
@@ -143,12 +148,12 @@ namespace VendTech.BLL.Managers
         PagingResult<POSListingModel> IPOSManager.GetUserPosPagingListForApp(int pageNo, int pageSize, long userId)
         {
             var result = new PagingResult<POSListingModel>();
-            var query = Context.POS.Where(p => !p.IsDeleted).OrderBy("SerialNumber" + " " + "Asc").AsEnumerable();
+            var query = _context.POS.Where(p => !p.IsDeleted).OrderBy("SerialNumber" + " " + "Asc").AsEnumerable();
             //if (agentId > 0)
             //    query = query.Where(p => p.Vendor.AgencyId == agentId);
             if (userId > 0)
             {
-                var user = Context.Users.FirstOrDefault(p => p.UserId == userId);
+                var user = _context.Users.FirstOrDefault(p => p.UserId == userId);
                 query = query.Where(p => p.VendorId != null && p.VendorId == user.FKVendorId);
             }
 
@@ -163,13 +168,13 @@ namespace VendTech.BLL.Managers
         }
         List<PosAPiListingModel> IPOSManager.GetPOSSelectListForApi(long userId = 0)
         {
-            var query = Context.POS.Where(p => !p.IsDeleted && p.Enabled != false);
+            var query = _context.POS.Where(p => !p.IsDeleted && p.Enabled != false);
             // enable check has been removed
-            //   var query = Context.POS.Where(p => !p.IsDeleted);
+            //   var query = _context.POS.Where(p => !p.IsDeleted);
             var userPos = new List<POS>();
             if (userId > 0)
             {
-                var user = Context.Users.FirstOrDefault(p => p.UserId == userId);
+                var user = _context.Users.FirstOrDefault(p => p.UserId == userId);
 
                 query = query.Where(p => (p.VendorId != null && p.VendorId == user.FKVendorId));
             }
@@ -178,8 +183,8 @@ namespace VendTech.BLL.Managers
         }
         List<PosSelectItem> IPOSManager.GetVendorPos(long userId)
         {
-            var query = Context.POS.Where(p => !p.IsDeleted && p.Enabled != false && !p.SerialNumber.StartsWith("AGT"));
-            // var query = Context.POS.Where(p => !p.IsDeleted);
+            var query = _context.POS.Where(p => !p.IsDeleted && p.Enabled != false && !p.SerialNumber.StartsWith("AGT"));
+            // var query = _context.POS.Where(p => !p.IsDeleted);
             var userPos = new List<POS>();
             if (userId > 0)
                 query = query.Where(p => (p.VendorId != null && p.VendorId == userId));
@@ -194,8 +199,8 @@ namespace VendTech.BLL.Managers
 
         List<PosSelectItem> IPOSManager.GetAgencyPos(long userId)
         {
-            var query = Context.POS.Where(p => !p.IsDeleted && p.Enabled != false && !p.SerialNumber.StartsWith("AGT"));
-            // var query = Context.POS.Where(p => !p.IsDeleted);
+            var query = _context.POS.Where(p => !p.IsDeleted && p.Enabled != false && !p.SerialNumber.StartsWith("AGT"));
+            // var query = _context.POS.Where(p => !p.IsDeleted);
             var userPos = new List<POS>();
             if (userId > 0)
                 query = query.Where(p => (p.User != null && p.User.AgentId == userId));
@@ -215,16 +220,16 @@ namespace VendTech.BLL.Managers
             var userPos = new List<POS>();
             if (userId > 0)
             {
-                var user = Context.Users.FirstOrDefault(p => p.UserId == userId);
+                var user = _context.Users.FirstOrDefault(p => p.UserId == userId);
                 if (user != null)
-                    query = Context.POS.Where(p => (p.VendorId != null && p.VendorId == user.FKVendorId && p.Enabled != false && !p.IsDeleted && !p.SerialNumber.StartsWith("AGT")) && !p.IsAdmin).ToList();
+                    query = _context.POS.Where(p => (p.VendorId != null && p.VendorId == user.FKVendorId && p.Enabled != false && !p.IsDeleted && !p.SerialNumber.StartsWith("AGT")) && !p.IsAdmin).ToList();
             }else
-                query = Context.POS.Where(p => !p.IsDeleted && p.Enabled != false && !p.IsAdmin && !p.SerialNumber.StartsWith("AGT")).ToList();
+                query = _context.POS.Where(p => !p.IsDeleted && p.Enabled != false && !p.IsAdmin && !p.SerialNumber.StartsWith("AGT")).ToList();
              
 
             if (agentId > 0)
             {
-                query = Context.POS.Where(p => p.User.AgentId == agentId && p.Enabled != false && !p.IsDeleted && !p.IsAdmin && !p.SerialNumber.StartsWith("AGT")).ToList();
+                query = _context.POS.Where(p => p.User.AgentId == agentId && p.Enabled != false && !p.IsDeleted && !p.IsAdmin && !p.SerialNumber.StartsWith("AGT")).ToList();
             }
             return query.OrderBy(p => p.SerialNumber).Select(p => new SelectListItem
             {
@@ -239,17 +244,17 @@ namespace VendTech.BLL.Managers
             var userPos = new List<POS>();
             if (userId > 0)
             {
-                var user = Context.Users.FirstOrDefault(p => p.UserId == userId);
+                var user = _context.Users.FirstOrDefault(p => p.UserId == userId);
                 if (user != null)
-                    query = Context.POS.Where(p => (p.VendorId != null && p.VendorId == user.FKVendorId && p.Enabled != false && !p.IsDeleted && !p.SerialNumber.StartsWith("AGT")) && !p.IsAdmin).ToList();
+                    query = _context.POS.Where(p => (p.VendorId != null && p.VendorId == user.FKVendorId && p.Enabled != false && !p.IsDeleted && !p.SerialNumber.StartsWith("AGT")) && !p.IsAdmin).ToList();
             }
             else
-                query = Context.POS.Where(p => !p.IsDeleted && p.Enabled != false && !p.IsAdmin && !p.SerialNumber.StartsWith("AGT")).ToList();
+                query = _context.POS.Where(p => !p.IsDeleted && p.Enabled != false && !p.IsAdmin && !p.SerialNumber.StartsWith("AGT")).ToList();
 
 
             if (agentId > 0)
             {
-                query = Context.POS.Where(p => p.User.AgentId == agentId && p.Enabled != false && !p.IsDeleted && !p.IsAdmin && !p.SerialNumber.StartsWith("AGT")).ToList();
+                query = _context.POS.Where(p => p.User.AgentId == agentId && p.Enabled != false && !p.IsDeleted && !p.IsAdmin && !p.SerialNumber.StartsWith("AGT")).ToList();
             }
             return query.OrderBy(p => p.SerialNumber).Select(p => new SelectListItem
             {
@@ -260,14 +265,14 @@ namespace VendTech.BLL.Managers
 
         SavePosModel IPOSManager.GetPosDetail(long posId)
         {
-            var dbPos = Context.POS.FirstOrDefault(p => p.POSId == posId);
+            var dbPos = _context.POS.FirstOrDefault(p => p.POSId == posId);
             if(dbPos != null)
             {
                 var user = new User();
-                user = Context.Users.Where(x => x.FKVendorId == dbPos.VendorId && x.Status == (int)UserStatusEnum.Active).FirstOrDefault();
+                user = _context.Users.Where(x => x.FKVendorId == dbPos.VendorId && x.Status == (int)UserStatusEnum.Active).FirstOrDefault();
                 if (user == null)
                 {
-                    user = Context.Users.FirstOrDefault(x => x.UserId == dbPos.VendorId);
+                    user = _context.Users.FirstOrDefault(x => x.UserId == dbPos.VendorId);
                 }
                 var email = user.Email;
                 if (dbPos == null)
@@ -300,15 +305,15 @@ namespace VendTech.BLL.Managers
         }
         POS IPOSManager.GetSinglePos(long pos)
         {
-            return Context.POS.Find(pos);
+            return _context.POS.Find(pos);
         }
         POS IPOSManager.GetVendorPos2(long vendorId)
         {
-            return Context.POS.FirstOrDefault(s => s.VendorId == vendorId);
+            return _context.POS.FirstOrDefault(s => s.VendorId == vendorId);
         }
         SavePosModel IPOSManager.GetPosDetails(string passCode)
         {
-            var dbPos = Context.POS.FirstOrDefault(p => p.PassCode == passCode);
+            var dbPos = _context.POS.FirstOrDefault(p => p.PassCode == passCode);
 
             if (dbPos == null)
                 return null;
@@ -327,7 +332,7 @@ namespace VendTech.BLL.Managers
                 SMSNotificationSales = dbPos.SMSNotificationSales == null ? false : dbPos.SMSNotificationSales.Value,
                 //CountryCode = dbPos.CountryCode,
                 PassCode = dbPos.PassCode,
-                Email = Context.Users.FirstOrDefault(x => x.UserId == dbPos.VendorId).Email,
+                Email = _context.Users.FirstOrDefault(x => x.UserId == dbPos.VendorId).Email,
                 WebSms = dbPos?.WebSms ?? false,
                 PosSms = dbPos?.PosSms ?? false,
                 PosPrint = dbPos?.PosPrint ?? false,
@@ -339,11 +344,11 @@ namespace VendTech.BLL.Managers
 
         UserModel IPOSManager.GetUserPosDetails(string posSerialNumber)
         {
-            var dbPos = Context.POS.FirstOrDefault(p => p.SerialNumber == posSerialNumber);
+            var dbPos = _context.POS.FirstOrDefault(p => p.SerialNumber == posSerialNumber);
 
             if (dbPos == null)
                 return null;
-            var user = Context.Users.FirstOrDefault(x => x.UserId == dbPos.VendorId);
+            var user = _context.Users.FirstOrDefault(x => x.UserId == dbPos.VendorId);
             return new UserModel()
             {
                 Email = user.Email,
@@ -355,14 +360,14 @@ namespace VendTech.BLL.Managers
 
         UserModel IPOSManager.GetUserPosDetailApi(string posSerialNumber)
         {
-            var dbPos = Context.POS.FirstOrDefault(p => p.SerialNumber == posSerialNumber);
+            var dbPos = _context.POS.FirstOrDefault(p => p.SerialNumber == posSerialNumber);
             var user = new User();
             if (dbPos == null)
                 return null;
-            user = Context.Users.FirstOrDefault(x => x.FKVendorId == dbPos.VendorId && x.Status == (int)UserStatusEnum.Active);
+            user = _context.Users.FirstOrDefault(x => x.FKVendorId == dbPos.VendorId && x.Status == (int)UserStatusEnum.Active);
             if (user == null)
             {
-                user = Context.Users.FirstOrDefault(x => x.UserId == dbPos.VendorId);
+                user = _context.Users.FirstOrDefault(x => x.UserId == dbPos.VendorId);
             }
             return new UserModel()
             {
@@ -375,19 +380,19 @@ namespace VendTech.BLL.Managers
 
         ActionOutput IPOSManager.DeletePos(long posId)
         {
-            var dbPos = Context.POS.FirstOrDefault(p => p.POSId == posId);
+            var dbPos = _context.POS.FirstOrDefault(p => p.POSId == posId);
             if (dbPos == null)
                 return ReturnError("POS not exist");
             dbPos.IsDeleted = true;
             dbPos.User.Status = (int)UserStatusEnum.Block;
             //EnableOrdisablePOSAccount(false, dbPos.POSId);
-            Context.SaveChanges();
+            _context.SaveChanges();
             return ReturnSuccess("POS DELETED SUCCESSFULLY.");
         }
 
         ActionOutput IPOSManager.ChangePOSStatus(int posId, bool value)
         {
-            var pos = Context.POS.Where(z => z.POSId == posId).FirstOrDefault();
+            var pos = _context.POS.Where(z => z.POSId == posId).FirstOrDefault();
             if (pos == null)
             {
                 return new ActionOutput
@@ -405,7 +410,7 @@ namespace VendTech.BLL.Managers
                     pos.User.Status = (int)UserStatusEnum.Block;
 
                 //EnableOrdisablePOSAccount(value, pos.POSId);
-                Context.SaveChanges();
+                _context.SaveChanges();
                 return new ActionOutput
                 {
                     Status = ActionStatus.Successfull,
@@ -416,28 +421,28 @@ namespace VendTech.BLL.Managers
 
         decimal IPOSManager.GetPosCommissionPercentage(long posId)
         {
-            var dbPos = Context.POS.FirstOrDefault(p => p.POSId == posId);
+            var dbPos = _context.POS.FirstOrDefault(p => p.POSId == posId);
             if (dbPos == null || dbPos.CommissionPercentage == null)
                 return 0;
             return dbPos.Commission.Percentage;
         }
         decimal IPOSManager.GetPosBalance(long posId)
         {
-            var dbPos = Context.POS.FirstOrDefault(p => p.POSId == posId && !p.SerialNumber.StartsWith("AGT"));
+            var dbPos = _context.POS.FirstOrDefault(p => p.POSId == posId && !p.SerialNumber.StartsWith("AGT"));
             if (dbPos == null || dbPos.Balance == null)
                 return 0;
             return dbPos.Balance.Value;
         }
         decimal IPOSManager.GetPosPercentage(long posId)
         {
-            var dbPos = Context.POS.FirstOrDefault(p => p.POSId == posId);
+            var dbPos = _context.POS.FirstOrDefault(p => p.POSId == posId);
             if (dbPos == null)
                 return 0;
             return dbPos.Commission.Percentage;
         }
         decimal IPOSManager.GetPosCommissionPercentageByUserId(long userId)
         {
-            var userObj = Context.Users.FirstOrDefault(p => p.UserId == userId);
+            var userObj = _context.Users.FirstOrDefault(p => p.UserId == userId);
             var userAssignedPos = new POS();
             if (userObj.UserRole.Role == UserRoles.Vendor)
                 userAssignedPos = userObj.POS.FirstOrDefault();
@@ -452,7 +457,7 @@ namespace VendTech.BLL.Managers
         IList<PlatformCheckbox> IPOSManager.GetAllPlatforms(long posId)
         {
             IList<PlatformCheckbox> chekboxListOfModules = null;
-            IList<Platform> modules = Context.Platforms.Where(p => !p.IsDeleted && p.Enabled && !p.DisablePlatform).ToList();
+            IList<Platform> modules = _context.Platforms.Where(p => !p.IsDeleted && p.Enabled && !p.DisablePlatform).ToList();
             if (modules.Count() > 0)
             {
                 chekboxListOfModules = modules.Select(x =>
@@ -467,7 +472,7 @@ namespace VendTech.BLL.Managers
 
                 if (posId > 0)
                 {
-                    var existingPermissons = Context.POSAssignedPlatforms.Where(x => x.POSId == posId).ToList();
+                    var existingPermissons = _context.POSAssignedPlatforms.Where(x => x.POSId == posId).ToList();
                     if (existingPermissons.Count > 0)
                     {
                         chekboxListOfModules.ToList().ForEach(x => x.Checked = existingPermissons.Where(z => z.PlatformId == x.Id).Any());
@@ -481,13 +486,13 @@ namespace VendTech.BLL.Managers
             var dbPos = new POS();
             if (model.POSId > 0)
             {
-                dbPos = Context.POS.FirstOrDefault(p => p.POSId == model.POSId);
+                dbPos = _context.POS.FirstOrDefault(p => p.POSId == model.POSId);
                 if (dbPos == null)
                     return ReturnError("Pos not exist");
             }
             else
             {
-                if(Context.POS.Any(d => d.SerialNumber.Contains(model.SerialNumber)))
+                if(_context.POS.Any(d => d.SerialNumber.Contains(model.SerialNumber)))
                 {
                     return ReturnError("POS with same ID already exist");
                 }
@@ -496,7 +501,7 @@ namespace VendTech.BLL.Managers
             dbPos.VendorId = model.VendorId != null ? model.VendorId : dbPos.VendorId;
             if(dbPos.VendorId.HasValue && dbPos.VendorId > 0)
             {
-                dbPos.User = Context.Users.FirstOrDefault(d => d.UserId == dbPos.VendorId.Value);
+                dbPos.User = _context.Users.FirstOrDefault(d => d.UserId == dbPos.VendorId.Value);
             }
             dbPos.VendorType = model.Type;
             dbPos.Phone = model.Phone;
@@ -522,15 +527,15 @@ namespace VendTech.BLL.Managers
 
 
             if (model.POSId == 0)
-                Context.POS.Add(dbPos);
-            Context.SaveChanges();
+                _context.POS.Add(dbPos);
+            _context.SaveChanges();
             //EnableOrdisablePOSAccount(model.Enabled, model.POSId);
             //Deleting Exisiting Platforms
-            var existingPlatforms = Context.POSAssignedPlatforms.Where(x => x.POSId == dbPos.POSId).ToList();
+            var existingPlatforms = _context.POSAssignedPlatforms.Where(x => x.POSId == dbPos.POSId).ToList();
             if (existingPlatforms.Count > 0)
             {
-                Context.POSAssignedPlatforms.RemoveRange(existingPlatforms);
-                Context.SaveChanges();
+                _context.POSAssignedPlatforms.RemoveRange(existingPlatforms);
+                _context.SaveChanges();
             }
             List<POSAssignedPlatform> newPlatforms = new List<POSAssignedPlatform>();
 
@@ -543,8 +548,8 @@ namespace VendTech.BLL.Managers
                      PlatformId = c,
                      CreatedAt = DateTime.UtcNow,
                  }));
-                Context.POSAssignedPlatforms.AddRange(newPlatforms);
-                Context.SaveChanges();
+                _context.POSAssignedPlatforms.AddRange(newPlatforms);
+                _context.SaveChanges();
             }
             return ReturnSuccess("POS SAVED SUCCESSFULLY.");
         }
@@ -552,7 +557,7 @@ namespace VendTech.BLL.Managers
         
         void EnableOrdisablePOSAccount(bool isEnabled, long posId)
         {
-            var pos = Context.POS.Where(z => z.POSId == posId).FirstOrDefault();
+            var pos = _context.POS.Where(z => z.POSId == posId).FirstOrDefault();
             if (pos != null)
             {
                 var posUserAccount = pos.User;
@@ -567,13 +572,13 @@ namespace VendTech.BLL.Managers
             var dbPos = new POS();
             if (savePassCodeModel.POSId > 0)
             {
-                dbPos = Context.POS.FirstOrDefault(p => p.POSId == savePassCodeModel.POSId);
+                dbPos = _context.POS.FirstOrDefault(p => p.POSId == savePassCodeModel.POSId);
                 if (dbPos == null)
                     return ReturnError("Pos does not exist");
             }
             else if (!string.IsNullOrEmpty(savePassCodeModel.Phone))
             {
-                dbPos = Context.POS.FirstOrDefault(p => p.Phone == savePassCodeModel.Phone);
+                dbPos = _context.POS.FirstOrDefault(p => p.Phone == savePassCodeModel.Phone);
                 if (dbPos == null)
                     return ReturnError("Pos does not exist");
             }
@@ -581,17 +586,17 @@ namespace VendTech.BLL.Managers
             dbPos.PassCode = savePassCodeModel.PassCode;
             dbPos.IsNewPasscode = true;
             if (savePassCodeModel.POSId == 0)
-                Context.POS.Add(dbPos);
-            Context.SaveChanges();
+                _context.POS.Add(dbPos);
+            _context.SaveChanges();
             return ReturnSuccess("PASSCODE SENT SUCCESSFULLY.");
         }
 
         void IPOSManager.UpdatePasscode(long VendorId)
         {
-            var pos = Context.POS.FirstOrDefault(d => d.VendorId ==  VendorId);
+            var pos = _context.POS.FirstOrDefault(d => d.VendorId ==  VendorId);
             if(pos == null) return;
             pos.IsNewPasscode = false;
-            Context.SaveChanges();
+            _context.SaveChanges();
         }
 
         ActionOutput IPOSManager.SavePasscodePosApi(SavePassCodeModel savePassCodeModel)
@@ -599,27 +604,27 @@ namespace VendTech.BLL.Managers
             var dbPos = new POS();
             if (!string.IsNullOrEmpty(savePassCodeModel.PosNumber))
             {
-                dbPos = Context.POS.FirstOrDefault(p => p.SerialNumber == savePassCodeModel.PosNumber);
+                dbPos = _context.POS.FirstOrDefault(p => p.SerialNumber == savePassCodeModel.PosNumber);
                 if (dbPos == null)
                     return ReturnError("Pos does not exist");
             }
             else if (!string.IsNullOrEmpty(savePassCodeModel.Phone))
             {
-                dbPos = Context.POS.FirstOrDefault(p => p.Phone == savePassCodeModel.Phone);
+                dbPos = _context.POS.FirstOrDefault(p => p.Phone == savePassCodeModel.Phone);
                 if (dbPos == null)
                     return ReturnError("Pos does not exist");
             }
             //dbPos.CountryCode = !string.IsNullOrEmpty(savePassCodeModel.CountryCode) ? savePassCodeModel.CountryCode : dbPos.CountryCode;
             dbPos.PassCode = savePassCodeModel.PassCode;
             if (dbPos.POSId == 0)
-                Context.POS.Add(dbPos);
-            Context.SaveChanges();
+                _context.POS.Add(dbPos);
+            _context.SaveChanges();
             return ReturnSuccess("PASSCODE SAVED SUCCESSFULLY.");
         }
 
         POS IPOSManager.ReturnAgencyAdminPOS(long userId)
         {
-            return Context.POS.FirstOrDefault(e => e.VendorId == userId);
+            return _context.POS.FirstOrDefault(e => e.VendorId == userId);
         }
 
         PagingResultWithDefaultAmount<BalanceSheetListingModel2> IPOSManager.CalculateBalancesheet(List<BalanceSheetListingModel> result)
@@ -656,7 +661,7 @@ namespace VendTech.BLL.Managers
         {
             decimal commmission1 = Convert.ToDecimal(0.00);
             decimal commmission2 = Convert.ToDecimal(0.50);
-            return Context.POS.Where(d => d.User != null 
+            return _context.POS.Where(d => d.User != null 
             && (d.Commission.Percentage == commmission1 
             ||  d.Commission.Percentage == commmission2)
             && d.Balance < 1 && d.User.Status == (int)UserStatusEnum.Active
@@ -671,7 +676,7 @@ namespace VendTech.BLL.Managers
         }
 
         bool IPOSManager.BalanceLowMessageIsSent(long userId, UserScheduleTypes type) => 
-            Context.UserSchedules.Any(d => d.UserId == userId && d.ScheduleType == (int)type && d.Status == (int)UserScheduleStatus.NotSent);
+            _context.UserSchedules.Any(d => d.UserId == userId && d.ScheduleType == (int)type && d.Status == (int)UserScheduleStatus.NotSent);
 
         void IPOSManager.SaveUserSchedule(long userId, string balance)
         {
@@ -683,23 +688,23 @@ namespace VendTech.BLL.Managers
                 UserId = userId,
                 Balance = balance
             };
-            Context.UserSchedules.Add(userSchedule);
-            Context.SaveChanges();
+            _context.UserSchedules.Add(userSchedule);
+            _context.SaveChanges();
         }
 
         void IPOSManager.RemoveFromSchedule(long userId)
         {
-            var schedule = Context.UserSchedules.FirstOrDefault(d => d.UserId == userId && d.ScheduleType == (int)UserScheduleTypes.LowBalnce);
-            Context.UserSchedules.Remove(schedule);
-            Context.SaveChanges();
+            var schedule = _context.UserSchedules.FirstOrDefault(d => d.UserId == userId && d.ScheduleType == (int)UserScheduleTypes.LowBalnce);
+            _context.UserSchedules.Remove(schedule);
+            _context.SaveChanges();
         }
 
         bool IPOSManager.BalanceLowScheduleExist(long userId, UserScheduleTypes type) =>
-            Context.UserSchedules.Any(d => d.UserId == userId && d.ScheduleType == (int)type);
+            _context.UserSchedules.Any(d => d.UserId == userId && d.ScheduleType == (int)type);
 
         List<UserScheduleDTO> IPOSManager.GetUserSchedule()
         {
-            return Context.UserSchedules.Where(d =>  d.ScheduleType == (int)UserScheduleTypes.LowBalnce)
+            return _context.UserSchedules.Where(d =>  d.ScheduleType == (int)UserScheduleTypes.LowBalnce)
                 .AsEnumerable().Select(e => new UserScheduleDTO
             {
                 CreatedAt = e.CreatedAt,
@@ -711,12 +716,12 @@ namespace VendTech.BLL.Managers
 
         void IPOSManager.UpdateUserSchedule(long userId, UserScheduleStatus status)
         {
-            var schedule = Context.UserSchedules.FirstOrDefault(d => d.UserId == userId && d.ScheduleType == (int)UserScheduleTypes.LowBalnce);
+            var schedule = _context.UserSchedules.FirstOrDefault(d => d.UserId == userId && d.ScheduleType == (int)UserScheduleTypes.LowBalnce);
             schedule.Status = (int)status;
-            Context.SaveChanges();
+            _context.SaveChanges();
         }
 
         bool IPOSManager.IsWalletFunded(long userId) =>
-           Context.POS.FirstOrDefault(d => d.VendorId == userId && d.Balance != null).Balance > 1;
+           _context.POS.FirstOrDefault(d => d.VendorId == userId && d.Balance != null).Balance > 1;
     }
 }

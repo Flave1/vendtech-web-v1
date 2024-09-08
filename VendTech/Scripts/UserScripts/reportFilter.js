@@ -52,13 +52,12 @@ $(document).ready(function () {
     var selectedToDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
 
     function validateDate() {
+        $("#btnFilterSearch").prop('disabled', false);
         var daysDifference = Math.floor((selectedToDate - selectedFrmDate) / (1000 * 3600 * 24));
         if (daysDifference != "NaN" && daysDifference > 30) {
             $.ShowMessage($('div.messageAlert'), "Date range cannot be more than 30 days", MessageType.Error);
-            $("#btnFilterSearch").prop('disabled', true);
             return;
         }
-        $("#btnFilterSearch").prop('disabled', false);
     }
     
     
