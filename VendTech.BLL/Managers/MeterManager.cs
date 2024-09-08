@@ -834,9 +834,7 @@ namespace VendTech.BLL.Managers
         {
             if(message == "The request timed out with the Ouc server.")
             {
-                //DisablePlatform(PlatformTypeEnum.ELECTRICITY);
                 FlagTransaction(tx, RechargeMeterStatusEnum.Failed);
-                //NotifyAdmin1();
                 throw new ArgumentException(message);
             }
             if (message == "Error: Vending is disabled")
@@ -857,7 +855,7 @@ namespace VendTech.BLL.Managers
 
             if (message == "InCMS-BL-CO000846. The amount is too low for recharge")
             {
-                FlagTransaction(tx, RechargeMeterStatusEnum.Pending);
+                FlagTransaction(tx, RechargeMeterStatusEnum.Failed);
                 throw new ArgumentException("The amount is too low for recharge");
             }
 

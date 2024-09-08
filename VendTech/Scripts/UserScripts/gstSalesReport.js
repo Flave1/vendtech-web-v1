@@ -129,7 +129,6 @@ function Paging(sender) {
     }).replace(/ /g, '-') + " " + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }).replace("AM", "").replace("PM", "");
 
 
-
     // $("#printedDate").text(printDt.getDate() + "/" + getMonthName(printDt.getMonth()) + "/" + printDt.getFullYear()+" "+printDt.toLocaleTimeString());
 
     $("#btnFilterSearch").val('DATA LOADING........');
@@ -146,7 +145,6 @@ function Paging(sender) {
         throbberPosition: { my: "left center", at: "right center", of: sender, offset: "5 0" },
         url: baseUrl + '/Report/GetGSTSalesReportPagingList',
         success: function (results, message) {
-            console.log(results);
            
             $("#btnFilterSearch").val('SEARCH');
             $("#btnFilterSearch").prop('disabled', false);
@@ -159,6 +157,7 @@ function Paging(sender) {
         }
     });
 }
+
 
 function getMonthName(number) {
     var month = new Array();
