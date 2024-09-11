@@ -1103,7 +1103,7 @@ namespace VendTech.BLL.Managers
                 try
                 {
                     Context.Users.Add(dbUser);
-                    SaveChanges();
+                    Context.SaveChanges();
                 }
                 catch (Exception ex)
                 {

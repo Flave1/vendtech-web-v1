@@ -272,7 +272,7 @@ namespace VendTech.BLL.Managers
                 transDetail.QueryStatusCount = count;
                 if (string.IsNullOrEmpty(statusResponse.Content.VoucherPin))
                 {
-                    SaveChanges();
+                    Context.SaveChanges();
                     response.Add("failed", statusResponse);
                     return response;
                 }

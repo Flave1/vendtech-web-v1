@@ -1311,7 +1311,7 @@ namespace VendTech.BLL.Managers
                         if (error_response.SystemError.ToLower() == "The specified TransactionID already exists for this terminal.".ToLower())
                         {
                             Utilities.LogExceptionToDatabase(new Exception($"The specified TransactionID already exists for this terminal. {DateTime.UtcNow} for traxId {model.TransactionId}"), $"Exception: {strings_result}");
-                            model.TransactionId = model.TransactionId + 1;
+                            model.TransactionId = Convert.ToInt64(Utilities.NewTransactionId());
                             return await MakeRechargeRequest(model, transactionDetail);
                         }
                         response.Status = error_response?.Status;

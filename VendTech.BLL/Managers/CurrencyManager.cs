@@ -120,9 +120,9 @@ namespace VendTech.BLL.Managers
                 dbCurrency.CountryId = Context.Countries.Max(d => d.CountryId) + 1;
                 Context.Countries.Add(dbCurrency);
             }
-               
-            SaveChanges();
-          
+
+            Context.SaveChanges();
+
             return ReturnSuccess("Country saved successfully.");
         }
 

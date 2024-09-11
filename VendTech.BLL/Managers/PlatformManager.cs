@@ -117,7 +117,7 @@ namespace VendTech.BLL.Managers
                 dbPlatform.IsDeleted = false;
                 Context.Platforms.Add(dbPlatform);
             }
-            SaveChanges();
+            Context.SaveChanges();
             return ReturnSuccess("Platform detail saved successfully.");
 
         }
@@ -144,7 +144,7 @@ namespace VendTech.BLL.Managers
                 //dbPlatform.IsDeleted = false;
                 //Context.Platforms.Add(dbPlatform);
             }
-            SaveChanges();
+            Context.SaveChanges();
             return ReturnSuccess("Platform detail saved successfully.");
 
         }

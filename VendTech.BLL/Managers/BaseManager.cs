@@ -18,34 +18,34 @@ namespace VendTech.BLL.Managers
         /// <summary>
         /// protected, it only visible for inherited class
         /// </summary>
-        protected void SaveChanges()
-        {
-            try
-            {
-                Context.SaveChanges();
-            }
+        //protected void SaveChanges()
+        //{
+        //    try
+        //    {
+        //        Context.SaveChanges();
+        //    }
             
-            catch (DbEntityValidationException dbEx)
-            {
-                Exception raise = dbEx;
-                foreach (var validationErrors in dbEx.EntityValidationErrors)
-                {
-                    foreach (var validationError in validationErrors.ValidationErrors)
-                    {
-                        string message = string.Format("{0}:{1}",
-                            validationErrors.Entry.Entity.ToString(),
-                            validationError.ErrorMessage);
-                        // raise a new exception nesting
-                        // the current instance as InnerException
-                        raise = new InvalidOperationException(message, raise);
-                    }
-                }
-                throw raise;
-            }catch(Exception ec)
-            {
+        //    catch (DbEntityValidationException dbEx)
+        //    {
+        //        Exception raise = dbEx;
+        //        foreach (var validationErrors in dbEx.EntityValidationErrors)
+        //        {
+        //            foreach (var validationError in validationErrors.ValidationErrors)
+        //            {
+        //                string message = string.Format("{0}:{1}",
+        //                    validationErrors.Entry.Entity.ToString(),
+        //                    validationError.ErrorMessage);
+        //                // raise a new exception nesting
+        //                // the current instance as InnerException
+        //                raise = new InvalidOperationException(message, raise);
+        //            }
+        //        }
+        //        throw raise;
+        //    }catch(Exception ec)
+        //    {
 
-            }
-        }
+        //    }
+        //}
 
         protected async Task SaveChangesAsync()
         {

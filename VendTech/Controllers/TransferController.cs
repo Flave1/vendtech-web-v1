@@ -118,7 +118,7 @@ namespace VendTech.Controllers
                         ValueDate = DateTime.UtcNow.ToString(),
                         ValueDateStamp = DateTime.UtcNow
                     };
-                    var result2 = await _depositManager.CreateDepositCreditTransfer(depositCr, LOGGEDIN_USER.UserID, frompos, request.otp);
+                    var result2 = await _depositManager.CreateDepositCreditTransfer(depositCr, LOGGEDIN_USER.UserID, frompos);
 
                     if (result2.Status == ActionStatus.Successfull)
                     {

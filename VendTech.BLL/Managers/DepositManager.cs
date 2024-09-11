@@ -2425,7 +2425,7 @@ namespace VendTech.BLL.Managers
                         //recordWithSimilarRef.BalanceBefore = dbDeposit.BalanceBefore == null ? 0 : dbDeposit.BalanceBefore;
                     }
                 }
-                SaveChanges();
+                _context.SaveChanges();
             }
             
             depositAuditModel.DateTime = dbDeposit.CreatedAt.ToString("dd/MM/yyyy hh:mm");
@@ -2714,7 +2714,7 @@ namespace VendTech.BLL.Managers
             }
         }
 
-        async Task<ActionOutput> IDepositManager.CreateDepositCreditTransfer(Deposit dbDeposit, long currentUserId, POS fromPos, string otp)
+        async Task<ActionOutput> IDepositManager.CreateDepositCreditTransfer(Deposit dbDeposit, long currentUserId, POS fromPos)
         {
             try
             { 
