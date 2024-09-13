@@ -1059,62 +1059,76 @@ namespace VendTech.BLL.Managers
 
         private async Task<TransactionDetail> UpdateTransactionOnStatusSuccessIMPROVED(IcekloudQueryResponse response_data, TransactionDetail trans, bool billVendor = true)
         {
-            trans.Status = response_data.Content.Finalised ? (int)RechargeMeterStatusEnum.Success : 0;
-            trans.AccountNumber = response_data.Content?.CustomerAccNo ?? string.Empty;
-            trans.Customer = response_data.Content?.Customer ?? string.Empty;
-            trans.ReceiptNumber = response_data.Content?.VoucherSerialNumber ?? string.Empty;
-            trans.RTSUniqueID = response_data.Content?.RTSUniqueID ?? string.Empty;
-            trans.MeterToken1 = response_data.Content?.VoucherPin ?? string.Empty;
-            trans.MeterToken2 = response_data.Content?.VoucherPin2 ?? string.Empty;
-            trans.MeterToken3 = response_data.Content?.VoucherPin3 ?? string.Empty;
-            trans.SerialNumber = response_data?.Content?.SerialNumber ?? string.Empty;
-            trans.ServiceCharge = response_data?.Content?.ServiceCharge;
-            trans.Tariff = response_data.Content?.Tariff;
-            trans.TaxCharge = response_data?.Content?.TaxCharge;
-            trans.Units = response_data?.Content?.Units;
-            trans.VProvider = response_data?.Content?.Provider ?? string.Empty;
-            trans.Finalised = response_data?.Content?.Finalised;
-            trans.Sold = response_data?.Content?.Sold;
-            trans.DateAndTimeSold = response_data.Content?.DateAndTimeSold;
-            trans.DateAndTimeFinalised = response_data?.Content?.DateAndTimeFinalised;
-            trans.DateAndTimeLinked = response_data?.Content?.DateAndTimeLinked;
-            trans.VoucherSerialNumber = response_data?.Content?.VoucherSerialNumber;
-            trans.VendStatus = response_data.Content?.Status;
-            trans.VendStatusDescription = response_data?.Content?.StatusDescription;
-            trans.StatusResponse = response_data.Content?.StatusDescription;
-            trans.DebitRecovery = "0";
-            //BALANCE DEDUCTION
-            await Deductbalace(trans, trans.User.POS.FirstOrDefault(s => s.POSId == trans.POSId), billVendor);
+            try
+            {
+                trans.Status = response_data.Content.Finalised ? (int)RechargeMeterStatusEnum.Success : 0;
+                trans.AccountNumber = response_data.Content?.CustomerAccNo ?? string.Empty;
+                trans.Customer = response_data.Content?.Customer ?? string.Empty;
+                trans.ReceiptNumber = response_data.Content?.VoucherSerialNumber ?? string.Empty;
+                trans.RTSUniqueID = response_data.Content?.RTSUniqueID ?? string.Empty;
+                trans.MeterToken1 = response_data.Content?.VoucherPin ?? string.Empty;
+                trans.MeterToken2 = response_data.Content?.VoucherPin2 ?? string.Empty;
+                trans.MeterToken3 = response_data.Content?.VoucherPin3 ?? string.Empty;
+                trans.SerialNumber = response_data?.Content?.SerialNumber ?? string.Empty;
+                trans.ServiceCharge = response_data?.Content?.ServiceCharge;
+                trans.Tariff = response_data.Content?.Tariff;
+                trans.TaxCharge = response_data?.Content?.TaxCharge;
+                trans.Units = response_data?.Content?.Units;
+                trans.VProvider = response_data?.Content?.Provider ?? string.Empty;
+                trans.Finalised = response_data?.Content?.Finalised;
+                trans.Sold = response_data?.Content?.Sold;
+                trans.DateAndTimeSold = response_data.Content?.DateAndTimeSold;
+                trans.DateAndTimeFinalised = response_data?.Content?.DateAndTimeFinalised;
+                trans.DateAndTimeLinked = response_data?.Content?.DateAndTimeLinked;
+                trans.VoucherSerialNumber = response_data?.Content?.VoucherSerialNumber;
+                trans.VendStatus = response_data.Content?.Status;
+                trans.VendStatusDescription = response_data?.Content?.StatusDescription;
+                trans.StatusResponse = response_data.Content?.StatusDescription;
+                trans.DebitRecovery = "0";
+                //BALANCE DEDUCTION
+                await Deductbalace(trans, trans.User.POS.FirstOrDefault(s => s.POSId == trans.POSId), billVendor);
+            }
+            catch (Exception ex)
+            {
+                Utilities.LogExceptionToDatabase(new Exception($"UpdateTransactionOnStatusSuccessIMPROVED at {DateTime.UtcNow} for traxId {trans.TransactionId} user: {trans.UserId}"), $"Exception: {JsonConvert.SerializeObject(ex)}");
+            }
             return trans;
 
         }
         private async Task<TransactionDetail> UpdateTransaction(Datum response_data, TransactionDetail trans, POS pos)
         {
-            trans.CurrentDealerBalance = response_data.DealerBalance;
-            trans.CostOfUnits = response_data.PowerHubVoucher.CostOfUnits;
-            trans.MeterToken1 = response_data?.PowerHubVoucher.Pin1?.ToString() ?? string.Empty;
-            trans.MeterToken2 = response_data?.PowerHubVoucher?.Pin2?.ToString() ?? string.Empty;
-            trans.MeterToken3 = response_data?.PowerHubVoucher?.Pin3?.ToString() ?? string.Empty;
-            trans.Status = (int)RechargeMeterStatusEnum.Success;
-            trans.AccountNumber = response_data.PowerHubVoucher?.AccountNumber ?? string.Empty;
-            trans.Customer = response_data.PowerHubVoucher?.Customer ?? string.Empty;
-            trans.ReceiptNumber = response_data?.PowerHubVoucher.ReceiptNumber ?? string.Empty;
-            trans.SerialNumber = response_data?.SerialNumber ?? string.Empty;
-            trans.RTSUniqueID = response_data.PowerHubVoucher.RtsUniqueId;
-            trans.ServiceCharge = response_data?.PowerHubVoucher?.ServiceCharge;
-            trans.Tariff = response_data.PowerHubVoucher?.Tariff;
-            trans.TaxCharge = response_data?.PowerHubVoucher?.TaxCharge;
-            trans.Units = response_data?.PowerHubVoucher?.Units;
-            trans.VProvider = "";
-            trans.CustomerAddress = response_data?.PowerHubVoucher?.CustAddress;
-            trans.Finalised = true;
-            trans.VProvider = response_data.Provider;
-            trans.StatusRequestCount = 0;
-            trans.Sold = true;
-            trans.VoucherSerialNumber = response_data?.SerialNumber;
-            trans.VendStatus = "";
-            //BALANCE DEDUCTION
-            await Deductbalace(trans, pos);
+            try
+            {
+                trans.CurrentDealerBalance = response_data.DealerBalance;
+                trans.CostOfUnits = response_data.PowerHubVoucher.CostOfUnits;
+                trans.MeterToken1 = response_data?.PowerHubVoucher.Pin1?.ToString() ?? string.Empty;
+                trans.MeterToken2 = response_data?.PowerHubVoucher?.Pin2?.ToString() ?? string.Empty;
+                trans.MeterToken3 = response_data?.PowerHubVoucher?.Pin3?.ToString() ?? string.Empty;
+                trans.Status = (int)RechargeMeterStatusEnum.Success;
+                trans.AccountNumber = response_data.PowerHubVoucher?.AccountNumber ?? string.Empty;
+                trans.Customer = response_data.PowerHubVoucher?.Customer ?? string.Empty;
+                trans.ReceiptNumber = response_data?.PowerHubVoucher.ReceiptNumber ?? string.Empty;
+                trans.SerialNumber = response_data?.SerialNumber ?? string.Empty;
+                trans.RTSUniqueID = response_data.PowerHubVoucher.RtsUniqueId;
+                trans.ServiceCharge = response_data?.PowerHubVoucher?.ServiceCharge;
+                trans.Tariff = response_data.PowerHubVoucher?.Tariff;
+                trans.TaxCharge = response_data?.PowerHubVoucher?.TaxCharge;
+                trans.Units = response_data?.PowerHubVoucher?.Units;
+                trans.VProvider = "";
+                trans.CustomerAddress = response_data?.PowerHubVoucher?.CustAddress;
+                trans.Finalised = true;
+                trans.VProvider = response_data.Provider;
+                trans.StatusRequestCount = 0;
+                trans.Sold = true;
+                trans.VoucherSerialNumber = response_data?.SerialNumber;
+                trans.VendStatus = "";
+                //BALANCE DEDUCTION
+                await Deductbalace(trans, pos);
+            }
+            catch (Exception ex)
+            {
+                Utilities.LogExceptionToDatabase(new Exception($"UpdateTransact at {DateTime.UtcNow} for traxId {trans.TransactionId} user: {trans.UserId}"), $"Exception: {JsonConvert.SerializeObject(ex)}");
+            }
 
             return trans;
         }
@@ -1311,7 +1325,9 @@ namespace VendTech.BLL.Managers
                         if (error_response.SystemError.ToLower() == "The specified TransactionID already exists for this terminal.".ToLower())
                         {
                             Utilities.LogExceptionToDatabase(new Exception($"The specified TransactionID already exists for this terminal. {DateTime.UtcNow} for traxId {model.TransactionId}"), $"Exception: {strings_result}");
-                            model.TransactionId = Convert.ToInt64(Utilities.NewTransactionId());
+                            string traxId = Utilities.NewTransactionId();
+                            model.TransactionId = Convert.ToInt64(traxId);
+                            transactionDetail.TransactionId = traxId;
                             return await MakeRechargeRequest(model, transactionDetail);
                         }
                         response.Status = error_response?.Status;

@@ -184,6 +184,7 @@
     <Compile Include="Jobs\BalanceLowSheduleJob.cs" />
     <Compile Include="Jobs\PendingTransactionCheckJob.cs" />
     <Compile Include="Managers\CurrencyManager.cs" />
+    <Compile Include="Managers\DepositOperationsManager.cs" />
     <Compile Include="Managers\PlatformApiManager.cs" />
     <Compile Include="Managers\PlatformTransactionManager.cs" />
     <Compile Include="Managers\RTSEDSAManager.cs" />
