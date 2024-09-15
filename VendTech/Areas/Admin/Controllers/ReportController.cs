@@ -403,6 +403,7 @@ namespace VendTech.Areas.Admin.Controllers
             return JsonResult(resultString);
         }
 
+        [Obsolete]
         public void ExportSalesReportTo(ReportSearchModel model, string ExportType, string FromDate, string ToDate, string PrintedDateServer)
         {
             PrintedDateServer = PrintedDateServer.TrimEnd(' ');
@@ -608,6 +609,8 @@ namespace VendTech.Areas.Admin.Controllers
             }
 
         }
+
+        [Obsolete]
         public void ExportDepositReportTo(ReportSearchModel model, string ExportType, string FromDate, string ToDate, string PrintedDateServer)
         {
             string fromdate = "";

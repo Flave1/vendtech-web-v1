@@ -61,7 +61,7 @@ namespace VendTech.BLL.Managers
                     return res;
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                return new List<PlatformModel>();
             } 

@@ -17,7 +17,6 @@ namespace VendTech.Areas.Admin.Controllers
         public void WriteDataToExcel()
         {
             DataTable dt = getData();
-            string fileName = "Sample.xlsx";
             using (XLWorkbook wb = new XLWorkbook(Server.MapPath(@"~/Content/StaticFileFormat/TempSalesReport.xlsx")))
             {
                 wb.Worksheets.Add(dt);

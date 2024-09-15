@@ -71,7 +71,7 @@ namespace VendTech.BLL.Managers
                 }
                 throw raise;
             }
-            catch (Exception ec)
+            catch (Exception)
             {
 
             }

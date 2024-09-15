@@ -9,11 +9,17 @@ namespace VendTech.BLL.Managers
 {
     public class EmailTemplateManager : BaseManager, IEmailTemplateManager
     {
+        private readonly VendtechEntities _context;
+
+        public EmailTemplateManager(VendtechEntities context)
+        {
+            _context = context;
+        }
 
         PagingResult<TemplateViewModel> IEmailTemplateManager.GetEmailTemplateList(PagingModel model)
         {
             var result = new PagingResult<TemplateViewModel>();
-            var query = Context.EmailTemplates.Where(s => s.IsActive == true).OrderBy(model.SortBy + " " + model.SortOrder);
+            var query = _context.EmailTemplates.Where(s => s.IsActive == true).OrderBy(model.SortBy + " " + model.SortOrder);
             if (!string.IsNullOrEmpty(model.Search))
             {
                 query = query.Where(z => z.TemplateName.Contains(model.Search));
@@ -31,10 +37,10 @@ namespace VendTech.BLL.Managers
 
         ActionOutput IEmailTemplateManager.AddUpdateEmailTemplate(AddEditEmailTemplateModel templateModel)
         {
-            var existingTemplate = Context.EmailTemplates.FirstOrDefault(z => z.TemplateId == templateModel.TemplateId);
+            var existingTemplate = _context.EmailTemplates.FirstOrDefault(z => z.TemplateId == templateModel.TemplateId);
             if (existingTemplate == null)
             {
-                Context.EmailTemplates.Add(new EmailTemplate
+                _context.EmailTemplates.Add(new EmailTemplate
                 {
                     TemplateName = templateModel.TemplateName,
                     EmailSubject = templateModel.EmailSubject,
@@ -43,7 +49,7 @@ namespace VendTech.BLL.Managers
                     CreatedOn = DateTime.UtcNow,
                     TemplateType = templateModel.TemplateType
                 });
-                Context.SaveChanges();
+                _context.SaveChanges();
                 return new ActionOutput
                 {
                     Status = ActionStatus.Successfull,
@@ -57,7 +63,7 @@ namespace VendTech.BLL.Managers
                 existingTemplate.TemplateStatus = templateModel.TemplateStatus;
                 existingTemplate.UpdatedOn = DateTime.UtcNow;
                 existingTemplate.TemplateType = templateModel.TemplateType;
-                Context.SaveChanges();
+                _context.SaveChanges();
                 return new ActionOutput
                 {
                     Status = ActionStatus.Successfull,
@@ -69,7 +75,7 @@ namespace VendTech.BLL.Managers
 
         TemplateViewModel IEmailTemplateManager.GetEmailTemplateByTemplateType(TemplateTypes type)
         {
-            var template = Context.EmailTemplates.Where(z => z.TemplateType == (int)type).FirstOrDefault();
+            var template = _context.EmailTemplates.Where(z => z.TemplateType == (int)type).FirstOrDefault();
             if (template == null)
                 return null;
             else
@@ -78,7 +84,7 @@ namespace VendTech.BLL.Managers
 
         AddEditEmailTemplateModel IEmailTemplateManager.GetEmailTemplateByTemplateId(int templateId)
         {
-            var existingTemplate = Context.EmailTemplates.FirstOrDefault(z => z.TemplateId == templateId);
+            var existingTemplate = _context.EmailTemplates.FirstOrDefault(z => z.TemplateId == templateId);
             if (existingTemplate != null)
                 return new AddEditEmailTemplateModel(existingTemplate);
             else

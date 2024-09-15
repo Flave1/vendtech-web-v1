@@ -35,7 +35,7 @@ namespace VendTech.Areas.Admin.Controllers
 
         }
         [Inject]
-        public IUserManager _userManager { get; set; }
+        public new IUserManager _userManager { get; set; }
         /// <summary>
         /// This will be used to chek admin user authorization
         /// </summary>
@@ -70,7 +70,7 @@ namespace VendTech.Areas.Admin.Controllers
                             //SignOut();
                         }
                     }
-                    catch (CryptographicException ex)
+                    catch (CryptographicException)
                     {
                         SignOut();
                     }

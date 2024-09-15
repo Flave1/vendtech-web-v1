@@ -6,6 +6,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Threading.Tasks;
 using System.Web.Http.Results;
 using System.Web.Mvc;
 using System.Web.Script.Serialization;
@@ -21,7 +22,7 @@ namespace VendTech.Areas.Admin.Controllers
     public class ReleaseDepositController : AdminBaseV2Controller
     {
         #region Variable Declaration
-        private readonly IUserManager _userManager;
+        private new readonly IUserManager _userManager;
         private readonly IEmailTemplateManager _templateManager;
         private readonly IDepositManager _depositManager;
         #endregion
@@ -73,7 +74,7 @@ namespace VendTech.Areas.Admin.Controllers
         }
 
         [HttpGet, Public]
-        public ActionResult Autoreleased(string status = "", string depositids = "", string otp = "", string taskId = "")
+        public async Task<ActionResult> Autoreleased(string status = "", string depositids = "", string otp = "", string taskId = "")
         {
             try
             {
@@ -86,12 +87,12 @@ namespace VendTech.Areas.Admin.Controllers
                 {
                     return View(new AutoRelease { Success = false, Message = $"Deposit was not approved \n Invalid admin account" });
                 }
-                var result  = _depositManager.ChangeDepositStatus(Convert.ToInt64(depositids.Split(',')[0]), DepositPaymentStatusEnum.Released, false);
+                var result  = await _depositManager.ChangeDepositStatus(Convert.ToInt64(depositids.Split(',')[0]), DepositPaymentStatusEnum.Released, false);
                 if (result.Status == ActionStatus.Successfull)
                 {
                     var depIds = depositids.Split(',').Select(long.Parse).ToList();
-                    SendEmailOnDeposit(depIds);
-                    SendSmsOnDeposit(depIds);
+                    await SendEmailOnDeposit(depIds);
+                    await SendSmsOnDeposit(depIds);
 
                     return View(new AutoRelease { Success = true, Message = $"{result.Message}" });
                 }
@@ -116,17 +117,17 @@ namespace VendTech.Areas.Admin.Controllers
             return JsonResult(resultString);
         }
         [AjaxOnly, HttpPost]
-        public JsonResult ApproveReleaseDeposit(long depositId)
+        public async Task<JsonResult> ApproveReleaseDeposit(long depositId)
         {
             ViewBag.SelectedTab = SelectedAdminTab.Deposits;
-            var result = _depositManager.ChangeDepositStatus(depositId, DepositPaymentStatusEnum.Released, false);
+            var result = await _depositManager.ChangeDepositStatus(depositId, DepositPaymentStatusEnum.Released, false);
             return JsonResult(result);
         }
         [AjaxOnly, HttpPost]
-        public JsonResult RejectReleaseDeposit(long depositId)
+        public async Task<JsonResult> RejectReleaseDeposit(long depositId)
         {
             ViewBag.SelectedTab = SelectedAdminTab.Deposits;
-            return JsonResult(_depositManager.ChangeDepositStatus(depositId, DepositPaymentStatusEnum.Rejected, false));
+            return JsonResult(await _depositManager.ChangeDepositStatus(depositId, DepositPaymentStatusEnum.Rejected, false));
         }
         [AjaxOnly, HttpPost]
         public JsonResult SendOTP()
@@ -174,10 +175,10 @@ namespace VendTech.Areas.Admin.Controllers
             return JsonResult(new ActionOutput { Message = result.Message, Status = result.Status });
         }
         [AjaxOnly, HttpPost]
-        public JsonResult ChangeDepositStatus(ReleaseDepositModel model)
+        public async Task<JsonResult> ChangeDepositStatus(ReleaseDepositModel model)
         {
             ViewBag.SelectedTab = SelectedAdminTab.Deposits;
-            var result = _depositManager.ChangeMultipleDepositStatus(model, LOGGEDIN_USER.UserID);
+            var result = await _depositManager.ChangeMultipleDepositStatus(model, LOGGEDIN_USER.UserID);
 
             if (result.Status == ActionStatus.Error)
             {
@@ -186,8 +187,8 @@ namespace VendTech.Areas.Admin.Controllers
 
             if (model.ReleaseDepositIds != null && model.ReleaseDepositIds.Any())
             {
-                SendEmailOnDeposit(model.ReleaseDepositIds);
-                SendSmsOnDeposit(model.ReleaseDepositIds);
+                await SendEmailOnDeposit(model.ReleaseDepositIds);
+                await SendSmsOnDeposit(model.ReleaseDepositIds);
             }
             return JsonResult(new ActionOutput { Message = result.Message, Status = result.Status });
         }
@@ -209,14 +210,14 @@ namespace VendTech.Areas.Admin.Controllers
 
 
         [AjaxOnly, HttpPost]
-        public JsonResult AutoRelease(ReleaseDepositModel2 model)
+        public async Task<JsonResult> AutoRelease(ReleaseDepositModel2 model)
         {
             try
             {
                 var pds = _depositManager.GetPendingDeposits(model.ReleaseDepositIds);
                 for (int i = 0; i < pds.Count; i++)
                 {
-                    ActionOutput result = _depositManager.ChangeDepositStatus(pds[i].PendingDepositId, DepositPaymentStatusEnum.Released, true);
+                    ActionOutput result = await _depositManager.ChangeDepositStatus(pds[i].PendingDepositId, DepositPaymentStatusEnum.Released, true);
                     var deposit = _depositManager.GetDeposit(pds[i].PendingDepositId);
                     SendEmailOTPToAdmin(pds[i].PendingDepositId);
                     SendEmailOnDepositApproval(deposit);
@@ -239,9 +240,9 @@ namespace VendTech.Areas.Admin.Controllers
             }
         }
 
-        private void  SendEmailOnDeposit(List<long> depositIds)
+        private async Task  SendEmailOnDeposit(List<long> depositIds)
         {
-            var deposits = _depositManager.GetListOfDeposits(depositIds);
+            var deposits = await _depositManager.GetListOfDeposits(depositIds);
             if (deposits.Any())
             {
                 foreach (var deposit in deposits)
@@ -263,11 +264,11 @@ namespace VendTech.Areas.Admin.Controllers
                 }
             }
         }
-        private void SendSmsOnDeposit(List<long> depositIds)
+        private async Task SendSmsOnDeposit(List<long> depositIds)
         {
             if (depositIds.Any())
             {
-                var deposits = _depositManager.GetListOfDeposits(depositIds);
+                var deposits = await _depositManager.GetListOfDeposits(depositIds);
                 if (deposits.Any())
                 {
                     foreach(var deposit in deposits)
@@ -284,18 +285,7 @@ namespace VendTech.Areas.Admin.Controllers
                                "VENDTECH"
                                 };
 
-                            var json = JsonConvert.SerializeObject(requestmsg);
-
-                            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
-                            HttpClient client = new HttpClient();
-                            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
-                            client.BaseAddress = new Uri("https://kwiktalk.io");
-                            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                            HttpRequestMessage httpRequest = new HttpRequestMessage(HttpMethod.Post, "/api/v2/submit");
-                            httpRequest.Content = new StringContent(json, Encoding.UTF8, "application/json");
-
-                            var res =  client.SendAsync(httpRequest).Result;
-                            var stringResult = res.Content.ReadAsStringAsync().Result;
+                           Utilities.SendSms(requestmsg);
                         }
                     }
                     _depositManager.DeletePendingDeposits(deposits);

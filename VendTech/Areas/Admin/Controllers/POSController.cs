@@ -23,7 +23,7 @@ namespace VendTech.Areas.Admin.Controllers
         private readonly IPOSManager _posManager;
         private readonly IVendorManager _vendorManager;
         private readonly IEmailTemplateManager _templateManager;
-        private readonly IUserManager _userManager;
+        private new readonly IUserManager _userManager;
         private readonly ICommissionManager _commissionManager;
         private readonly IMeterManager _meterManager;
         #endregion

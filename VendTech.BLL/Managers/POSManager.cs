@@ -166,7 +166,7 @@ namespace VendTech.BLL.Managers
             result.TotalCount = Convert.ToInt32(list.Sum(x => x.Balance));
             return result;
         }
-        List<PosAPiListingModel> IPOSManager.GetPOSSelectListForApi(long userId = 0)
+        List<PosAPiListingModel> IPOSManager.GetPOSSelectListForApi(long userId)
         {
             var query = _context.POS.Where(p => !p.IsDeleted && p.Enabled != false);
             // enable check has been removed

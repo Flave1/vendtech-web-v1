@@ -57,7 +57,7 @@ namespace VendTech.BLL.Models
                 PlatformTypeEnum pe = (PlatformTypeEnum)PlatformType;
                 return pe.ToString();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return "Invalid Platform Type";
             }

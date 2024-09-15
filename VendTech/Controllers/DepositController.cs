@@ -29,7 +29,7 @@ namespace VendTech.Controllers
     public class DepositController : AppUserBaseController
     {
         #region Variable Declaration
-        private readonly IUserManager _userManager;
+        private new readonly IUserManager _userManager;
         private readonly IAuthenticateManager _authenticateManager;
         private readonly IVendorManager _vendorManager;
         private readonly ICMSManager _cmsManager;
@@ -124,7 +124,7 @@ namespace VendTech.Controllers
         }
     
         [AjaxOnly, HttpPost]
-        public JsonResult AddDeposit(DepositModel model)
+        public async Task<JsonResult> AddDeposit(DepositModel model)
         {
             ActionOutput<PendingDeposit> pd = null;
             if (model.PosId == 0)
@@ -146,7 +146,7 @@ namespace VendTech.Controllers
             string mesg = pd.Message;
             if (pd.Object.User.AutoApprove.Value)
             {
-                ActionOutput result = _depositManager.ChangeDepositStatus(pd.Object.PendingDepositId, DepositPaymentStatusEnum.Released, true);
+                ActionOutput result = await _depositManager.ChangeDepositStatus(pd.Object.PendingDepositId, DepositPaymentStatusEnum.Released, true);
 
                 var deposit = _depositManager.GetDeposit(pd.Object.PendingDepositId);
                 SendEmailOnDepositApproval(deposit);

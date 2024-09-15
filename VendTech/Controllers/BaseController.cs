@@ -363,7 +363,7 @@ namespace VendTech.Controllers
                     viewResult.View.Render(viewContext, sw);
                     viewResult.ViewEngine.ReleaseView(ControllerContext, viewResult.View);
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
 
                     throw;

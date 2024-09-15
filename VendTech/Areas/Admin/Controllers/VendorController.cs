@@ -12,7 +12,7 @@ namespace VendTech.Areas.Admin.Controllers
     public class VendorController : AdminBaseV2Controller
     {
         #region Variable Declaration
-        private readonly IUserManager _userManager;
+        private new readonly IUserManager _userManager;
         private readonly IVendorManager _vendorManager;
         private readonly IAgencyManager _agentManager;
         private readonly ICommissionManager _commissionManager;

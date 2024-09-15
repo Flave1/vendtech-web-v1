@@ -156,7 +156,7 @@ namespace VendTech.Areas.Admin.Controllers
                               $"To Approve deposits, please use the following OTP (One Time Passcode). {result.Object}\n" +
                               "VENDTECH"
                         };
-                        await _smsManager.SendSmsAsync(msg);
+                        Utilities.SendSms(msg);
                     }
                 }
                 catch (ArgumentException ex)
@@ -169,7 +169,7 @@ namespace VendTech.Areas.Admin.Controllers
         }
 
         [AjaxOnly, HttpPost]
-        public JsonResult AddDeposit(DepositToAdmin request)
+        public async Task<JsonResult> AddDeposit(DepositToAdmin request)
         {
             if (request.PosId == 0)
             {
@@ -183,22 +183,19 @@ namespace VendTech.Areas.Admin.Controllers
                 else
                     request.ValueDate = request.ValueDate;
 
-                var depositCr = new Deposit
+                var depositCr = new DepositDTOV2
                 {
                     Amount = request.Amount,
                     POSId = request.PosId,
                     BankAccountId = request.BankAccountId,
-                    CreatedAt = DateTime.UtcNow,
-                    PercentageAmount = request.Amount,
                     CheckNumberOrSlipId = Utilities.TrimLeadingZeros(request.ChkOrSlipNo),
                     ChequeBankName = request.Bank,
                     ValueDate = request.ValueDate,
                     NameOnCheque = request.NameOnCheque,
                     PaymentType = request.PaymentType,
-                    ValueDateStamp = request.ValueDate == null ? DateTime.UtcNow : Convert.ToDateTime(request.ValueDate),
                 };
 
-               var result =  _depositManager.DepositToAgencyAdminAccount(depositCr, LOGGEDIN_USER.UserID, request.OTP);
+               var result =  await _depositManager.DepositToAgencyAdminAccount(depositCr, LOGGEDIN_USER.UserID, request.OTP);
 
                if(result.Status == ActionStatus.Successfull)
                 {
@@ -209,8 +206,6 @@ namespace VendTech.Areas.Admin.Controllers
                     {
                         _depositManager.DeletePendingDeposits(pdIndDeposit);
                     }
-
-
                     var pos = _posManager.GetSinglePos(request.PosId);
                     if (pos != null && pos.EmailNotificationDeposit == true)
                     {

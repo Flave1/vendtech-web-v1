@@ -154,7 +154,7 @@ namespace VendTech.BLL.Managers
                 //Last pending check done 1 min ago. This is to avoid checking the status within too short intervals
                 long lastPendingCheck = Utilities.ToUnixTimestamp(DateTime.UtcNow) - 60;
                 PlatformTransaction pendingTranx = null;
-                if (lastPendingCheck != null)
+                if (lastPendingCheck > 0)
                 {
                     try
                     {
@@ -276,7 +276,7 @@ namespace VendTech.BLL.Managers
                             }
                         }
                     }
-                    catch (Exception ex)
+                    catch (Exception)
                     {
 
                     }

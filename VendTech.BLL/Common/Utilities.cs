@@ -356,6 +356,7 @@ namespace VendTech.BLL.Common
 
         public static void SendEmail(string to, string sub, string body)
         {
+            return;
             string from = WebConfigurationManager.AppSettings["SMTPFromtest"].ToString();
             string password = "Supt*VT&ch"; //WebConfigurationManager.AppSettings["SMTPPassword"].ToString();
             string displayName = WebConfigurationManager.AppSettings["SMTPDisplayName"].ToString();
@@ -411,6 +412,7 @@ namespace VendTech.BLL.Common
 
         public static bool SendSms(SendSMSRequest request)
         {
+            return true;
             //request.Recipient = null;
             var json = JsonConvert.SerializeObject(request);
             string baseUrl = WebConfigurationManager.AppSettings["SMSAPI"].ToString();
@@ -428,6 +430,7 @@ namespace VendTech.BLL.Common
         }
         public static void SendPDFEmail(string to, string sub, string body, string file = "", string name = "")
         {
+            return;
             string from = WebConfigurationManager.AppSettings["SMTPFromtest"].ToString();
             string password = "Supt*VT&ch"; //WebConfigurationManager.AppSettings["SMTPPassword"].ToString();
             string displayName = WebConfigurationManager.AppSettings["SMTPDisplayName"].ToString();
@@ -486,7 +489,7 @@ namespace VendTech.BLL.Common
                     client.Disconnect(true);
                 }
             }
-            catch (Exception x)
+            catch (Exception)
             {
                 //LogExceptionToDatabase(x);
                 //return true;
@@ -736,7 +739,7 @@ namespace VendTech.BLL.Common
                     File.Delete(path);
                 }
             }
-            catch (IOException ex)
+            catch (IOException)
             {
                 throw;
             }
@@ -793,7 +796,7 @@ namespace VendTech.BLL.Common
                 string content = File.ReadAllText(filePath);
                 return content;
             }
-            catch (FileNotFoundException ex)
+            catch (FileNotFoundException)
             {
                 Console.WriteLine($"The file '{fileName}' was not found in the current applicatio   n directory.");
             }

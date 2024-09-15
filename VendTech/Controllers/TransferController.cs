@@ -3,6 +3,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Web.Mvc;
+using System.Windows.Interop;
 using VendTech.Attributes;
 using VendTech.BLL.Common;
 using VendTech.BLL.Interfaces;
@@ -89,41 +90,36 @@ namespace VendTech.Controllers
                 }
                 var reference = Utilities.GenerateByAnyLength(6).ToUpper();
                 var frompos = _posManager.ReturnAgencyAdminPOS(LOGGEDIN_USER.UserID);
-                var depositDr = new Deposit
+                var depositDr = new DepositDTOV2
                 {
                     Amount = Decimal.Negate(request.Amount),
                     POSId = frompos.POSId,
-                    BankAccountId = 0,
-                    CreatedAt = DateTime.UtcNow,
-                    PercentageAmount = Decimal.Negate(request.Amount),
+                    BankAccountId = 1,
                     CheckNumberOrSlipId = reference,
-                    ValueDate = DateTime.UtcNow.ToString(),
-                    ValueDateStamp = DateTime.UtcNow,
-                    PaymentType = (int)DepositPaymentTypeEnum.AdminTransferOut
-            };
+                    PaymentType = (int)DepositPaymentTypeEnum.AdminTransferOut,
+                    ChequeBankName = "OWN ACC TRANSFER - (AGENCY TRANSFER)"
+                };
 
                 var result1 = await _depositManager.CreateDepositDebitTransfer(depositDr, LOGGEDIN_USER.UserID, request.otp, request.ToPosId, frompos.POSId);
 
                 
                 if(result1.Status == ActionStatus.Successfull)
                 {
-                    var depositCr = new Deposit
+                    var depositCr = new DepositDTOV2
                     {
                         Amount = request.Amount,
                         POSId = request.ToPosId,
-                        BankAccountId = 0,
-                        CreatedAt = DateTime.UtcNow.AddSeconds(1),
-                        PercentageAmount = request.Amount,
+                        BankAccountId = 1,
                         CheckNumberOrSlipId = reference,
-                        ValueDate = DateTime.UtcNow.ToString(),
-                        ValueDateStamp = DateTime.UtcNow
+                        ChequeBankName = "OWN ACC TRANSFER - (AGENCY TRANSFER)",
+                        PaymentType = (int)DepositPaymentTypeEnum.VendorFloatIn
                     };
                     var result2 = await _depositManager.CreateDepositCreditTransfer(depositCr, LOGGEDIN_USER.UserID, frompos);
 
                     if (result2.Status == ActionStatus.Successfull)
                     {
-                        SendEmailOnDeposit(request.FromPosId, request.ToPosId);
-                        SendSmsOnDeposit(request.FromPosId, request.ToPosId, request.Amount);
+                        SendEmailOnDeposit(frompos.POSId, request.ToPosId);
+                        await SendSmsOnDeposit(frompos.POSId, request.ToPosId, request.Amount);
                     }
                     return JsonResult(new ActionOutput { Message = result2.Message, Status = result2.Status });
                 }
@@ -191,7 +187,7 @@ namespace VendTech.Controllers
                    "VENDTECH"
                 };
 
-                await _smsManager.SendSmsAsync(requestmsg);
+                Utilities.SendSms(requestmsg);
             }
 
             if (toPos != null & toPos.SMSNotificationDeposit ?? true)
@@ -204,7 +200,7 @@ namespace VendTech.Controllers
                    "VENDTECH"
                 };
 
-                await _smsManager.SendSmsAsync(requestmsg);
+                Utilities.SendSms(requestmsg);
             }
         }
 
@@ -239,10 +235,10 @@ namespace VendTech.Controllers
                     {
                         Recipient = "232" + user.Phone,
                         Payload = $"Greetings {user.Name} \n" +
-                  $"To Approve deposits, please use the following OTP (One Time Passcode). {result.Object}\n" +
-                  "VENDTECH"
+                                  $"To Approve deposits, please use the following OTP (One Time Passcode). {result.Object}\n" +
+                                  "VENDTECH"
                     };
-                    await _smsManager.SendSmsAsync(requestmsg);
+                    Utilities.SendSms(requestmsg);
                 }
                 
             }

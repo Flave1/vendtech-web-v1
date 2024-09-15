@@ -158,6 +158,7 @@
     <Compile Include="DbContext.cs" />
     <Compile Include="HttpRequest.cs" />
     <Compile Include="Interfaces\ICurrencyManager.cs" />
+    <Compile Include="Interfaces\IBalanceDepositOperationsManager.cs" />
     <Compile Include="Interfaces\IPlatformApiManager.cs" />
     <Compile Include="Interfaces\IPlatformTransactionManager.cs" />
     <Compile Include="Interfaces\ITransferManager.cs" />
@@ -184,7 +185,7 @@
     <Compile Include="Jobs\BalanceLowSheduleJob.cs" />
     <Compile Include="Jobs\PendingTransactionCheckJob.cs" />
     <Compile Include="Managers\CurrencyManager.cs" />
-    <Compile Include="Managers\DepositOperationsManager.cs" />
+    <Compile Include="Managers\BalanceDepositOperationsManager.cs" />
     <Compile Include="Managers\PlatformApiManager.cs" />
     <Compile Include="Managers\PlatformTransactionManager.cs" />
     <Compile Include="Managers\RTSEDSAManager.cs" />

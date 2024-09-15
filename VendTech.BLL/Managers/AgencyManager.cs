@@ -39,10 +39,51 @@ namespace VendTech.BLL.Managers
                 if (model.SearchField.Equals("BALANCE"))
                     query = query.Where(z => z.User.POS.FirstOrDefault().Balance.ToString().ToLower().Trim().Contains(model.Search.ToLower().Trim()));
             }
-            var list = query
-               .Skip(model.PageNo - 1).Take(model.RecordsPerPage)
-               .ToList().Select(x => new AgencyListingModel(x)).OrderBy(x => x.SerialNumber).ToList();
-            result.List = list;
+            var agencyList = query.Select(e => new
+            {
+                AgencyId = e.AgencyId,
+                AgencyName = e.AgencyName,
+                AdminName = e.User.Name + " " + e.User.SurName,
+                Percentage = e.Commission.Percentage,
+                UserId = e.Representative.Value
+            }).ToList();
+
+            // Now that the data is retrieved, you can safely work with it in memory
+            var resultList = new List<AgencyListingModel>();
+
+            foreach (var item in agencyList)
+            {
+                var agencyModel = new AgencyListingModel
+                {
+                    AgencyId = item.AgencyId,
+                    AgencyName = item.AgencyName,
+                    Admin = item.AdminName,
+                    Percentage = item.Percentage,
+                    UserId = item.UserId
+                };
+
+                var pos = Context.POS.FirstOrDefault(d => d.VendorId == item.UserId);
+                var vendorsCount = Context.Users.Where(p => p.Status != (int)UserStatusEnum.Block
+                            && p.AgentId == item.AgencyId
+                            && p.UserRole.Role == UserRoles.Vendor
+                            && p.Status != (int)UserStatusEnum.Deleted
+                            && !string.IsNullOrEmpty(p.POS.FirstOrDefault().SerialNumber)
+                            && !p.POS.FirstOrDefault().SerialNumber.StartsWith("AGT")).Count();
+
+                if (pos != null)
+                {
+                    agencyModel.SerialNumber = pos.SerialNumber;
+                    agencyModel.AgencyAdminDisplayName = pos.User.Vendor + " - " + pos.SerialNumber;
+                    agencyModel.AgencyAdminPosId = pos.POSId;
+                    agencyModel.Balance = Utilities.FormatAmount(pos.Balance);
+                    agencyModel.VendorsCount = vendorsCount;
+                }
+
+                resultList.Add(agencyModel);
+            }
+
+            // Assign the result to the final output
+            result.List = resultList;
             result.Status = ActionStatus.Successfull;
             result.Message = "Agency List";
             result.TotalCount = query.Count();

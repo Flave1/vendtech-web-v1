@@ -20,7 +20,7 @@ namespace VendTech.Controllers
     public class UserController : AppUserBaseController
     {
         #region Variable Declaration
-        private readonly IUserManager _userManager;
+        private new readonly IUserManager _userManager;
         private readonly IAuthenticateManager _authenticateManager;
         private readonly ICMSManager _cmsManager;
 
