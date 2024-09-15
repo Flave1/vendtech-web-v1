@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Entity;
+using System.Data.Entity.Infrastructure;
 using System.Data.Entity.Migrations;
 using System.Data.SqlClient;
 using System.Diagnostics;
@@ -982,6 +983,12 @@ namespace VendTech.BLL.Managers
                     }
                 }
             }
+            catch(DbUpdateException ex)
+            {
+                Utilities.LogExceptionToDatabase(new Exception($"QueryVendStatus 6 ends for DbUpdateException at {DateTime.UtcNow} for traxId {model.TransactionId}", ex), $"DbUpdateException: {JsonConvert.SerializeObject(ex)}");
+                response.Add("failed", null);
+                return response;
+            }
             catch (HttpException ex)
             {
                 Utilities.LogExceptionToDatabase(new Exception($"QueryVendStatus 6 ends at {DateTime.UtcNow} for traxId {model.TransactionId}", ex), $"HttpException: {JsonConvert.SerializeObject(model)}");
@@ -994,9 +1001,15 @@ namespace VendTech.BLL.Managers
                 response.Add("failed", null);
                 return response;
             }
-            catch (Exception ex)
+            catch (WebException ex)
             {
-                Utilities.LogExceptionToDatabase(new Exception($"QueryVendStatus 7 ends at {DateTime.UtcNow} for traxId {model.TransactionId} see: {ex}"), $"Exception: {JsonConvert.SerializeObject(model)}");
+                Utilities.LogExceptionToDatabase(new Exception($"QueryVendStatus  WebException 2 ends at {DateTime.UtcNow} for traxId {model.TransactionId}"), $"Exception: {ex.ToString()}");
+                response.Add("failed", null);
+                return response;
+            }
+            catch (Exception)
+            {
+                Utilities.LogExceptionToDatabase(new Exception($"QueryVendStatus 8 ends at {DateTime.UtcNow} for traxId {model.TransactionId}"), $"Unexpected Exception");
                 response.Add("failed", null);
                 return response;
             }
@@ -1306,10 +1319,25 @@ namespace VendTech.BLL.Managers
                 }
                 throw new AggregateException();
             }
+            catch(HttpException ex)
+            {
+                Utilities.LogExceptionToDatabase(new Exception($"HttpException ERROR {DateTime.UtcNow} for traxId {model.TransactionId}"), $"Exception: {ex.Message}");
+                throw new ArgumentException("Unable to Access service");
+            }
+            catch (WebException ex)
+            {
+                Utilities.LogExceptionToDatabase(new Exception($"WebException ERROR {DateTime.UtcNow} for traxId {model.TransactionId}"), $"Exception: {ex?.ToString()}");
+                throw new ArgumentException("Unable to Access service");
+            }
             catch (Exception)
             {
                 try
                 {
+                    if (string.IsNullOrEmpty(strings_result))
+                    {
+                        Utilities.LogExceptionToDatabase(new Exception($"WebException ERROR {DateTime.UtcNow} for traxId {model.TransactionId}"));
+                        throw new ArgumentException("Unable to Reach Edsa services");
+                    }
                    Utilities.LogExceptionToDatabase(new Exception($"MakeRechargeRequest ERROR {DateTime.UtcNow} for traxId {model.TransactionId}"), $"Exception: {strings_result}");
                     IceCloudErorResponse error_response = JsonConvert.DeserializeObject<IceCloudErorResponse>(strings_result);
 
