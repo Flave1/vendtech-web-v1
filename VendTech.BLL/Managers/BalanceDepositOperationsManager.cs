@@ -6,6 +6,7 @@ using VendTech.DAL;
 using System.Data.Entity;
 using VendTech.DAL.DomainBuilders;
 using VendTech.BLL.Common;
+using System.Linq;
 
 namespace VendTech.BLL.Managers
 {
@@ -13,71 +14,89 @@ namespace VendTech.BLL.Managers
     {
         private readonly VendtechEntities _context;
 
-        public BalanceDepositOperationsManager(VendtechEntities entities)
+        public BalanceDepositOperationsManager(VendtechEntities context)
         {
-            _context = entities;
+            _context = context;
         }
 
-        async Task<Deposit> IBalanceDepositOperationsManager.CreateDeposit(DepositDTOV2 depositDto, long currentUserId, bool isCreditDeposit)
+        public async Task<Deposit> CreateDeposit(DepositDTOV2 depositDto, long currentUserId, bool processPercentage)
         {
-            try
+            //using (var transaction = _context.Database.BeginTransaction())  // Start transaction
+            //{
+                try
+                {
+                    var deposit = await CreateNewDeposit(depositDto, processPercentage);
+                    await GenerateDepositLog(deposit, currentUserId);
+
+                    //transaction.Commit();  // Commit the transaction
+                    return deposit;
+                }
+                catch (Exception e)
+                {
+                    //transaction.Rollback();  // Rollback the transaction in case of an error
+                    throw new ArgumentException(e.Message);
+                }
+                //finally { transaction.Dispose(); }
+            //}
+        }
+
+        private async Task<Deposit> CreateNewDeposit(DepositDTOV2 newDepositDto, bool processPercentage)
+        {
+            var deposit = GenerateDeposit(newDepositDto);
+            await CalculatePercentageAmount(deposit, processPercentage);
+            _context.Deposits.Add(deposit);
+            await _context.SaveChangesAsync();
+
+
+            //GENERATE COMMISSION FOR DEPOSIT
+            if (newDepositDto.Amount > 0 && deposit.POS.Commission.Percentage > 0)
             {
-                var deposit = await CreateNewDeposit(depositDto, isCreditDeposit);
-
-                //Creating Log entry in deposit logs table
-                var dbDepositLog = new DepositLog();
-                dbDepositLog.UserId = currentUserId;
-                dbDepositLog.DepositId = deposit.DepositId;
-                dbDepositLog.PreviousStatus = (int)DepositPaymentStatusEnum.Released;
-                dbDepositLog.NewStatus = (int)DepositPaymentStatusEnum.Released;
-                dbDepositLog.CreatedAt = DateTime.UtcNow;
-                _context.DepositLogs.Add(dbDepositLog);
-                await _context.SaveChangesAsync();
-
-                
-                return deposit;
+                DepositDTOV2 commisionDepositDto = newDepositDto;
+                commisionDepositDto.Amount = (deposit.PercentageAmount.Value - deposit.Amount);
+                await GenerateCommission(commisionDepositDto, false);
             }
-            catch (Exception e)
+
+
+            //GENERATE COMMISSION IF IS AGENCY ADMIN
+            long vendorId = newDepositDto.UserId;
+            long agencyId = deposit.POS?.User.AgentId.Value ?? 0;
+            long vendorAdminId = _context.Agencies.FirstOrDefault(d => d.AgencyId == agencyId)?.Representative ?? 0;
+            if (newDepositDto.Amount > 0 && agencyId != Utilities.VENDTECH && agencyId != 0) 
             {
-                throw new ArgumentException(e.Message);
+                if (vendorId != vendorAdminId)
+                {
+                    POS adminPos = _context.POS.FirstOrDefault(d => d.VendorId == vendorAdminId);
+                    if(adminPos != null)
+                    {
+                        DepositDTOV2 commisionDepositDto = newDepositDto;
+                        commisionDepositDto.Amount = (deposit.PercentageAmount.Value - deposit.Amount);
+                        commisionDepositDto.UserId = vendorAdminId;
+                        commisionDepositDto.POSId = adminPos.POSId;
+                        await GenerateCommission(commisionDepositDto, false);
+                    }
+                }
             }
+
+            return deposit;
         }
 
-        private async Task<Deposit> CreateNewDeposit(DepositDTOV2 depositDto, bool isCreditDeposit)
+        private async Task GenerateCommission(DepositDTOV2 depositDto, bool processPercentage)
         {
-            var newDeposit = new DepositBuilder()
-                        .WithCheckNumberOrSlipId(depositDto.CheckNumberOrSlipId)
-                        .WithTransactionId(Utilities.NewDepositTransactionId())
-                        .WithStatus((int)DepositPaymentStatusEnum.Released)
-                        .WithNextReminderDate(depositDto.NextReminderDate)
-                        .WithValueDateStamp(depositDto.ValueDateStamp)
-                        .WithChequeBankName(depositDto.ChequeBankName)
-                        .WithBankAccountId(depositDto.BankAccountId)
-                        .WithNameOnCheque(depositDto.NameOnCheque)
-                        .WithPaymentType(depositDto.PaymentType)
-                        .WithValueDate(depositDto.ValueDate)
-                        .WithUpdatedAt(depositDto.UpdatedAt)
-                        .WithComments(depositDto.Comments)
-                        .WithIsAudit(depositDto.IsAudit)
-                        .WithAmount(depositDto.Amount)
-                        .WithUserId(depositDto.UserId)
-                        .WithPOSId(depositDto.POSId)
-                        .WithAgencyCommission(0)
-                        .WithIsDeleted(false)
-                        .Build();
-
-            await CalculatePercentageAmount(newDeposit, isCreditDeposit);
-            _context.Deposits.Add(newDeposit);
-            _context.SaveChanges();
-            return newDeposit;
+            depositDto.PaymentType = (int)DepositPaymentTypeEnum.AgencyCommision;
+            var deposit = GenerateDeposit(depositDto);
+            await CalculatePercentageAmount(deposit, processPercentage);
+            _context.Deposits.Add(deposit);
+            await _context.SaveChangesAsync();
+            await GenerateDepositLog(deposit, deposit.UserId);
+            return;
         }
 
-        private async Task<Deposit> CalculatePercentageAmount(Deposit deposit, bool isCreditDeposit)
+        private async Task<Deposit> CalculatePercentageAmount(Deposit deposit, bool processPercentage)
         {
             var pos = await _context.POS.FirstOrDefaultAsync(d => d.VendorId == deposit.UserId);
-            if(pos != null)
+            if (pos != null)
             {
-                if (isCreditDeposit)
+                if (processPercentage)
                 {
                     decimal commission = 0;
                     var percentage = pos.Commission.Percentage;
@@ -98,6 +117,43 @@ namespace VendTech.BLL.Managers
                 return deposit;
             }
             return deposit;
+        }
+
+        private Deposit GenerateDeposit(DepositDTOV2 depositDto)
+        {
+            return new DepositBuilder()
+                        .WithCheckNumberOrSlipId(depositDto.CheckNumberOrSlipId)
+                        .WithTransactionId(Utilities.NewDepositTransactionId())
+                        .WithStatus((int)DepositPaymentStatusEnum.Released)
+                        .WithNextReminderDate(depositDto.NextReminderDate)
+                        .WithValueDateStamp(depositDto.ValueDateStamp)
+                        .WithChequeBankName(depositDto.ChequeBankName)
+                        .WithBankAccountId(depositDto.BankAccountId)
+                        .WithNameOnCheque(depositDto.NameOnCheque)
+                        .WithPaymentType(depositDto.PaymentType)
+                        .WithValueDate(depositDto.ValueDate)
+                        .WithUpdatedAt(depositDto.UpdatedAt)
+                        .WithComments(depositDto.Comments)
+                        .WithIsAudit(depositDto.IsAudit)
+                        .WithAmount(depositDto.Amount)
+                        .WithUserId(depositDto.UserId)
+                        .WithPOSId(depositDto.POSId)
+                        .WithAgencyCommission(0)
+                        .WithIsDeleted(false)
+                        .Build();
+        }
+        
+        private async Task GenerateDepositLog(Deposit deposit, long currentUserId)
+        {
+            //Creating Log entry in deposit logs table
+            var dbDepositLog = new DepositLog();
+            dbDepositLog.UserId = currentUserId;
+            dbDepositLog.DepositId = deposit.DepositId;
+            dbDepositLog.PreviousStatus = (int)DepositPaymentStatusEnum.Released;
+            dbDepositLog.NewStatus = (int)DepositPaymentStatusEnum.Released;
+            dbDepositLog.CreatedAt = DateTime.UtcNow;
+            _context.DepositLogs.Add(dbDepositLog);
+            await _context.SaveChangesAsync();
         }
     }
 }

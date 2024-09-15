@@ -128,9 +128,9 @@ namespace VendTech.Controllers
                     return JsonResult(new ActionOutput { Message = result1.Message, Status = result1.Status});
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                return JsonResult(new ActionOutput { Message = "Error Occurred!!! please contact administrator", Status = ActionStatus.Error });
+                return JsonResult(new ActionOutput { Message = $"Error Occurred!!! please contact administrator: {ex?.Message}", Status = ActionStatus.Error });
             }
         }
 
@@ -187,7 +187,7 @@ namespace VendTech.Controllers
                    "VENDTECH"
                 };
 
-                Utilities.SendSms(requestmsg);
+                await Task.Run(() => Utilities.SendSms(requestmsg));
             }
 
             if (toPos != null & toPos.SMSNotificationDeposit ?? true)
@@ -238,7 +238,7 @@ namespace VendTech.Controllers
                                   $"To Approve deposits, please use the following OTP (One Time Passcode). {result.Object}\n" +
                                   "VENDTECH"
                     };
-                    Utilities.SendSms(requestmsg);
+                    await Task.Run(() => Utilities.SendSms(requestmsg));
                 }
                 
             }
