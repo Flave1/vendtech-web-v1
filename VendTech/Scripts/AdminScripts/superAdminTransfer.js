@@ -57,14 +57,17 @@ var superAdminTransferHandler = {
     },
 
     getAmountWithPercentage: function () {
+
         var displayVal = $("#amountDisplay").val();
         var val = "";
         if (displayVal) {
             var cc = displayVal.replace(/\,/g, "");
             $("#amount").val(cc);
             val = $("#amount").val();
+            var commission = Number(val * 0.5 / 100);
+            var percentage = Number(val)+commission
             $("#amountDisplay").val(superAdminTransferHandler.thousands_separators(val));
-            $("#amountDisplay2").val(superAdminTransferHandler.thousands_separators(val));
+            $("#amountDisplay2").val(superAdminTransferHandler.thousands_separators(percentage));
         }
         
     },

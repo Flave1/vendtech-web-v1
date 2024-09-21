@@ -1522,7 +1522,7 @@ namespace VendTech.BLL.Managers
                             TransactionType = a.Platform.Title,
                             DepositAmount = 0,
                             SaleAmount = a.Amount,
-                            Balance = 0,
+                            Balance = (a.BalanceBefore.Value - a.Amount),
                             POSId = a.POSId,
                             BalanceBefore = a.BalanceBefore.Value
                         };
@@ -1540,7 +1540,7 @@ namespace VendTech.BLL.Managers
                             TransactionType = a.Platform.Title,
                             DepositAmount = 0,
                             SaleAmount = a.Amount,
-                            Balance = 0,
+                            Balance = (a.BalanceBefore.Value - a.Amount),
                             POSId = a.POSId,
                             BalanceBefore = a.BalanceBefore.Value
                         };

@@ -114,7 +114,7 @@ namespace VendTech.Areas.Admin.Controllers
             if (result.Status == ActionStatus.Successfull)
             {
                 if (request.ValueDate == null)
-                    request.ValueDate = Utilities.formatDate(DateTime.UtcNow);
+                    request.ValueDate = DateTime.UtcNow.ToString();
                 else
                     request.ValueDate = request.ValueDate;
 
@@ -156,14 +156,13 @@ namespace VendTech.Areas.Admin.Controllers
                               $"To Approve deposits, please use the following OTP (One Time Passcode). {result.Object}\n" +
                               "VENDTECH"
                         };
-                        Utilities.SendSms(msg);
+                        await Task.Run(() => Utilities.SendSms(msg));
                     }
                 }
                 catch (ArgumentException ex)
                 {
                     return JsonResult(new ActionOutput { Message = ex.Message, Status = ActionStatus.Error });
                 }
-
             }
             return JsonResult(new ActionOutput { Message = result.Message, Status = result.Status });
         }
@@ -179,33 +178,33 @@ namespace VendTech.Areas.Admin.Controllers
             try
             {
                 if (request.ValueDate == null)
-                    request.ValueDate = Utilities.formatDate(DateTime.UtcNow);
+                    request.ValueDate = DateTime.UtcNow.ToString();
                 else
                     request.ValueDate = request.ValueDate;
 
+
+                var pdIndDeposit = await _depositManager.GetPendingDepositByPOS(request.PosId, request.Amount);
+                if (pdIndDeposit == null)
+                {
+                     return JsonResult(new ActionOutput { Message = $"Unable to process request", Status = ActionStatus.Error }); ;
+                }
                 var depositCr = new DepositDTOV2
                 {
-                    Amount = request.Amount,
-                    POSId = request.PosId,
-                    BankAccountId = request.BankAccountId,
-                    CheckNumberOrSlipId = Utilities.TrimLeadingZeros(request.ChkOrSlipNo),
-                    ChequeBankName = request.Bank,
-                    ValueDate = request.ValueDate,
-                    NameOnCheque = request.NameOnCheque,
-                    PaymentType = request.PaymentType,
+                    Amount = pdIndDeposit.Amount,
+                    POSId = pdIndDeposit.POSId,
+                    BankAccountId = pdIndDeposit.PendingBankAccountId,
+                    CheckNumberOrSlipId = Utilities.TrimLeadingZeros(pdIndDeposit.CheckNumberOrSlipId),
+                    ChequeBankName = pdIndDeposit.ChequeBankName,
+                    ValueDate = pdIndDeposit.ValueDate,
+                    NameOnCheque = pdIndDeposit.NameOnCheque,
+                    PaymentType = pdIndDeposit.PaymentType,
                 };
 
-               var result =  await _depositManager.DepositToAgencyAdminAccount(depositCr, LOGGEDIN_USER.UserID, request.OTP);
-
-               if(result.Status == ActionStatus.Successfull)
+                var result = await _depositManager.DepositToAgencyAdminAccount(depositCr, LOGGEDIN_USER.UserID, request.OTP);
+                if (result.Status == ActionStatus.Successfull)
                 {
-
-                    var pdIndDeposit = _depositManager.GetPendingDepositByPOS(depositCr.POSId, depositCr.Amount);
-
-                    if(pdIndDeposit != null)
-                    {
-                        _depositManager.DeletePendingDeposits(pdIndDeposit);
-                    }
+                    
+                       await _depositManager.DeletePendingDeposits(pdIndDeposit);
                     var pos = _posManager.GetSinglePos(request.PosId);
                     if (pos != null && pos.EmailNotificationDeposit == true)
                     {

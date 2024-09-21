@@ -10,6 +10,6 @@ namespace VendTech.BLL.Interfaces
 {
     public interface IBalanceDepositOperationsManager
     {
-        Task<Deposit> CreateDeposit(DepositDTOV2 depositDto, long currentUserId, bool processPercentage);
+        Task<Deposit> CreateDeposit(DepositDTOV2 depositDto, long currentUserId, bool giveAgencyAdminCommission = true);
     }
 }

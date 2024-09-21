@@ -1913,9 +1913,10 @@ namespace VendTech.BLL.Managers
 
                 return ReturnSuccess(isAutoApprove ? Convert.ToInt64(dbDeposit.TransactionId) : dbDeposit.UserId, "Deposit status changed successfully.");
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw ;
+                Utilities.LogExceptionToDatabase(new Exception($"ChangeDepositStatus.Error"), $"Exception: {ex?.ToString()}");
+                throw;
             }
         }
 
@@ -2439,15 +2440,15 @@ namespace VendTech.BLL.Managers
             //PushNotificationToWeb(deposits.FirstOrDefault().UserId).Wait();
         }
 
-        void IDepositManager.DeletePendingDeposits(PendingDeposit deposit)
+        async Task IDepositManager.DeletePendingDeposits(PendingDeposit deposit)
         {
             using(var ctx = new VendtechEntities())
             {
-                var de = ctx.PendingDeposits.FirstOrDefault(d => d.PendingDepositId == deposit.PendingDepositId);
+                var de = await ctx.PendingDeposits.FirstOrDefaultAsync(d => d.PendingDepositId == deposit.PendingDepositId);
                 if(de != null)
                 {
                     ctx.PendingDeposits.Remove(de);
-                    ctx.SaveChanges();
+                    await ctx.SaveChangesAsync();
                 }
             }
            
@@ -2470,9 +2471,9 @@ namespace VendTech.BLL.Managers
                             Reference = a.CheckNumberOrSlipId,
                             TransactionId = a.TransactionId,
                             TransactionType = "Deposit",
-                            DepositAmount = a.PercentageAmount ?? 0,
+                            DepositAmount = a.Amount,
                             SaleAmount = 0,
-                            Balance = 0,
+                            Balance = a.NewBalance.Value,
                             POSId = a.POSId,
                             BalanceBefore = a.BalanceBefore.Value,
                         };
@@ -2486,9 +2487,9 @@ namespace VendTech.BLL.Managers
                             Reference = a.CheckNumberOrSlipId,
                             TransactionId = a.TransactionId,
                             TransactionType = "Deposit",
-                            DepositAmount = a.PercentageAmount ?? 0,
+                            DepositAmount = a.Amount,
                             SaleAmount = 0,
-                            Balance = 0,
+                            Balance = a.NewBalance.Value,
                             POSId = a.POSId,
                             BalanceBefore = a.BalanceBefore.Value,
                         };
@@ -2647,7 +2648,7 @@ namespace VendTech.BLL.Managers
                 depositDto.UserId = toPos?.VendorId??0;
                 depositDto.NameOnCheque = toPos.User.Vendor;
 
-                var deposit = await _balDepOperations.CreateDeposit(depositDto, currentUserId, true);
+                var deposit = await _balDepOperations.CreateDeposit(depositDto, currentUserId, false);
                 
                 //Send push to all devices where this user logged in when admin released deposit
                 var deviceTokens = toPos.User.TokensManagers.Where(p => p.DeviceToken != null && p.DeviceToken != string.Empty).Select(p => new { p.AppType, p.DeviceToken }).ToList().Distinct();
@@ -2664,7 +2665,7 @@ namespace VendTech.BLL.Managers
                 {
                     obj.DeviceToken = item.DeviceToken;
                     obj.DeviceType = item.AppType.Value;
-                    //PushNotification.SendNotification(obj);
+                    PushNotification.SendNotificationTOMobile(obj);
                 }
                 return await Task.Run(() => ReturnSuccess("TRANSFER SUCCESSFUL"));
             }
@@ -2688,7 +2689,6 @@ namespace VendTech.BLL.Managers
                 depositDto.UserId = toPos.VendorId.Value;
 
                 var deposit = await _balDepOperations.CreateDeposit(depositDto, currentUserId, true);
-
 
                 //Send push to all devices where this user logged in when admin released deposit
                 var deviceTokens = toPos.User.TokensManagers.Where(p => p.DeviceToken != null && p.DeviceToken != string.Empty).Select(p => new { p.AppType, p.DeviceToken }).ToList().Distinct();
@@ -2716,9 +2716,9 @@ namespace VendTech.BLL.Managers
             }
         }
 
-        PendingDeposit IDepositManager.GetPendingDepositByPOS(long posId, decimal amount)
+        async Task<PendingDeposit> IDepositManager.GetPendingDepositByPOS(long posId, decimal amount)
         {
-            return _context.PendingDeposits.FirstOrDefault(d => d.POSId == posId && d.Amount == amount);
+            return await _context.PendingDeposits.FirstOrDefaultAsync(d => d.POSId == posId && d.Amount == amount);
         }
         void IDepositManager.CreateCommissionCreditEntry(POS toPos, decimal amount, string reference, long currentUserId)
         {

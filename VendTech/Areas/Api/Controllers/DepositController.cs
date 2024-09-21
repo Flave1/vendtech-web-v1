@@ -69,7 +69,7 @@ namespace VendTech.Areas.Api.Controllers
                 SendEmailToAdminOnDepositApproval(deposit, result.ID);
                 SendSmsOnDepositApproval(deposit);
 
-                _depositManager.DeletePendingDeposits(deposit);
+                await _depositManager.DeletePendingDeposits(deposit);
             }
             else
             {

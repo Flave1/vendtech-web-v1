@@ -238,25 +238,30 @@ namespace VendTech.BLL.Managers
             }).ToList();
         }
 
-        List<SelectListItem> IPOSManager.GetPOSWithNameSelectList(long userId, long agentId)
+        List<SelectListItem> IPOSManager.GetPOSWithNameSelectList(long userId, long agentId, bool includeAdminPos)
         {
-            var query = new List<POS>();
-            var userPos = new List<POS>();
+            IQueryable<POS> query = null;
             if (userId > 0)
             {
                 var user = _context.Users.FirstOrDefault(p => p.UserId == userId);
                 if (user != null)
-                    query = _context.POS.Where(p => (p.VendorId != null && p.VendorId == user.FKVendorId && p.Enabled != false && !p.IsDeleted && !p.SerialNumber.StartsWith("AGT")) && !p.IsAdmin).ToList();
+                    query = _context.POS.Where(p => (p.VendorId != null && p.VendorId == user.FKVendorId 
+                    && p.Enabled != false && !p.IsDeleted ) && !p.IsAdmin);
             }
             else
-                query = _context.POS.Where(p => !p.IsDeleted && p.Enabled != false && !p.IsAdmin && !p.SerialNumber.StartsWith("AGT")).ToList();
-
+                query = _context.POS.Where(p => !p.IsDeleted && p.Enabled != false 
+                && !p.IsAdmin);
 
             if (agentId > 0)
             {
-                query = _context.POS.Where(p => p.User.AgentId == agentId && p.Enabled != false && !p.IsDeleted && !p.IsAdmin && !p.SerialNumber.StartsWith("AGT")).ToList();
+                query = _context.POS.Where(p => p.User.AgentId == agentId && p.Enabled != false && !p.IsDeleted && !p.IsAdmin);
             }
-            return query.OrderBy(p => p.SerialNumber).Select(p => new SelectListItem
+
+            if (!includeAdminPos)
+            {
+                query = query.Where(p => !p.SerialNumber.StartsWith("AGT"));
+            }
+            return query.ToList().OrderBy(p => p.SerialNumber).Select(p => new SelectListItem
             {
                 Text = p.User.Vendor + " - " + p.SerialNumber.ToUpper(),
                 Value = p.POSId.ToString()
@@ -632,20 +637,20 @@ namespace VendTech.BLL.Managers
             var balanceSheet = new PagingResultWithDefaultAmount<BalanceSheetListingModel2>();
             balanceSheet.List = new List<BalanceSheetListingModel2>();
             decimal openingBalance = 0;
-            decimal prevBal = 0;
+            //decimal prevBal = 0;
 
             foreach (var item in result)
             {
-                if (item.TransactionType == "Deposit")
-                {
-                    item.Balance = prevBal == 0 ? item.DepositAmount : item.BalanceBefore.Value + item.DepositAmount;
-                    prevBal = prevBal + item.DepositAmount;
-                }
-                else
-                {
-                    item.Balance = prevBal == 0 ? item.BalanceBefore.Value - item.SaleAmount : prevBal - item.SaleAmount;
-                    prevBal = item.Balance;
-                }
+                //if (item.TransactionType == "Deposit")
+                //{
+                //    item.Balance = prevBal == 0 ? item.DepositAmount : item.BalanceBefore.Value + item.DepositAmount;
+                //    prevBal = prevBal + item.DepositAmount;
+                //}
+                //else
+                //{
+                //    item.Balance = prevBal == 0 ? item.BalanceBefore.Value - item.SaleAmount : prevBal - item.SaleAmount;
+                //    prevBal = item.Balance;
+                //}
 
                 if (openingBalance == 0)
                     openingBalance = item.BalanceBefore.Value;

@@ -1310,7 +1310,10 @@ namespace VendTech.BLL.Managers
                     return 0;
                 if (agentId > 0)
                 {
-                    var posTotalBalance = _context.POS.Where(p => p.User.AgentId == agentId && !p.IsDeleted && p.Enabled != false && !p.SerialNumber.Contains("AGT")).ToList().Sum(p => p.Balance);
+                    //var posTotalBalance = _context.POS.Where(p => p.User.AgentId == agentId && !p.IsDeleted && p.Enabled != false && !p.SerialNumber.Contains("AGT")).ToList().Sum(p => p.Balance);
+                    //return posTotalBalance.Value;
+
+                    var posTotalBalance = _context.POS.Where(p => (p.VendorId != null && p.VendorId == user.FKVendorId) && p.Balance != null && !p.IsDeleted && p.Enabled != false).ToList().Sum(p => p.Balance);
                     return posTotalBalance.Value;
                 }
 

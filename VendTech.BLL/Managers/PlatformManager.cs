@@ -35,7 +35,7 @@ namespace VendTech.BLL.Managers
         }
         List<SelectListItem> IPlatformManager.GetActivePlatformsSelectList()
         {
-            var platforms = Context.Platforms.Where(p => !p.IsDeleted && p.Enabled && !p.DisablePlatform).Select(p => new SelectListItem {
+            var platforms = Context.Platforms.Where(p => !p.IsDeleted).Select(p => new SelectListItem {
                 Value = p.PlatformId.ToString(),
                 Text = p.Title,
                     }).ToList();

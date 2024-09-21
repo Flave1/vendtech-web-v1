@@ -91,11 +91,15 @@ namespace VendTech.Controllers
                 ViewBag.WalletHistory = depositsPendLIst.Concat(deposits.List).ToList();
 
                 ViewBag.ChkBankName = new SelectList(_bankAccountManager.GetBankNames_API().ToList(), "BankName", "BankName");
-                var posList = _posManager.GetPOSWithNameSelectList(LOGGEDIN_USER.UserID, LOGGEDIN_USER.AgencyId);
+                var posList = _posManager.GetPOSWithNameSelectList(LOGGEDIN_USER.UserID, LOGGEDIN_USER.AgencyId, true);
                 ViewBag.userPos = posList;
                 if (string.IsNullOrEmpty(posId) && posList.Count > 0)
                 {
                     //posId = Convert.ToInt64(posList[0].Value);
+                    ViewBag.posId = posList[0].Value;
+                }
+                else
+                {
                     ViewBag.posId = posId;
                 }
                 if (!string.IsNullOrEmpty(posId))
@@ -105,8 +109,8 @@ namespace VendTech.Controllers
                 }
                 else
                 {
-                    ViewBag.Percentage = 0;
-                    ViewBag.balance = 0;
+                    ViewBag.Percentage = _posManager.GetPosCommissionPercentage(long.Parse(posList[0].Value));
+                    ViewBag.balance = _posManager.GetPosBalance(long.Parse(posList[0].Value));
                 }
                 var bankAccounts = _bankAccountManager.GetBankAccounts();
 
@@ -153,7 +157,7 @@ namespace VendTech.Controllers
                 SendEmailToAdminOnDepositApproval(deposit, result.ID);
                 SendSmsOnDepositApproval(deposit);
 
-                _depositManager.DeletePendingDeposits(deposit);
+                await _depositManager.DeletePendingDeposits(deposit);
             }
             else
             {

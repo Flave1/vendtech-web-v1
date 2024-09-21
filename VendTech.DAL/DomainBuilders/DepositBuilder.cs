@@ -10,8 +10,8 @@ namespace VendTech.DAL.DomainBuilders
         {
             _deposit = new Deposit
             {
-                CreatedAt = DateTime.Now,
-                UpdatedAt = DateTime.Now,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
             };
         }
 

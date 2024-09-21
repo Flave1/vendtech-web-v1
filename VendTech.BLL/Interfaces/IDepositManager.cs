@@ -65,10 +65,10 @@ namespace VendTech.BLL.Interfaces
         PagingResult<AgentRevenueListingModel> GetCommissionsReportsPagedList(ReportSearchModel model, bool callFromAdmin = false, long agentId = 0);
         Deposit GetSingleTransaction(long transactionId);
         PendingDeposit GetDeposit(long depositId);
-        void DeletePendingDeposits(PendingDeposit deposit);
+        Task DeletePendingDeposits(PendingDeposit deposit);
         bool IsOtpValid(string otp);
         List<PendingDeposit> GetPendingDeposits(List<long> pdepositIds);
-        PendingDeposit GetPendingDepositByPOS(long posId, decimal amount);
+        Task<PendingDeposit> GetPendingDepositByPOS(long posId, decimal amount);
     }
 
 }

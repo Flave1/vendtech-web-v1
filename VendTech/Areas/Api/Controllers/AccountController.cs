@@ -64,6 +64,11 @@ namespace VendTech.Areas.Api.Controllers
         [ActionName("SignIn")]
         public HttpResponseMessage SignIn(LoginAPIPassCodeModel model)
         {
+            var country = Utilities.GetCountry();
+            if (country.DomainUrl.Contains("vendtechsl.net"))
+            {
+                return new JsonContent("Please ensure you are connected to production", Status.Failed).ConvertToHttpResponseOK();
+            }
             if (string.IsNullOrEmpty(model.DeviceToken))
             {
                 return new JsonContent("Unsupported device Detected!", Status.Failed).ConvertToHttpResponseOK();

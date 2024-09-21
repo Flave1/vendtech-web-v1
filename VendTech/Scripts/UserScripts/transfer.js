@@ -488,14 +488,17 @@ var transferHandler = {
         }
         x = x.toString().replace(/\,/g, "");
         $("#amtToTransfer").val(transferHandler.thousands_separators(x));
-        $("#agencyAmountToTransferDisplay").text(transferHandler.thousands_separators(x));
+        var commission = Number(x * 1.0 / 100)
+        var amountDisplay = Number(x) + commission
+        $("#agencyAmountToTransferDisplay").text(transferHandler.thousands_separators(amountDisplay));
     },
 
     displayOtherAmount: function (x) {
 
         x = x.toString().replace(/\,/g, "");
-       
-        $("#otherAgencyAmountToTransferDisplay").text(transferHandler.thousands_separators(x));
+        var commission = Number(x * 0.1 / 100)
+        var amountDisplay = Number(x) + commission
+        $("#otherAgencyAmountToTransferDisplay").text(transferHandler.thousands_separators(amountDisplay));
 
         $("#otherAmtToTransfer").val(transferHandler.thousands_separators(x));
     },
