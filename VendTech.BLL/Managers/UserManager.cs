@@ -29,43 +29,57 @@ namespace VendTech.BLL.Managers
 
         UserModel IUserManager.ValidateUserSession(string token)
         {
-
-            var session = _context.TokensManagers.Where(o => o.TokenKey.Equals(token)).FirstOrDefault();
-            if (session != null)
+            using(var context = new VendtechEntities())
             {
-                var currentTimeWithAppSeconds = session.User.AppLastUsed.Value.AddSeconds(Convert.ToInt16(_context.AppSettings.FirstOrDefault().Value));
-                var hasExpired = currentTimeWithAppSeconds < DateTime.UtcNow;
+                if (!string.IsNullOrEmpty(token))
+                {
+                    var session = context.TokensManagers.Where(o => o.TokenKey.Equals(token)).FirstOrDefault();
+                    if (session != null)
+                    {
+                        var currentTimeWithAppSeconds = session.User.AppLastUsed.Value.AddSeconds(Convert.ToInt16(context.AppSettings.FirstOrDefault().Value));
+                        var hasExpired = currentTimeWithAppSeconds < DateTime.UtcNow;
 
-                //Utilities.LogProcessToDatabase($"currentTimeWithAppSeconds: {currentTimeWithAppSeconds}", "");
-                //Utilities.LogProcessToDatabase($"DateTime.UtcNow: {DateTime.UtcNow}", "");
-                //if (hasExpired)
-                //{
-                //    return null;
-                //}
-                var pos = _context.POS.FirstOrDefault(x => x.SerialNumber == session.PosNumber);
-                if (session != null &&
-                    (session.User.Status == (int)UserStatusEnum.Active
-                    || session.User.Status == (int)UserStatusEnum.Pending
-                    || session.User.Status == (int)UserStatusEnum.PasswordNotReset) && pos.Enabled == true) return new UserModel(session.TokenKey, session.User);
-                else return null;
-            }
-            else
-            {
-                return null;
-            }
+                        //Utilities.LogProcessToDatabase($"currentTimeWithAppSeconds: {currentTimeWithAppSeconds}", "");
+                        //Utilities.LogProcessToDatabase($"DateTime.UtcNow: {DateTime.UtcNow}", "");
+                        //if (hasExpired)
+                        //{
+                        //    return null;
+                        //}
+                        var pos = context.POS.FirstOrDefault(x => x.SerialNumber == session.PosNumber);
+                        if (session != null &&
+                            (session.User.Status == (int)UserStatusEnum.Active
+                            || session.User.Status == (int)UserStatusEnum.Pending
+                            || session.User.Status == (int)UserStatusEnum.PasswordNotReset) && pos.Enabled == true) return new UserModel(session.TokenKey, session.User);
+                        else return null;
+                    }
+                    else
+                    {
+                        return null;
+                    }
+                }
+                else
+                {
+                    return null;
+                }
+            }           
         }
 
        
         bool IUserManager.UpdateUserLastAppUsedTime(long userId)
         {
-            var user = _context.Users.FirstOrDefault(p => p.UserId == userId);
-            if (user != null)
+
+            using (var context = new VendtechEntities())
             {
-                user.AppLastUsed = DateTime.UtcNow;
-                _context.SaveChanges();
-                return true;
+                var user = context.Users.FirstOrDefault(p => p.UserId == userId);
+                if (user != null)
+                {
+                    user.AppLastUsed = DateTime.UtcNow;
+                    context.SaveChanges();
+                    return true;
+                }
+                return false;
             }
-            return false;
+            
         }
         ActionOutput IUserManager.UpdateProfilePic(long userId, HttpPostedFile image)
         {

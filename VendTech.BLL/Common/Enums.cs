@@ -180,7 +180,7 @@ namespace VendTech.BLL.Models
         [Description("AGENCY VENDOR - IN")]
         VendorFloatIn = 9,
         [Description("VENDOR - COMMISION IN")]
-        VendorCommision = 11,
+        VendorCommision = 12,
     }
     public enum DepositPaymentStatusEnum
     {
