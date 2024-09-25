@@ -2379,12 +2379,12 @@ namespace VendTech.BLL.Managers
                 dbDeposit.PaymentType = depositAuditModel.Type != null ? int.Parse(depositAuditModel.Type) : _context.PaymentTypes.FirstOrDefault().PaymentTypeId;
                 dbDeposit.BankAccountId = _context.BankAccounts.FirstOrDefault(d => d.BankName.Contains(depositAuditModel.GTBank))?.BankAccountId ?? 0;
                 dbDeposit.Comments = string.IsNullOrEmpty(depositAuditModel.Comment) ? "" : depositAuditModel.Comment;
-                if (dbDeposit.CheckNumberOrSlipId.StartsWith("VTSL"))
+                var recordsWithSimilarRef = GetUnclearedRelatedDeposits(dbDeposit);
+                if (recordsWithSimilarRef.Any())
                 {
-                    var recordWithSimilarRef = _context.Deposits.FirstOrDefault(d => d.CheckNumberOrSlipId == dbDeposit.CheckNumberOrSlipId && d.DepositId != dbDeposit.DepositId);
-                    if(recordWithSimilarRef != null)
+                    foreach (var item in recordsWithSimilarRef)
                     {
-                        recordWithSimilarRef.isAudit = depositAuditModel.isAudit;
+                        item.isAudit = depositAuditModel.isAudit;
                     }
                 }
                 _context.SaveChanges();
@@ -2408,7 +2408,10 @@ namespace VendTech.BLL.Managers
             depositAuditModel.TransactionId = dbDeposit.TransactionId;
             return depositAuditModel;
         }
-        
+
+        List<Deposit> GetUnclearedRelatedDeposits(Deposit deposit) => _context.Deposits.Where(d => d.DepositId != deposit.DepositId
+            && d.InitiatingTransactionId == deposit.InitiatingTransactionId).ToList();
+
         List<Deposit> IDepositManager.GetUnclearedDeposits()
         {
             var currentDate = DateTime.UtcNow;
@@ -2583,58 +2586,47 @@ namespace VendTech.BLL.Managers
             });
         }
 
-        async Task<ActionOutput> IDepositManager.CreateDepositDebitTransfer(DepositDTOV2 depositDto, long currentUserId, string otp, long toPos, long fromPosId)
+        async Task<Deposit> IDepositManager.CreateDepositDebitTransfer(DepositDTOV2 depositDto, long currentUserId, string otp, long toPos, long fromPosId)
         {
-            try
+            var beneficiaryPos = _context.POS.FirstOrDefault(er => er.POSId == toPos);
+            var fromPos = _context.POS.FirstOrDefault(er => er.POSId == fromPosId);
+            if (beneficiaryPos == null)
+                throw new ArgumentException("POS NOT FOUND");
+
+            if (fromPos == null)
+                throw new ArgumentException("POT NOT FOUND");
+
+            if (depositDto.Amount > fromPos.Balance.Value)
+                throw new ArgumentException("INSUFFICIENT BALANCE TO MAKE TRANSFER");
+
+            if (!IsOtpValid(otp))
+                throw new ArgumentException("WRONG OTP ENTERED");
+
+            depositDto.Status = (int)DepositPaymentStatusEnum.Released;
+            depositDto.UserId = fromPos?.VendorId ?? 0;
+            depositDto.NameOnCheque = fromPos.User.Vendor;
+            depositDto.IsAudit = false;
+
+            var deposit = await _balDepOperations.CreateDeposit(depositDto, currentUserId, false);
+
+            var deviceTokens = fromPos.User.TokensManagers.Where(p => p.DeviceToken != null && p.DeviceToken != string.Empty).Select(p => new { p.AppType, p.DeviceToken }).ToList().Distinct();
+            var obj = new PushNotificationModel();
+            obj.UserId = depositDto.UserId;
+            obj.Id = depositDto.DepositId;
+            obj.Balance = deposit.POS.Balance.Value;
+            var notyAmount = Utilities.FormatAmount(depositDto.Amount);
+
+            obj.Title = $"Account Debited";
+            obj.Message = "Your wallet has been updated with  " + Utilities.GetCountry().CurrencyCode + " " + notyAmount;
+
+            obj.NotificationType = NotificationTypeEnum.DepositStatusChange;
+            foreach (var item in deviceTokens)
             {
-                var beneficiaryPos = _context.POS.FirstOrDefault(er => er.POSId == toPos);
-                var fromPos = _context.POS.FirstOrDefault(er => er.POSId == fromPosId);
-                if (beneficiaryPos == null)
-                    return ReturnError("POS NOT FOUND");
-
-                if (fromPos == null)
-                    return ReturnError("POT NOT FOUND");
-
-                if (depositDto.Amount > fromPos.Balance.Value)
-                    return ReturnError("INSUFFICIENT BALANCE TO MAKE TRANSFER");
-
-                if (!IsOtpValid(otp))
-                    return ReturnError("WRONG OTP ENTERED");
-
-                depositDto.Status = (int)DepositPaymentStatusEnum.Released;
-                depositDto.UserId = fromPos?.VendorId ?? 0;
-                depositDto.NameOnCheque = fromPos.User.Vendor;
-                depositDto.IsAudit = false;
-
-                var deposit = await _balDepOperations.CreateDeposit(depositDto, currentUserId, false);
-
-                var deviceTokens = fromPos.User.TokensManagers.Where(p => p.DeviceToken != null && p.DeviceToken != string.Empty).Select(p => new { p.AppType, p.DeviceToken }).ToList().Distinct();
-                var obj = new PushNotificationModel();
-                obj.UserId = depositDto.UserId;
-                obj.Id = depositDto.DepositId;
-                obj.Balance = deposit.POS.Balance.Value;
-                var notyAmount = Utilities.FormatAmount(depositDto.Amount);
-
-                obj.Title = $"Account Debited";
-                obj.Message = "Your wallet has been updated with  "+ Utilities.GetCountry().CurrencyCode+ " " + notyAmount;
-
-                obj.NotificationType = NotificationTypeEnum.DepositStatusChange;
-                foreach (var item in deviceTokens)
-                {
-                    obj.DeviceToken = item.DeviceToken;
-                    obj.DeviceType = item.AppType.Value;
-                    PushNotification.SendNotificationTOMobile(obj);
-                }
-                return await Task.Run(() => ReturnSuccess("TRANSFER SUCCESSFUL"));
+                obj.DeviceToken = item.DeviceToken;
+                obj.DeviceType = item.AppType.Value;
+                PushNotification.SendNotificationTOMobile(obj);
             }
-            catch (Exception e)
-            {;
-                throw e;
-            }
-            finally
-            {
-
-            }
+            return deposit;
         }
 
         async Task<ActionOutput> IDepositManager.CreateDepositCreditTransfer(DepositDTOV2 depositDto, long currentUserId, POS fromPos)

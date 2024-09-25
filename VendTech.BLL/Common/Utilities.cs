@@ -32,6 +32,7 @@ namespace VendTech.BLL.Common
     {
         public static decimal MinimumDepositAmount = 50;
         public static decimal MaximumDepositAmount = 500;
+        public static bool SendNotification = true;
         private static Random random = new Random();
 
         public static string RandomString(int length)
@@ -356,7 +357,8 @@ namespace VendTech.BLL.Common
 
         public static void SendEmail(string to, string sub, string body)
         {
-            return;
+            if (!SendNotification)
+                return;
             string from = WebConfigurationManager.AppSettings["SMTPFromtest"].ToString();
             string password = "Supt*VT&ch"; //WebConfigurationManager.AppSettings["SMTPPassword"].ToString();
             string displayName = WebConfigurationManager.AppSettings["SMTPDisplayName"].ToString();
@@ -412,7 +414,9 @@ namespace VendTech.BLL.Common
 
         public static bool SendSms(SendSMSRequest request)
         {
-            return true;
+            if (!SendNotification)
+                return true;
+
             //request.Recipient = null;
             var json = JsonConvert.SerializeObject(request);
             string baseUrl = WebConfigurationManager.AppSettings["SMSAPI"].ToString();
@@ -430,7 +434,9 @@ namespace VendTech.BLL.Common
         }
         public static void SendPDFEmail(string to, string sub, string body, string file = "", string name = "")
         {
-            return;
+            if (!SendNotification)
+                return;
+
             string from = WebConfigurationManager.AppSettings["SMTPFromtest"].ToString();
             string password = "Supt*VT&ch"; //WebConfigurationManager.AppSettings["SMTPPassword"].ToString();
             string displayName = WebConfigurationManager.AppSettings["SMTPDisplayName"].ToString();
@@ -496,9 +502,6 @@ namespace VendTech.BLL.Common
             }
 
         }
-
-
-
 
         public static void LogProcessToDatabase(string Message, object data)
         {

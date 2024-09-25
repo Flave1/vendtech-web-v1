@@ -666,6 +666,7 @@ namespace VendTech.BLL.Models
         public int PaymentType { get; set; }
         public decimal? BalanceBefore { get; set; }
         public decimal Amount { get; set; }
+        public string FirstDepositTransactionId { get; set; }
         public string CheckNumberOrSlipId { get; set; }
         public string Comments { get; set; }
         public int Status { get; set; }

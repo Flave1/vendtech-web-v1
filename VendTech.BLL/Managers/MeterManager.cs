@@ -1287,7 +1287,6 @@ namespace VendTech.BLL.Managers
 
                 strings_result = await icekloud_response.Content.ReadAsStringAsync();
 
-
                 transactionDetail.Request = JsonConvert.SerializeObject(request_model);
                 transactionDetail.Response = strings_result;
 

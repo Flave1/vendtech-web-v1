@@ -36,6 +36,8 @@ namespace VendTech.BLL.Managers
         private async Task<Deposit> CreateNewDeposit(DepositDTOV2 newDepositDto, bool giveAgencyAdminCommission)
         {
             var deposit = GenerateDeposit(newDepositDto);
+            string firstDepositTransactionId = string.IsNullOrEmpty(newDepositDto.FirstDepositTransactionId) ? deposit.TransactionId : newDepositDto.FirstDepositTransactionId;
+            deposit.InitiatingTransactionId = firstDepositTransactionId;
             POS vendorPos = await _context.POS.FirstOrDefaultAsync(d => d.VendorId == deposit.UserId);
             await CalculateBalance(deposit, vendorPos);
             _context.Deposits.Add(deposit);
@@ -46,6 +48,7 @@ namespace VendTech.BLL.Managers
             {
                 DepositDTOV2 commisionDepositDto = newDepositDto;
                 commisionDepositDto.Amount = (deposit.Amount * vendorPos.Commission.Percentage / 100);
+                commisionDepositDto.FirstDepositTransactionId = firstDepositTransactionId;
                 await GenerateCommission(commisionDepositDto, vendorPos);
             }
 
@@ -67,6 +70,7 @@ namespace VendTech.BLL.Managers
                             commisionDepositDto.Amount = (deposit.Amount  * adminPos.Commission.Percentage / 100);
                             commisionDepositDto.UserId = vendorAdminId;
                             commisionDepositDto.POSId = adminPos.POSId;
+                            commisionDepositDto.FirstDepositTransactionId = firstDepositTransactionId;
                             await GenerateCommission(commisionDepositDto, adminPos);
                         }
                     }
@@ -77,6 +81,7 @@ namespace VendTech.BLL.Managers
 
         private async Task GenerateCommission(DepositDTOV2 depositDto, POS pos)
         {
+
             if(await isAdmin(pos.VendorId.Value))
                 depositDto.PaymentType = (int)DepositPaymentTypeEnum.AgencyCommision;
             else
@@ -105,6 +110,7 @@ namespace VendTech.BLL.Managers
         private Deposit GenerateDeposit(DepositDTOV2 depositDto)
         {
             return new DepositBuilder()
+                        .WithInitiatingTransactionId(depositDto.FirstDepositTransactionId)
                         .WithCheckNumberOrSlipId(depositDto.CheckNumberOrSlipId)
                         .WithTransactionId(Utilities.NewDepositTransactionId())
                         .WithStatus((int)DepositPaymentStatusEnum.Released)

@@ -3,12 +3,10 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Web.Mvc;
-using System.Windows.Interop;
 using VendTech.Attributes;
 using VendTech.BLL.Common;
 using VendTech.BLL.Interfaces;
 using VendTech.BLL.Models;
-using VendTech.DAL;
 
 namespace VendTech.Controllers
 {
@@ -92,7 +90,7 @@ namespace VendTech.Controllers
                 var frompos = _posManager.ReturnAgencyAdminPOS(LOGGEDIN_USER.UserID);
                 var depositDr = new DepositDTOV2
                 {
-                    Amount = Decimal.Negate(request.Amount),
+                    Amount = decimal.Negate(request.Amount),
                     POSId = frompos.POSId,
                     BankAccountId = 1,
                     CheckNumberOrSlipId = reference,
@@ -100,10 +98,10 @@ namespace VendTech.Controllers
                     ChequeBankName = "OWN ACC TRANSFER - (AGENCY TRANSFER)"
                 };
 
-                var result1 = await _depositManager.CreateDepositDebitTransfer(depositDr, LOGGEDIN_USER.UserID, request.otp, request.ToPosId, frompos.POSId);
+                var debitDeposit = await _depositManager.CreateDepositDebitTransfer(depositDr, LOGGEDIN_USER.UserID, request.otp, request.ToPosId, frompos.POSId);
 
                 
-                if(result1.Status == ActionStatus.Successfull)
+                if(debitDeposit != null)
                 {
                     var depositCr = new DepositDTOV2
                     {
@@ -112,26 +110,28 @@ namespace VendTech.Controllers
                         BankAccountId = 1,
                         CheckNumberOrSlipId = reference,
                         ChequeBankName = "OWN ACC TRANSFER - (AGENCY TRANSFER)",
-                        PaymentType = (int)DepositPaymentTypeEnum.VendorFloatIn
+                        PaymentType = (int)DepositPaymentTypeEnum.VendorFloatIn,
+                        FirstDepositTransactionId = debitDeposit.TransactionId
                     };
-                    var result2 = await _depositManager.CreateDepositCreditTransfer(depositCr, LOGGEDIN_USER.UserID, frompos);
+                    var creditDeposit = await _depositManager.CreateDepositCreditTransfer(depositCr, LOGGEDIN_USER.UserID, frompos);
 
-                    if (result2.Status == ActionStatus.Successfull)
+                    if (creditDeposit.Status == ActionStatus.Successfull)
                     {
                         SendEmailOnDeposit(frompos.POSId, request.ToPosId);
                         await SendSmsOnDeposit(frompos.POSId, request.ToPosId, request.Amount);
                     }
-                    return JsonResult(new ActionOutput { Message = result2.Message, Status = result2.Status });
+                    return JsonResult(new ActionOutput { Message = creditDeposit.Message, Status = creditDeposit.Status });
                 }
-                else
-                {
-                    return JsonResult(new ActionOutput { Message = result1.Message, Status = result1.Status});
-                }
+            }
+            catch(ArgumentException ex)
+            {
+                return JsonResult(new ActionOutput { Message = ex?.Message, Status = ActionStatus.Error });
             }
             catch (Exception ex)
             {
                 return JsonResult(new ActionOutput { Message = $"Error Occurred!!! please contact administrator: {ex?.Message}", Status = ActionStatus.Error });
             }
+            return JsonResult(new ActionOutput { Message = $"Error Occurred!!! please contact administrator", Status = ActionStatus.Error });
         }
 
 

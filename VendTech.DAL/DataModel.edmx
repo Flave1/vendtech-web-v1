@@ -4,7 +4,7 @@
   <edmx:Runtime>
     <!-- SSDL content -->
     <edmx:StorageModels>
-      <Schema Namespace="VENDTECH_MAINModel.Store" Provider="System.Data.SqlClient" ProviderManifestToken="2012" Alias="Self" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm/ssdl">
+    <Schema Namespace="VENDTECH_MAINModel.Store" Provider="System.Data.SqlClient" ProviderManifestToken="2012" Alias="Self" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm/ssdl">
         <EntityType Name="AccountVerificationOTP">
           <Key>
             <PropertyRef Name="AccountVerificationOTPId" />
@@ -173,6 +173,7 @@
           <Property Name="NextReminderDate" Type="datetime" />
           <Property Name="IsDeleted" Type="bit" Nullable="false" />
           <Property Name="ValueDateStamp" Type="datetime" />
+          <Property Name="InitiatingTransactionId" Type="varchar" MaxLength="255" />
         </EntityType>
         <EntityType Name="EmailConfirmationRequests">
           <Key>
@@ -453,6 +454,33 @@
           <Property Name="IsUsed" Type="bit" Nullable="false" />
           <Property Name="CreatedAt" Type="datetime" Nullable="false" />
         </EntityType>
+        <!--Errors Found During Generation:
+warning 6002: The table/view 'VENDTECH_MAIN.dbo.RTS DATA_VTWEB_TRANSACTIONDETALS- JULY 13 - AUG 8 - 2024' does not have a primary key defined. The key has been inferred and the definition was created as a read-only table/view.-->
+        <EntityType Name="RTS DATA_VTWEB_TRANSACTIONDETALS- JULY 13 - AUG 8 - 2024">
+          <Key>
+            <PropertyRef Name="RequestDate" />
+            <PropertyRef Name="Amount" />
+            <PropertyRef Name="CostOfUnits" />
+            <PropertyRef Name="Units" />
+            <PropertyRef Name="Tariff" />
+            <PropertyRef Name="VoucherStatus" />
+          </Key>
+          <Property Name="RTSUID" Type="varchar" MaxLength="50" />
+          <Property Name="RequestDate" Type="datetime2" Precision="7" Nullable="false" />
+          <Property Name="MeterNumber1" Type="varchar" MaxLength="50" />
+          <Property Name="Amount" Type="decimal" Precision="18" Scale="10" Nullable="false" />
+          <Property Name="IntegratorID" Type="varchar" MaxLength="50" />
+          <Property Name="TransactionID" Type="nvarchar" MaxLength="50" />
+          <Property Name="SerialNumber" Type="nvarchar" MaxLength="50" />
+          <Property Name="UserNameVended" Type="nvarchar" MaxLength="50" />
+          <Property Name="VTWEBUID" Type="varchar" MaxLength="50" />
+          <Property Name="Request" Type="varchar(max)" />
+          <Property Name="Response" Type="varchar(max)" />
+          <Property Name="CostOfUnits" Type="varchar" MaxLength="50" Nullable="false" />
+          <Property Name="Units" Type="varchar" MaxLength="50" Nullable="false" />
+          <Property Name="Tariff" Type="varchar" MaxLength="50" Nullable="false" />
+          <Property Name="VoucherStatus" Type="int" Nullable="false" />
+        </EntityType>
         <EntityType Name="SMS_LOG">
           <Key>
             <PropertyRef Name="ID" />
@@ -559,6 +587,7 @@
           <Property Name="DateAndTimeFinalised" Type="varchar(max)" />
           <Property Name="DateAndTimeLinked" Type="varchar(max)" />
           <Property Name="QueryStatusCount" Type="int" />
+          <Property Name="isClaimed" Type="int" Nullable="false" />
         </EntityType>
         <EntityType Name="UserAssignedModules">
           <Key>
@@ -1364,6 +1393,25 @@
           <EntitySet Name="UserSchedule" EntityType="Self.UserSchedule" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="Vendors" EntityType="Self.Vendors" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="Widgets" EntityType="Self.Widgets" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="RTS DATA_VTWEB_TRANSACTIONDETALS- JULY 13 - AUG 8 - 2024" EntityType="Self.RTS DATA_VTWEB_TRANSACTIONDETALS- JULY 13 - AUG 8 - 2024" store:Type="Tables" store:Schema="dbo">
+            <DefiningQuery>SELECT 
+    [RTS DATA_VTWEB_TRANSACTIONDETALS- JULY 13 - AUG 8 - 2024].[RTSUID] AS [RTSUID], 
+    [RTS DATA_VTWEB_TRANSACTIONDETALS- JULY 13 - AUG 8 - 2024].[RequestDate] AS [RequestDate], 
+    [RTS DATA_VTWEB_TRANSACTIONDETALS- JULY 13 - AUG 8 - 2024].[MeterNumber1] AS [MeterNumber1], 
+    [RTS DATA_VTWEB_TRANSACTIONDETALS- JULY 13 - AUG 8 - 2024].[Amount] AS [Amount], 
+    [RTS DATA_VTWEB_TRANSACTIONDETALS- JULY 13 - AUG 8 - 2024].[IntegratorID] AS [IntegratorID], 
+    [RTS DATA_VTWEB_TRANSACTIONDETALS- JULY 13 - AUG 8 - 2024].[TransactionID] AS [TransactionID], 
+    [RTS DATA_VTWEB_TRANSACTIONDETALS- JULY 13 - AUG 8 - 2024].[SerialNumber] AS [SerialNumber], 
+    [RTS DATA_VTWEB_TRANSACTIONDETALS- JULY 13 - AUG 8 - 2024].[UserNameVended] AS [UserNameVended], 
+    [RTS DATA_VTWEB_TRANSACTIONDETALS- JULY 13 - AUG 8 - 2024].[VTWEBUID] AS [VTWEBUID], 
+    [RTS DATA_VTWEB_TRANSACTIONDETALS- JULY 13 - AUG 8 - 2024].[Request] AS [Request], 
+    [RTS DATA_VTWEB_TRANSACTIONDETALS- JULY 13 - AUG 8 - 2024].[Response] AS [Response], 
+    [RTS DATA_VTWEB_TRANSACTIONDETALS- JULY 13 - AUG 8 - 2024].[CostOfUnits] AS [CostOfUnits], 
+    [RTS DATA_VTWEB_TRANSACTIONDETALS- JULY 13 - AUG 8 - 2024].[Units] AS [Units], 
+    [RTS DATA_VTWEB_TRANSACTIONDETALS- JULY 13 - AUG 8 - 2024].[Tariff] AS [Tariff], 
+    [RTS DATA_VTWEB_TRANSACTIONDETALS- JULY 13 - AUG 8 - 2024].[VoucherStatus] AS [VoucherStatus]
+    FROM [dbo].[RTS DATA_VTWEB_TRANSACTIONDETALS- JULY 13 - AUG 8 - 2024] AS [RTS DATA_VTWEB_TRANSACTIONDETALS- JULY 13 - AUG 8 - 2024]</DefiningQuery>
+          </EntitySet>
           <AssociationSet Name="FK_AccountVerificationOTP_Users" Association="Self.FK_AccountVerificationOTP_Users">
             <End Role="Users" EntitySet="Users" />
             <End Role="AccountVerificationOTP" EntitySet="AccountVerificationOTP" />
@@ -1577,8 +1625,7 @@
             <End Role="Vendors" EntitySet="Vendors" />
           </AssociationSet>
         </EntityContainer>
-      </Schema>
-    </edmx:StorageModels>
+      </Schema></edmx:StorageModels>
     <!-- CSDL content -->
     <edmx:ConceptualModels>
       <Schema Namespace="VENDTECH_MAINModel" Alias="Self" annotation:UseStrongSpatialTypes="false" xmlns:annotation="http://schemas.microsoft.com/ado/2009/02/edm/annotation" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm">
@@ -1773,6 +1820,7 @@
           <NavigationProperty Name="PaymentType1" Relationship="Self.FK_Deposits_PaymentType" FromRole="Deposits" ToRole="PaymentType" />
           <NavigationProperty Name="POS" Relationship="Self.FK_Deposits_POS" FromRole="Deposits" ToRole="POS" />
           <NavigationProperty Name="User" Relationship="Self.FK_Deposits_Users" FromRole="Deposits" ToRole="Users" />
+          <Property Name="InitiatingTransactionId" Type="String" MaxLength="255" FixedLength="false" Unicode="false" />
         </EntityType>
         <EntityType Name="EmailConfirmationRequest">
           <Key>
@@ -2208,6 +2256,7 @@
           <NavigationProperty Name="Platform" Relationship="Self.FK_TransactionDetails_Platform" FromRole="TransactionDetails" ToRole="Platform" />
           <NavigationProperty Name="POS" Relationship="Self.FK_TransactionDetails_POS" FromRole="TransactionDetails" ToRole="POS" />
           <NavigationProperty Name="User" Relationship="Self.FK_TransactionDetails_Users" FromRole="TransactionDetails" ToRole="Users" />
+          <Property Name="isClaimed" Type="Int32" Nullable="false" />
         </EntityType>
         <EntityType Name="UserAssignedModule">
           <Key>
@@ -3258,6 +3307,7 @@
           <FunctionImport Name="CalculateRunningBalance" ReturnType="Collection(VENDTECH_MAINModel.CalculateRunningBalance_Result)" />
           <FunctionImport Name="CalculateRunningBalance1" ReturnType="Collection(VENDTECH_MAINModel.CalculateRunningBalance1_Result)" />
           <FunctionImport Name="CalculateRunningBalance11" ReturnType="Collection(VENDTECH_MAINModel.CalculateRunningBalance11_Result)" />
+          <EntitySet Name="RTS_DATA_VTWEB_TRANSACTIONDETALS__JULY_13___AUG_8___2024" EntityType="VENDTECH_MAINModel.RTS_DATA_VTWEB_TRANSACTIONDETALS__JULY_13___AUG_8___2024" />
         </EntityContainer>
         <ComplexType Name="CalculateRunningBalance_Result">
           <Property Type="Int64" Name="userid" Nullable="false" />
@@ -3289,6 +3339,31 @@
           <Property Type="Decimal" Name="overage" Nullable="true" Precision="38" Scale="2" />
           <Property Type="Decimal" Name="AgencyCommission" Nullable="true" Precision="38" Scale="2" />
         </ComplexType>
+        <EntityType Name="RTS_DATA_VTWEB_TRANSACTIONDETALS__JULY_13___AUG_8___2024">
+          <Key>
+            <PropertyRef Name="RequestDate" />
+            <PropertyRef Name="Amount" />
+            <PropertyRef Name="CostOfUnits" />
+            <PropertyRef Name="Units" />
+            <PropertyRef Name="Tariff" />
+            <PropertyRef Name="VoucherStatus" />
+          </Key>
+          <Property Name="RTSUID" Type="String" MaxLength="50" FixedLength="false" Unicode="false" />
+          <Property Name="RequestDate" Type="DateTime" Nullable="false" Precision="7" />
+          <Property Name="MeterNumber1" Type="String" MaxLength="50" FixedLength="false" Unicode="false" />
+          <Property Name="Amount" Type="Decimal" Nullable="false" Precision="18" Scale="10" />
+          <Property Name="IntegratorID" Type="String" MaxLength="50" FixedLength="false" Unicode="false" />
+          <Property Name="TransactionID" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="SerialNumber" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="UserNameVended" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="VTWEBUID" Type="String" MaxLength="50" FixedLength="false" Unicode="false" />
+          <Property Name="Request" Type="String" MaxLength="Max" FixedLength="false" Unicode="false" />
+          <Property Name="Response" Type="String" MaxLength="Max" FixedLength="false" Unicode="false" />
+          <Property Name="CostOfUnits" Type="String" Nullable="false" MaxLength="50" FixedLength="false" Unicode="false" />
+          <Property Name="Units" Type="String" Nullable="false" MaxLength="50" FixedLength="false" Unicode="false" />
+          <Property Name="Tariff" Type="String" Nullable="false" MaxLength="50" FixedLength="false" Unicode="false" />
+          <Property Name="VoucherStatus" Type="Int32" Nullable="false" />
+        </EntityType>
       </Schema>
     </edmx:ConceptualModels>
     <!-- C-S mapping content -->
@@ -3452,6 +3527,7 @@
           <EntitySetMapping Name="Deposits">
             <EntityTypeMapping TypeName="VENDTECH_MAINModel.Deposit">
               <MappingFragment StoreEntitySet="Deposits">
+                <ScalarProperty Name="InitiatingTransactionId" ColumnName="InitiatingTransactionId" />
                 <ScalarProperty Name="DepositId" ColumnName="DepositId" />
                 <ScalarProperty Name="UserId" ColumnName="UserId" />
                 <ScalarProperty Name="POSId" ColumnName="POSId" />
@@ -3840,6 +3916,7 @@
           <EntitySetMapping Name="TransactionDetails">
             <EntityTypeMapping TypeName="VENDTECH_MAINModel.TransactionDetail">
               <MappingFragment StoreEntitySet="TransactionDetails">
+                <ScalarProperty Name="isClaimed" ColumnName="isClaimed" />
                 <ScalarProperty Name="TransactionDetailsId" ColumnName="TransactionDetailsId" />
                 <ScalarProperty Name="UserId" ColumnName="UserId" />
                 <ScalarProperty Name="TransactionId" ColumnName="TransactionId" />
@@ -4055,6 +4132,27 @@
               </ComplexTypeMapping>
             </ResultMapping>
           </FunctionImportMapping>
+          <EntitySetMapping Name="RTS_DATA_VTWEB_TRANSACTIONDETALS__JULY_13___AUG_8___2024">
+            <EntityTypeMapping TypeName="VENDTECH_MAINModel.RTS_DATA_VTWEB_TRANSACTIONDETALS__JULY_13___AUG_8___2024">
+              <MappingFragment StoreEntitySet="RTS DATA_VTWEB_TRANSACTIONDETALS- JULY 13 - AUG 8 - 2024">
+                <ScalarProperty Name="VoucherStatus" ColumnName="VoucherStatus" />
+                <ScalarProperty Name="Tariff" ColumnName="Tariff" />
+                <ScalarProperty Name="Units" ColumnName="Units" />
+                <ScalarProperty Name="CostOfUnits" ColumnName="CostOfUnits" />
+                <ScalarProperty Name="Response" ColumnName="Response" />
+                <ScalarProperty Name="Request" ColumnName="Request" />
+                <ScalarProperty Name="VTWEBUID" ColumnName="VTWEBUID" />
+                <ScalarProperty Name="UserNameVended" ColumnName="UserNameVended" />
+                <ScalarProperty Name="SerialNumber" ColumnName="SerialNumber" />
+                <ScalarProperty Name="TransactionID" ColumnName="TransactionID" />
+                <ScalarProperty Name="IntegratorID" ColumnName="IntegratorID" />
+                <ScalarProperty Name="Amount" ColumnName="Amount" />
+                <ScalarProperty Name="MeterNumber1" ColumnName="MeterNumber1" />
+                <ScalarProperty Name="RequestDate" ColumnName="RequestDate" />
+                <ScalarProperty Name="RTSUID" ColumnName="RTSUID" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
         </EntityContainerMapping>
       </Mapping>
     </edmx:Mappings>

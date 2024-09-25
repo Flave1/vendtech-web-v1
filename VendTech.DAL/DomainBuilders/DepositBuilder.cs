@@ -43,6 +43,11 @@ namespace VendTech.DAL.DomainBuilders
             _deposit.TransactionId = transactionId;
             return this;
         }
+        public DepositBuilder WithInitiatingTransactionId(string initiatingTransactionId)
+        {
+            _deposit.InitiatingTransactionId = initiatingTransactionId;
+            return this;
+        }
 
         public DepositBuilder WithPaymentType(int paymentType)
         {
