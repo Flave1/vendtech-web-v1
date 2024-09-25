@@ -92,7 +92,7 @@
                             <td>Amount :</td>
                             <td>@Model.Amount</td>
                         </tr>
-                        @if (Model.PercentageCommission.ToString() != "0.00" && Model.Type != "TRANSFER")
+                        @*@if (Model.PercentageCommission.ToString() != "0.00" && Model.Type != "TRANSFER")
                         {
                             <tr>
                                 <td>COMMISSION @@ 1% :</td>
@@ -101,24 +101,12 @@
                                 </td>
                             </tr>
 
-                        }
+                        }*@
 
-                        @if (Model.Type == "TRANSFER")
-                        {
-                            <tr>
-                                <td>TOTAL TRANSACTION AMOUNT :</td>
-                                <td>@Model.Amount</td>
-                            </tr>
-                        }
-                        else
-                        {
-                            <tr>
-                                <td style="font-weight: bold;">TOTAL TRANSACTION AMOUNT</td>
-                                <td style="font-weight: bold;">
-                                    @Model.PercentageAmount
-                                </td>
-                            </tr>
-                        }
+                    @*<tr>
+                        <td>TOTAL TRANSACTION AMOUNT :</td>
+                        <td>@Model.Amount</td>
+                    </tr>*@
 
 
                     </tbody>

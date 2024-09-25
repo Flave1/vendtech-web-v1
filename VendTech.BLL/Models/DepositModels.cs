@@ -645,4 +645,38 @@ namespace VendTech.BLL.Models
         public decimal? AgencyCommission { get; internal set; }
         public decimal? NewBalance { get; internal set; }
     }
+
+    public partial class DepositDTOV2
+    {
+        public DepositDTOV2()
+        {
+            IsAudit = false;
+            Comments = "";
+            ValueDate = Utilities.formatDate(DateTime.UtcNow);
+            UpdatedAt = DateTime.UtcNow;
+            Status = (int)DepositPaymentStatusEnum.Released;
+            NextReminderDate = DateTime.UtcNow;
+            ValueDateStamp = DateTime.UtcNow;
+        }
+        public long DepositId { get; set; }
+        public long UserId { get; set; }
+        public long POSId { get; set; }
+        public DateTime CreatedAt { get; set; }
+        //public string TransactionId { get; set; }
+        public int PaymentType { get; set; }
+        public decimal? BalanceBefore { get; set; }
+        public decimal Amount { get; set; }
+        public string FirstDepositTransactionId { get; set; }
+        public string CheckNumberOrSlipId { get; set; }
+        public string Comments { get; set; }
+        public int Status { get; set; }
+        public string ChequeBankName { get; set; }
+        public string NameOnCheque { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+        public int BankAccountId { get; set; }
+        public bool IsAudit { get; set; }
+        public string ValueDate { get; set; }
+        public DateTime? NextReminderDate { get; set; }
+        public DateTime? ValueDateStamp { get; set; }
+    }
 }

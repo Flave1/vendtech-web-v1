@@ -9,7 +9,7 @@ namespace VendTech.Areas.Admin.Controllers
     public class CMSController : AdminBaseV2Controller
     {
         #region Variable Declaration
-        private readonly IUserManager _userManager;
+        private new readonly IUserManager _userManager;
         private readonly ICMSManager _cmsManager;
         #endregion
 

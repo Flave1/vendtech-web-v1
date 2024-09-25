@@ -18,11 +18,11 @@ namespace VendTech.Controllers
     public class POSController : AppUserBaseController
     {
         #region Variable Declaration
-        private readonly IUserManager _userManager;
+        private new readonly IUserManager _userManager;
         private readonly IAuthenticateManager _authenticateManager;
         private readonly ICMSManager _cmsManager;
         private readonly IMeterManager _meterManager;
-        private readonly IPlatformManager _platformManager;
+        private new readonly IPlatformManager _platformManager;
         private readonly IVendorManager _vendorManager;
         private readonly IPOSManager _posManager;
 

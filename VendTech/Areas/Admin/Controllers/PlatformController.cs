@@ -9,7 +9,7 @@ namespace VendTech.Areas.Admin.Controllers
     public class PlatformController : AdminBaseV2Controller
     {
         #region Variable Declaration
-        private readonly IPlatformManager _platformManager;
+        private new readonly IPlatformManager _platformManager;
         private readonly IEmailTemplateManager _templateManager;
         private readonly IPlatformApiManager _platformApiManager;
         #endregion

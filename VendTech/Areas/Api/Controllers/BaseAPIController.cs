@@ -41,21 +41,5 @@ namespace VendTech.Areas.Api.Controllers
 
         }
 
-        public async Task<bool> SendSmsAsync(SendSMSRequest model)
-        {
-            try
-            {
-               
-                return true;
-            }
-            catch (HttpRequestException e)
-            {
-                throw e;
-            }
-            catch (Exception x)
-            {
-                throw x;
-            }
-        }
     }
 }

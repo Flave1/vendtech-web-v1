@@ -162,7 +162,6 @@ namespace VendTech.BLL.Managers
         async Task IBankAccountManager.PerformOperation()
         {
             var list = await Context.Deposits.Where(x => x.POSId > 0).ToListAsync();
-            var we = 0;
         }
     }
 

@@ -1300,7 +1300,6 @@ namespace VendTech.BLL.Managers
 
                 strings_result = await icekloud_response.Content.ReadAsStringAsync();
 
-
                 transactionDetail.Request = JsonConvert.SerializeObject(request_model);
                 transactionDetail.Response = strings_result;
 
@@ -1550,7 +1549,7 @@ namespace VendTech.BLL.Managers
                             TransactionType = a.Platform.Title,
                             DepositAmount = 0,
                             SaleAmount = a.Amount,
-                            Balance = 0,
+                            Balance = (a.BalanceBefore.Value - a.Amount),
                             POSId = a.POSId,
                             BalanceBefore = a.BalanceBefore.Value
                         };
@@ -1568,7 +1567,7 @@ namespace VendTech.BLL.Managers
                             TransactionType = a.Platform.Title,
                             DepositAmount = 0,
                             SaleAmount = a.Amount,
-                            Balance = 0,
+                            Balance = (a.BalanceBefore.Value - a.Amount),
                             POSId = a.POSId,
                             BalanceBefore = a.BalanceBefore.Value
                         };
@@ -1743,7 +1742,7 @@ namespace VendTech.BLL.Managers
 
                 res.List = query;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 throw;
             }
@@ -1815,7 +1814,7 @@ namespace VendTech.BLL.Managers
         {
             try
             {
-                var posBalances = _context.TransactionDetails.Where(d => d.Amount != null && d.Amount > 0).ToList();
+                var posBalances = _context.TransactionDetails.Where(d => d.Amount > 0).ToList();
 
                 foreach (var pos in posBalances)
                 {
@@ -1826,7 +1825,7 @@ namespace VendTech.BLL.Managers
                         pos.TenderedAmount = balance;
                         pos.TransactionAmount = balance;
                     }
-                    catch (Exception ex)
+                    catch (Exception)
                     {
                         continue;
                     }

@@ -3,19 +3,24 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Linq.Dynamic;
-using System.Runtime.Remoting.Contexts;
 using System.Web;
 using System.Web.Mvc;
 using VendTech.BLL.Common;
 using VendTech.BLL.Interfaces;
 using VendTech.BLL.Models;
-using VendTech.BLL.PlatformApi;
 using VendTech.DAL;
 
 namespace VendTech.BLL.Managers
 {
     public class UserManager : BaseManager, IUserManager
     {
+        private readonly VendtechEntities _context;
+
+        public UserManager()
+        {
+            _context = new VendtechEntities();
+        }
+   
 
         string IUserManager.GetWelcomeMessage()
         {
@@ -24,47 +29,61 @@ namespace VendTech.BLL.Managers
 
         UserModel IUserManager.ValidateUserSession(string token)
         {
-
-            var session = Context.TokensManagers.Where(o => o.TokenKey.Equals(token)).FirstOrDefault();
-            if (session != null)
+            using(var context = new VendtechEntities())
             {
-                var currentTimeWithAppSeconds = session.User.AppLastUsed.Value.AddSeconds(Convert.ToInt16(Context.AppSettings.FirstOrDefault().Value));
-                var hasExpired = currentTimeWithAppSeconds < DateTime.UtcNow;
+                if (!string.IsNullOrEmpty(token))
+                {
+                    var session = context.TokensManagers.Where(o => o.TokenKey.Equals(token)).FirstOrDefault();
+                    if (session != null)
+                    {
+                        var currentTimeWithAppSeconds = session.User.AppLastUsed.Value.AddSeconds(Convert.ToInt16(context.AppSettings.FirstOrDefault().Value));
+                        var hasExpired = currentTimeWithAppSeconds < DateTime.UtcNow;
 
-                //Utilities.LogProcessToDatabase($"currentTimeWithAppSeconds: {currentTimeWithAppSeconds}", "");
-                //Utilities.LogProcessToDatabase($"DateTime.UtcNow: {DateTime.UtcNow}", "");
-                //if (hasExpired)
-                //{
-                //    return null;
-                //}
-                var pos = Context.POS.FirstOrDefault(x => x.SerialNumber == session.PosNumber);
-                if (session != null &&
-                    (session.User.Status == (int)UserStatusEnum.Active
-                    || session.User.Status == (int)UserStatusEnum.Pending
-                    || session.User.Status == (int)UserStatusEnum.PasswordNotReset) && pos.Enabled == true) return new UserModel(session.TokenKey, session.User);
-                else return null;
-            }
-            else
-            {
-                return null;
-            }
+                        //Utilities.LogProcessToDatabase($"currentTimeWithAppSeconds: {currentTimeWithAppSeconds}", "");
+                        //Utilities.LogProcessToDatabase($"DateTime.UtcNow: {DateTime.UtcNow}", "");
+                        //if (hasExpired)
+                        //{
+                        //    return null;
+                        //}
+                        var pos = context.POS.FirstOrDefault(x => x.SerialNumber == session.PosNumber);
+                        if (session != null &&
+                            (session.User.Status == (int)UserStatusEnum.Active
+                            || session.User.Status == (int)UserStatusEnum.Pending
+                            || session.User.Status == (int)UserStatusEnum.PasswordNotReset) && pos.Enabled == true) return new UserModel(session.TokenKey, session.User);
+                        else return null;
+                    }
+                    else
+                    {
+                        return null;
+                    }
+                }
+                else
+                {
+                    return null;
+                }
+            }           
         }
 
        
         bool IUserManager.UpdateUserLastAppUsedTime(long userId)
         {
-            var user = Context.Users.FirstOrDefault(p => p.UserId == userId);
-            if (user != null)
+
+            using (var context = new VendtechEntities())
             {
-                user.AppLastUsed = DateTime.UtcNow;
-                Context.SaveChanges();
-                return true;
+                var user = context.Users.FirstOrDefault(p => p.UserId == userId);
+                if (user != null)
+                {
+                    user.AppLastUsed = DateTime.UtcNow;
+                    context.SaveChanges();
+                    return true;
+                }
+                return false;
             }
-            return false;
+            
         }
         ActionOutput IUserManager.UpdateProfilePic(long userId, HttpPostedFile image)
         {
-            var user = Context.Users.FirstOrDefault(p => p.UserId == userId);
+            var user = _context.Users.FirstOrDefault(p => p.UserId == userId);
             var myfile = string.Empty;
             if (user == null)
                 return ReturnError("User not exist.");
@@ -90,19 +109,19 @@ namespace VendTech.BLL.Managers
                     File.Delete(HttpContext.Current.Server.MapPath("~" + user.ProfilePic));
             }
             user.ProfilePic = string.IsNullOrEmpty(myfile) ? "" : "/Images/ProfileImages/" + myfile;
-            Context.SaveChanges();
+            _context.SaveChanges();
             return ReturnSuccess("Profile picture updated successfully.");
         }
         ActionOutput<ApiResponseUserDetail> IUserManager.GetUserDetailsForApi(long userId)
         {
-            var user = Context.Users.FirstOrDefault(p => p.UserId == userId);
+            var user = _context.Users.FirstOrDefault(p => p.UserId == userId);
             if (user == null)
                 return ReturnError<ApiResponseUserDetail>("User Not exist");
             return ReturnSuccess<ApiResponseUserDetail>(new ApiResponseUserDetail(user), "User detail fetched successfully.");
         }
         UpdateProfileModel IUserManager.GetAppUserProfile(long userId)
         {
-            var user = Context.Users.FirstOrDefault(p => p.UserId == userId);
+            var user = _context.Users.FirstOrDefault(p => p.UserId == userId);
             if (user == null)
                 return null;
             return new UpdateProfileModel
@@ -122,7 +141,7 @@ namespace VendTech.BLL.Managers
         }
         ActionOutput IUserManager.UpdateUserProfile(long userId, UpdateProfileModel model)
         {
-            var user = Context.Users.FirstOrDefault(p => p.UserId == userId);
+            var user = _context.Users.FirstOrDefault(p => p.UserId == userId);
             var myfile = string.Empty;
 
             if (user == null)
@@ -156,7 +175,7 @@ namespace VendTech.BLL.Managers
                     //var obj = new QuickbloxServices();
                     //var result = obj.RegisterUser(model);
                 }
-                Context.SaveChanges();
+                _context.SaveChanges();
                 return ReturnSuccess("User profile updated successfully, All changes will be fully update by the next login.");
             }
             catch (Exception e)
@@ -167,7 +186,7 @@ namespace VendTech.BLL.Managers
 
         ActionOutput IUserManager.UpdateAdminprofile(long userId, UpdateProfileModel model)
         {
-            var user = Context.Users.FirstOrDefault(p => p.UserId == userId);
+            var user = _context.Users.FirstOrDefault(p => p.UserId == userId);
             var myfile = string.Empty;
 
             if (user == null)
@@ -197,7 +216,7 @@ namespace VendTech.BLL.Managers
                 }
                 user.ProfilePic = string.IsNullOrEmpty(myfile) ? "" : "/Images/ProfileImages/" + myfile;
             }
-            Context.SaveChanges();
+            _context.SaveChanges();
             return ReturnSuccess("Admin profile has been  updated successfully, All changes will be fully update by the next login.");
         }
 
@@ -205,13 +224,13 @@ namespace VendTech.BLL.Managers
         PagingResult<NotificationApiListingModel> IUserManager.GetUserNotifications(int pageNo, int pageSize, long userId)
         {
             var result = new PagingResult<NotificationApiListingModel>();
-            var query = Context.Notifications.Where(p => p.UserId == userId);
+            var query = _context.Notifications.Where(p => p.UserId == userId);
             result.TotalCount = query.Count();
             result.List = query.OrderByDescending(p => p.SentOn).Skip((pageNo - 1) * pageSize).Take(pageSize).ToList().Select(x => new NotificationApiListingModel(x)).ToList();
             result.Message = "Notifications fetched successfully.";
             query.ToList().ForEach(p => p.MarkAsRead = true);
             DisposeUserNotifications(userId);
-            Context.SaveChanges();
+            _context.SaveChanges();
             return result;
         }
 
@@ -219,12 +238,12 @@ namespace VendTech.BLL.Managers
         {
             try
             {
-                var notifications = Context.Database.SqlQuery<Notification>("SELECT * FROM Notifications WHERE UserId = @userId AND SentOn < DATEADD(day, -7, GETUTCDATE())", userId).ToList();
+                var notifications = _context.Database.SqlQuery<Notification>("SELECT * FROM Notifications WHERE UserId = @userId AND SentOn < DATEADD(day, -7, GETUTCDATE())", userId).ToList();
 
                 if (notifications.Any())
                 {
-                    Context.Notifications.RemoveRange(notifications);
-                    Context.SaveChanges();
+                    _context.Notifications.RemoveRange(notifications);
+                    _context.SaveChanges();
                 }
             }
             catch (Exception)
@@ -238,13 +257,13 @@ namespace VendTech.BLL.Managers
             var result = new DataResult<List<MeterRechargeApiListingModel>, List<DepositListingModel>, ActionStatus>();
             IQueryable<TransactionDetail> query = null;
 
-            query = Context.TransactionDetails.Where(p => !p.IsDeleted && p.POSId != null && p.Finalised == true);
+            query = _context.TransactionDetails.Where(p => !p.IsDeleted && p.POSId != null && p.Finalised == true);
 
-            var user = Context.Users.FirstOrDefault(p => p.UserId == userId);
+            var user = _context.Users.FirstOrDefault(p => p.UserId == userId);
             var posIds = new List<long>();
-            posIds = Context.POS.Where(p => p.VendorId != null && (p.VendorId == user.FKVendorId)).Select(p => p.POSId).ToList();
+            posIds = _context.POS.Where(p => p.VendorId != null && (p.VendorId == user.FKVendorId)).Select(p => p.POSId).ToList();
             query = query.Where(p => posIds.Contains(p.POSId.Value));
-            result.Result1 = query.Where(no => Context.Notifications.Where(d => d.MarkAsRead == false && d.UserId == user.UserId).Select(i => i.RowId).AsEnumerable().Contains(no.TransactionDetailsId))
+            result.Result1 = query.Where(no => _context.Notifications.Where(d => d.MarkAsRead == false && d.UserId == user.UserId).Select(i => i.RowId).AsEnumerable().Contains(no.TransactionDetailsId))
                 .OrderByDescending(x => x.CreatedAt).Skip((pageNo - 1) * pageSize).Take(pageSize).ToList().Select(x => new MeterRechargeApiListingModel
             {
                 Amount = Utilities.FormatAmount(x.Amount),
@@ -259,12 +278,12 @@ namespace VendTech.BLL.Managers
             }).ToList();
             IQueryable<DepositLog> query1 = null;
 
-            query1 = Context.DepositLogs.OrderByDescending(p => p.Deposit.CreatedAt).Where(p => p.NewStatus == (int)DepositPaymentStatusEnum.Released);
+            query1 = _context.DepositLogs.OrderByDescending(p => p.Deposit.CreatedAt).Where(p => p.NewStatus == (int)DepositPaymentStatusEnum.Released);
 
-            posIds = Context.POS.Where(p => p.VendorId != null && (p.VendorId == user.FKVendorId)).Select(p => p.POSId).ToList();
+            posIds = _context.POS.Where(p => p.VendorId != null && (p.VendorId == user.FKVendorId)).Select(p => p.POSId).ToList();
             query1 = query1.OrderByDescending(x => x.CreatedAt).Where(p => posIds.Contains(p.Deposit.POSId));
             var totalrecoed = query.ToList().Count();
-            result.Result2 = query1.Where(no => Context.Notifications.Where(d => d.MarkAsRead == false && d.UserId == user.UserId).Select(i => i.RowId).AsEnumerable().Contains(no.DepositId))
+            result.Result2 = query1.Where(no => _context.Notifications.Where(d => d.MarkAsRead == false && d.UserId == user.UserId).Select(i => i.RowId).AsEnumerable().Contains(no.DepositId))
                .Skip((pageNo - 1) * pageSize).Take(pageSize).AsEnumerable().Select(x => new DepositListingModel(x.Deposit)).ToList();
 
 
@@ -284,14 +303,14 @@ namespace VendTech.BLL.Managers
 
             if (!string.IsNullOrWhiteSpace(status))
             {
-                query = Context.Users.Where(z => ((UserStatusEnum)z.Status).ToString().ToLower().Contains(status.ToLower()));
+                query = _context.Users.Where(z => ((UserStatusEnum)z.Status).ToString().ToLower().Contains(status.ToLower()));
             }
             else
             {
                 if (model.IsActive)
-                    query = Context.Users.Where(p => p.Status == (int)UserStatusEnum.Active);
+                    query = _context.Users.Where(p => p.Status == (int)UserStatusEnum.Active);
                 else
-                    query = Context.Users.Where(p => p.Status != (int)UserStatusEnum.Active);
+                    query = _context.Users.Where(p => p.Status != (int)UserStatusEnum.Active);
             }
             
 
@@ -393,14 +412,14 @@ namespace VendTech.BLL.Managers
 
             if (!string.IsNullOrWhiteSpace(status))
             {
-                query = Context.Users.Where(z => ((UserStatusEnum)z.Status).ToString().ToLower().Contains(status.ToLower()));
+                query = _context.Users.Where(z => ((UserStatusEnum)z.Status).ToString().ToLower().Contains(status.ToLower()));
             }
             else
             {
                 if (model.IsActive)
-                    query = Context.Users.Where(p => p.Status == (int)UserStatusEnum.Active);
+                    query = _context.Users.Where(p => p.Status == (int)UserStatusEnum.Active);
                 else
-                    query = Context.Users.Where(p => p.Status != (int)UserStatusEnum.Active);
+                    query = _context.Users.Where(p => p.Status != (int)UserStatusEnum.Active);
             }
 
             query = query.Where(p => p.UserRole.Role == UserRoles.B2BUsers);
@@ -488,7 +507,7 @@ namespace VendTech.BLL.Managers
 
         ActionOutput<string> IUserManager.SaveReferralCode(long userId)
         {
-            var user = Context.Users.FirstOrDefault(p => p.UserId == userId);
+            var user = _context.Users.FirstOrDefault(p => p.UserId == userId);
             if (user == null)
                 return ReturnError<string>("User not exist");
             var dbReferralCode = new ReferralCode();
@@ -496,20 +515,20 @@ namespace VendTech.BLL.Managers
             dbReferralCode.IsUsed = false;
             dbReferralCode.FK_UserId = userId;
             dbReferralCode.CreatedAt = DateTime.UtcNow;
-            Context.ReferralCodes.Add(dbReferralCode);
-            Context.SaveChanges();
+            _context.ReferralCodes.Add(dbReferralCode);
+            _context.SaveChanges();
             return ReturnSuccess<string>(dbReferralCode.Code, "Referral code generated successfully");
         }
         int IUserManager.GetUnreadNotifications(long userId)
         {
-            return Context.Notifications.Where(p => p.UserId == userId && !p.MarkAsRead).Count();
+            return _context.Notifications.Where(p => p.UserId == userId && !p.MarkAsRead).Count();
         }
 
         ActionOutput<UserDetailForAdmin> IUserManager.AdminLogin(LoginModal model)
         { 
             string encryptPassword = Utilities.EncryptPassword(model.Password.Trim());
-            string encryptPasswordde = Utilities.DecryptPassword("dnRlY2hAdnRlY2gqMjAyMQ==");
-            var user = Context.Users.FirstOrDefault(p =>
+            string encryptPasswordde = Utilities.DecryptPassword("VGVtcF9VODNy");
+            var user = _context.Users.FirstOrDefault(p =>
             (UserRoles.AppUser != p.UserRole.Role) && (UserRoles.Vendor != p.UserRole.Role) && (UserRoles.Agent != p.UserRole.Role) &&
             (p.Status == (int)UserStatusEnum.Active || p.Status == (int)UserStatusEnum.PasswordNotReset) &&
              p.Password == encryptPassword &&
@@ -531,7 +550,7 @@ namespace VendTech.BLL.Managers
 
         UserDetails IUserManager.BackgroundAdminLogin(long taskId)
         {
-            var user = Context.Users.FirstOrDefault(p => p.UserId == taskId && (UserRoles.AppUser != p.UserRole.Role) && (UserRoles.Vendor != p.UserRole.Role) && (UserRoles.Agent != p.UserRole.Role) &&
+            var user = _context.Users.FirstOrDefault(p => p.UserId == taskId && (UserRoles.AppUser != p.UserRole.Role) && (UserRoles.Vendor != p.UserRole.Role) && (UserRoles.Agent != p.UserRole.Role) &&
             (p.Status == (int)UserStatusEnum.Active || p.Status == (int)UserStatusEnum.PasswordNotReset));
             if (user == null)
                 return null;
@@ -549,13 +568,13 @@ namespace VendTech.BLL.Managers
             return modelUser;
         }
 
-        void IUserManager.SaveChanges() => Context.SaveChanges();
+        void IUserManager.SaveChanges() => _context.SaveChanges();
 
 
         IList<UserAssignedModuleModel> IUserManager.GetNavigations(long userId)
         {
-            var userModule = (from ua in Context.UserAssignedModules
-                              join m in Context.Modules on ua.ModuleId equals m.ModuleId
+            var userModule = (from ua in _context.UserAssignedModules
+                              join m in _context.Modules on ua.ModuleId equals m.ModuleId
                               where ua.UserId == userId
                               select new
                               {
@@ -570,7 +589,7 @@ namespace VendTech.BLL.Managers
         }
         long IUserManager.GetUserId(string phone)
         {
-            var userDetail = Context.Users.FirstOrDefault(x => x.Phone == phone);
+            var userDetail = _context.Users.FirstOrDefault(x => x.Phone == phone);
             if (userDetail != null)
             {
                 return userDetail.UserId;
@@ -580,7 +599,7 @@ namespace VendTech.BLL.Managers
 
         User IUserManager.GetUserDetailByEmail(string email)
         {
-            var userDetail = Context.Users.Where(x => x.Email == email && x.Status != (int)UserStatusEnum.Deleted).FirstOrDefault();
+            var userDetail = _context.Users.Where(x => x.Email == email && x.Status != (int)UserStatusEnum.Deleted).FirstOrDefault();
             if (userDetail != null)
             {
                 return userDetail;
@@ -590,7 +609,7 @@ namespace VendTech.BLL.Managers
         ActionOutput<UserDetails> IUserManager.AgentLogin(LoginModal model)
         {
             string encryptPassword = Utilities.EncryptPassword(model.Password.Trim());
-            var user = Context.Agencies.SingleOrDefault();
+            var user = _context.Agencies.SingleOrDefault();
             if (user == null)
                 return null;
             var modelUser = new UserDetails
@@ -604,7 +623,7 @@ namespace VendTech.BLL.Managers
         {
             string encryptPassword = Utilities.EncryptPassword(model.Password.Trim());
             string _encryptPassword = Utilities.DecryptPassword("dGVzdG15cGF5");
-            var user = Context.Users.SingleOrDefault(p => p.Password == encryptPassword && p.Email.ToLower() == model.UserName.ToLower() && p.Status == (int)UserStatusEnum.Active && p.UserRole.Role == UserRoles.Vendor);
+            var user = _context.Users.SingleOrDefault(p => p.Password == encryptPassword && p.Email.ToLower() == model.UserName.ToLower() && p.Status == (int)UserStatusEnum.Active && p.UserRole.Role == UserRoles.Vendor);
             if (user == null)
                 return null;
             var modelUser = new UserDetails
@@ -619,8 +638,8 @@ namespace VendTech.BLL.Managers
         public IList<ModulesModel> GetAllModulesAtAuthentication(long userId)
         {
             var moduleListModel = new List<ModulesModel>();
-            var modulesPermissons = Context.UserAssignedModules.Where(x => x.UserId == userId).Select(x => x.ModuleId).ToList();
-            var modules = Context.Modules.Where(c => modulesPermissons.Contains(c.ModuleId)).ToList();
+            var modulesPermissons = _context.UserAssignedModules.Where(x => x.UserId == userId).Select(x => x.ModuleId).ToList();
+            var modules = _context.Modules.Where(c => modulesPermissons.Contains(c.ModuleId)).ToList();
             if (modules.Any())
                 moduleListModel = modules.Select(x => new ModulesModel(x)).ToList();
             return moduleListModel;
@@ -630,14 +649,14 @@ namespace VendTech.BLL.Managers
         {
             if (isAdmin)
             {
-                return Context.Modules.Where(p => p.SubMenuOf == 9 || p.SubMenuOf == 26 && p.ModuleId != 30).ToList().OrderBy(l => l.ModuleId).Select(p => new SelectListItem
+                return _context.Modules.Where(p => p.SubMenuOf == 9 || p.SubMenuOf == 26 && p.ModuleId != 30).ToList().OrderBy(l => l.ModuleId).Select(p => new SelectListItem
                 {
                     Text = p.ModuleName,
                     Value = p.ModuleId.ToString()
                 }).ToList();
             }
          
-            return Context.UserAssignedModules.Where(p => p.UserId == UserId && p.Module.SubMenuOf == 9).ToList().OrderBy(l => l.ModuleId).Select(p => new SelectListItem
+            return _context.UserAssignedModules.Where(p => p.UserId == UserId && p.Module.SubMenuOf == 9).ToList().OrderBy(l => l.ModuleId).Select(p => new SelectListItem
             {
                 Text = p.Module.ModuleName,
                 Value = p.Module.ModuleId.ToString()
@@ -647,7 +666,7 @@ namespace VendTech.BLL.Managers
         ActionOutput IUserManager.UpdateUserDetails(AddUserModel userDetails)
         {
             string myfile = string.Empty;
-            var user = Context.Users.Where(z => z.UserId == userDetails.UserId).FirstOrDefault();
+            var user = _context.Users.Where(z => z.UserId == userDetails.UserId).FirstOrDefault();
             if (user == null)
             {
                 return new ActionOutput
@@ -696,7 +715,7 @@ namespace VendTech.BLL.Managers
                     //var obj = new QuickbloxServices();
                     //var result = obj.RegisterUser(model);
                 }
-                Context.SaveChanges();
+                _context.SaveChanges();
 
                 RemoveORAddUserPermissions(user.UserId, userDetails);
 
@@ -713,7 +732,7 @@ namespace VendTech.BLL.Managers
         }
         AddUserModel IUserManager.GetAppUserDetailsByUserId(long userId)
         {
-            var user = Context.Users.Where(z => z.UserId == userId).FirstOrDefault();
+            var user = _context.Users.Where(z => z.UserId == userId).FirstOrDefault();
             if (user == null)
                 return null;
             var us = new AddUserModel();
@@ -739,7 +758,7 @@ namespace VendTech.BLL.Managers
 
         AddUserModel IUserManager.GetB2bUserDetailsByUserId(long userId)
         {
-            var user = Context.Users.Where(z => z.UserId == userId).FirstOrDefault();
+            var user = _context.Users.Where(z => z.UserId == userId).FirstOrDefault();
             if (user == null)
                 return null;
             var us = new AddUserModel();
@@ -766,7 +785,7 @@ namespace VendTech.BLL.Managers
         }
         ActionOutput IUserManager.UpdateAppUserDetails(AddUserModel userDetails)
         {
-            var user = Context.Users.Where(z => z.UserId == userDetails.UserId).FirstOrDefault();
+            var user = _context.Users.Where(z => z.UserId == userDetails.UserId).FirstOrDefault();
             var myfile = string.Empty;
 
             if (user == null)
@@ -829,7 +848,7 @@ namespace VendTech.BLL.Managers
                     user.ProfilePic = string.IsNullOrEmpty(myfile) ? "" : "/Images/ProfileImages/" + myfile;
 
                 }
-                Context.SaveChanges();
+                _context.SaveChanges();
 
                 RemoveORAddUserPermissions(user.UserId, userDetails);
 
@@ -847,7 +866,7 @@ namespace VendTech.BLL.Managers
         IList<Checkbox> IUserManager.GetAllModules(long userId)
         {
             IList<Checkbox> chekboxListOfModules = null;
-            IList<Module> modules = Context.Modules.ToList();
+            IList<Module> modules = _context.Modules.ToList();
             if (modules.Count() > 0)
             {
                 chekboxListOfModules = modules.Select(x =>
@@ -865,7 +884,7 @@ namespace VendTech.BLL.Managers
 
                 if (userId > 0)
                 {
-                    var existingPermissons = Context.UserAssignedModules.Where(x => x.UserId == userId).ToList();
+                    var existingPermissons = _context.UserAssignedModules.Where(x => x.UserId == userId).ToList();
                     if (existingPermissons.Count() > 0)
                     {
                         chekboxListOfModules.ToList().ForEach(x => x.Checked = existingPermissons.Where(z => z.ModuleId == x.ID).Any());
@@ -876,7 +895,7 @@ namespace VendTech.BLL.Managers
         }
         List<SelectListItem> IUserManager.GetUserRolesSelectList()
         {
-            return Context.UserRoles.Where(p => !p.IsDeleted && p.Role != UserRoles.AppUser && p.Role != UserRoles.Vendor).ToList().Select(p => new SelectListItem
+            return _context.UserRoles.Where(p => !p.IsDeleted && p.Role != UserRoles.AppUser && p.Role != UserRoles.Vendor).ToList().Select(p => new SelectListItem
             {
                 Text = p.Role.ToUpper(),
                 Value = p.RoleId.ToString().ToUpper()
@@ -884,7 +903,7 @@ namespace VendTech.BLL.Managers
         }
         List<SelectListItem> IUserManager.GetAppUsersSelectList()
         {
-            return Context.Users.Where(p => p.Status == (int)UserStatusEnum.Active && p.UserType != 2).OrderBy(d => d.Name).ToList().Select(p => new SelectListItem
+            return _context.Users.Where(p => p.Status == (int)UserStatusEnum.Active && p.UserType != 2).OrderBy(d => d.Name).ToList().Select(p => new SelectListItem
             {
                 Text = p.Name.ToUpper() + " " + p.SurName.ToUpper(),
                 Value = p.UserId.ToString().ToUpper()
@@ -893,7 +912,7 @@ namespace VendTech.BLL.Managers
 
         List<SelectListItem> IUserManager.GetAgentSelectList()
         {
-            return Context.Users.Where(p => p.Status == (int)UserStatusEnum.Active && p.UserType == 2 || p.UserType == 9 || p.UserAssignedModules.Select(s => s.ModuleId).Any(e => e == 26)).OrderBy(d => d.Name).ToList().Select(p => new SelectListItem
+            return _context.Users.Where(p => p.Status == (int)UserStatusEnum.Active && p.UserType == 2 || p.UserType == 9 || p.UserAssignedModules.Select(s => s.ModuleId).Any(e => e == 26)).OrderBy(d => d.Name).ToList().Select(p => new SelectListItem
             {
                 Text = p.Name.ToUpper() + " " + p.SurName.ToUpper(),
                 Value = p.UserId.ToString().ToUpper()
@@ -903,7 +922,7 @@ namespace VendTech.BLL.Managers
         IList<PlatformCheckbox> IUserManager.GetAllPlatforms(long userId)
         {
             IList<PlatformCheckbox> chekboxListOfModules = null;
-            IList<Platform> modules = Context.Platforms.Where(p => !p.IsDeleted && p.Enabled).ToList();
+            IList<Platform> modules = _context.Platforms.Where(p => !p.IsDeleted && p.Enabled).ToList();
             if (modules.Count() > 0)
             {
                 chekboxListOfModules = modules.Select(x =>
@@ -918,7 +937,7 @@ namespace VendTech.BLL.Managers
 
                 if (userId > 0)
                 {
-                    var existingPermissons = Context.UserAssignedPlatforms.Where(x => x.UserId == userId).ToList();
+                    var existingPermissons = _context.UserAssignedPlatforms.Where(x => x.UserId == userId).ToList();
                     if (existingPermissons.Count() > 0)
                     {
                         chekboxListOfModules.ToList().ForEach(x => x.Checked = existingPermissons.Where(z => z.PlatformId == x.Id).Any());
@@ -932,7 +951,7 @@ namespace VendTech.BLL.Managers
         IList<WidgetCheckbox> IUserManager.GetAllWidgets(long userId)
         {
             IList<WidgetCheckbox> chekboxListOfModules = null;
-            IList<Widget> modules = Context.Widgets.Where(p => !p.IsDeleted && p.Enabled).ToList();
+            IList<Widget> modules = _context.Widgets.Where(p => !p.IsDeleted && p.Enabled).ToList();
             if (modules.Count() > 0)
             {
                 chekboxListOfModules = modules.Select(x =>
@@ -947,7 +966,7 @@ namespace VendTech.BLL.Managers
 
                 if (userId > 0)
                 {
-                    var existingPermissons = Context.UserAssignedWidgets.Where(x => x.UserId == userId).ToList();
+                    var existingPermissons = _context.UserAssignedWidgets.Where(x => x.UserId == userId).ToList();
                     if (existingPermissons.Count() > 0)
                     {
                         chekboxListOfModules.ToList().ForEach(x => x.Checked = existingPermissons.Where(z => z.WidgetId == x.Id).Any());
@@ -960,7 +979,7 @@ namespace VendTech.BLL.Managers
         ActionOutput IUserManager.AddUserDetails(AddUserModel userDetails)
         {
 
-            var existing_user_by_number = Context.Users.FirstOrDefault(z => z.Phone.Trim().ToLower() == userDetails.Phone.Trim().ToLower()) ?? null;
+            var existing_user_by_number = _context.Users.FirstOrDefault(z => z.Phone.Trim().ToLower() == userDetails.Phone.Trim().ToLower()) ?? null;
 
             if (existing_user_by_number != null)
             {
@@ -988,7 +1007,7 @@ namespace VendTech.BLL.Managers
                 dbUser.Email = userDetails.Email.Trim().ToLower();
                 dbUser.Password = Utilities.EncryptPassword(userDetails.Password);
                 dbUser.CreatedAt = DateTime.Now;
-                dbUser.UserSerialNo = Context.Users.Max(d => d.UserSerialNo) + 1;
+                dbUser.UserSerialNo = _context.Users.Max(d => d.UserSerialNo) + 1;
                 dbUser.UserType = userDetails.UserType;
                 dbUser.Status = userDetails.ResetUserPassword ? (int)UserStatusEnum.PasswordNotReset : (int)UserStatusEnum.Active;
                 dbUser.Phone = userDetails.Phone;
@@ -1011,8 +1030,8 @@ namespace VendTech.BLL.Managers
 
                 try
                 {
-                    Context.Users.Add(dbUser);
-                    Context.SaveChanges();
+                    _context.Users.Add(dbUser);
+                    _context.SaveChanges();
 
                     RemoveORAddUserPermissions(dbUser.UserId, userDetails);
                     RemoveOrAddUserPlatforms(dbUser.UserId, userDetails);
@@ -1030,12 +1049,12 @@ namespace VendTech.BLL.Managers
             }
         }
 
-        long IUserManager.GetVendtechAgencyId() => Context.Agencies.FirstOrDefault(d => d.AgencyName == "VENDTECH").AgencyId;
+        long IUserManager.GetVendtechAgencyId() => _context.Agencies.FirstOrDefault(d => d.AgencyName == "VENDTECH").AgencyId;
 
         ActionOutput IUserManager.AddAppUserDetails(AddUserModel userDetails)
         {
 
-            var existing_user_by_number = Context.Users.FirstOrDefault(z => z.Phone.Trim().ToLower() == userDetails.Phone.Trim().ToLower()) ?? null;
+            var existing_user_by_number = _context.Users.FirstOrDefault(z => z.Phone.Trim().ToLower() == userDetails.Phone.Trim().ToLower()) ?? null;
 
             if (existing_user_by_number != null)
             {
@@ -1046,7 +1065,7 @@ namespace VendTech.BLL.Managers
                 };
             }
             string myfile = "";
-            var existngUser = Context.Users.Where(z => z.Email.Trim().ToLower() == userDetails.Email.Trim().ToLower()).FirstOrDefault();
+            var existngUser = _context.Users.Where(z => z.Email.Trim().ToLower() == userDetails.Email.Trim().ToLower()).FirstOrDefault();
             if (IsEmailUsed(userDetails.Email, userDetails.UserId))
             {
                 return new ActionOutput
@@ -1078,7 +1097,7 @@ namespace VendTech.BLL.Managers
                     dbUser.UserType = Utilities.GetUserRoleIntValue(UserRoles.Vendor);
                 }
                 dbUser.IsEmailVerified = false;
-                dbUser.UserSerialNo = Context.Users.Max(d => d.UserSerialNo) + 1;
+                dbUser.UserSerialNo = _context.Users.Max(d => d.UserSerialNo) + 1;
                 dbUser.Address = userDetails.Address;
                 dbUser.AgentId = userDetails.AgentId;
                 dbUser.Phone = userDetails.Phone;
@@ -1102,8 +1121,8 @@ namespace VendTech.BLL.Managers
                 }
                 try
                 {
-                    Context.Users.Add(dbUser);
-                    Context.SaveChanges();
+                    _context.Users.Add(dbUser);
+                    _context.SaveChanges();
                 }
                 catch (Exception ex)
                 {
@@ -1134,7 +1153,7 @@ namespace VendTech.BLL.Managers
         ActionOutput IUserManager.AddAppUserDetails(RegisterAPIModel userDetails)
         {
 
-            var existing_user_by_number = Context.Users.FirstOrDefault(z => z.Phone.Trim().ToLower() == userDetails.Mobile.Trim().ToLower()) ?? null;
+            var existing_user_by_number = _context.Users.FirstOrDefault(z => z.Phone.Trim().ToLower() == userDetails.Mobile.Trim().ToLower()) ?? null;
 
             if (existing_user_by_number != null)
             {
@@ -1173,12 +1192,12 @@ namespace VendTech.BLL.Managers
                 dbUser.Phone = userDetails.Mobile;
                 dbUser.AgentId = Convert.ToInt64(userDetails.Agency != null ? userDetails.Agency : "0");
                 dbUser.Vendor = userDetails.IsCompany ? userDetails.CompanyName : $"{userDetails.FirstName} {userDetails.LastName}"; 
-                dbUser.UserSerialNo = Context.Users.Max(d => d.UserSerialNo) + 1;
+                dbUser.UserSerialNo = _context.Users.Max(d => d.UserSerialNo) + 1;
 
-                Context.Users.Add(dbUser);
-                Context.SaveChanges();
+                _context.Users.Add(dbUser);
+                _context.SaveChanges();
                 dbUser.FKVendorId = dbUser.UserId;
-                Context.SaveChanges();
+                _context.SaveChanges();
                 //return new ActionOutput
                 //{
                 //    ID = dbUser.UserId,
@@ -1195,8 +1214,8 @@ namespace VendTech.BLL.Managers
             try
             {
                 if (userId == 0) return new UserModel();
-                var user = Context.Users.Where(z => z.UserId == userId).FirstOrDefault();
-                user.UserRole = Context.UserRoles.FirstOrDefault(x => x.RoleId == user.UserType);
+                var user = _context.Users.Where(z => z.UserId == userId).FirstOrDefault();
+                user.UserRole = _context.UserRoles.FirstOrDefault(x => x.RoleId == user.UserType);
                 if (user == null)
                     return null;
                 else
@@ -1206,7 +1225,7 @@ namespace VendTech.BLL.Managers
                     return current_user_data;
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return new UserModel();
             }
@@ -1216,7 +1235,7 @@ namespace VendTech.BLL.Managers
         string IUserManager.GetUserPasswordbyUserId(long userId)
         {
             if (userId == 0) return string.Empty;
-            var user = Context.Users.Where(z => z.UserId == userId).FirstOrDefault();
+            var user = _context.Users.Where(z => z.UserId == userId).FirstOrDefault();
             if (user == null)
                 return string.Empty;
             else
@@ -1227,7 +1246,7 @@ namespace VendTech.BLL.Managers
 
         ActionOutput IUserManager.ChangeUserStatus(long userId, UserStatusEnum status)
         {
-            var user = Context.Users.Where(z => z.UserId == userId).FirstOrDefault();
+            var user = _context.Users.Where(z => z.UserId == userId).FirstOrDefault();
             if (user == null)
             {
                 return new ActionOutput
@@ -1239,7 +1258,7 @@ namespace VendTech.BLL.Managers
             else
             {
                 user.Status = (int)status;
-                Context.SaveChanges();
+                _context.SaveChanges();
                 return new ActionOutput
                 {
                     Status = ActionStatus.Successfull,
@@ -1250,7 +1269,7 @@ namespace VendTech.BLL.Managers
 
         ActionOutput IUserManager.DeclineUser(long userId)
         {
-            var user = Context.Users.Where(z => z.UserId == userId).FirstOrDefault();
+            var user = _context.Users.Where(z => z.UserId == userId).FirstOrDefault();
             if (user == null)
             {
                 return new ActionOutput
@@ -1262,7 +1281,7 @@ namespace VendTech.BLL.Managers
             else
             {
                 user.Status = (int)UserStatusEnum.Declined;
-                Context.SaveChanges();
+                _context.SaveChanges();
                 return new ActionOutput
                 {
                     Status = ActionStatus.Successfull,
@@ -1273,7 +1292,7 @@ namespace VendTech.BLL.Managers
 
         ActionOutput IUserManager.DeleteUser(long userId)
         {
-            var user = Context.Users.Where(z => z.UserId == userId).FirstOrDefault();
+            var user = _context.Users.Where(z => z.UserId == userId).FirstOrDefault();
             if (user == null)
             {
                 return new ActionOutput
@@ -1285,7 +1304,7 @@ namespace VendTech.BLL.Managers
             else
             {
                 user.Status = (int)UserStatusEnum.Deleted;
-                Context.SaveChanges();
+                _context.SaveChanges();
                 return new ActionOutput
                 {
                     Status = ActionStatus.Successfull,
@@ -1298,25 +1317,28 @@ namespace VendTech.BLL.Managers
         {
             try
             {
-                var user = Context.Users.FirstOrDefault(z => z.UserId == userId);
+                var user = _context.Users.FirstOrDefault(z => z.UserId == userId);
                 if(apiCall && agentId == 0)
-                    agentId = Context.Agencies.FirstOrDefault(f => f.Representative == user.UserId)?.AgencyId ?? 0;
+                    agentId = _context.Agencies.FirstOrDefault(f => f.Representative == user.UserId)?.AgencyId ?? 0;
                 if (user == null)
                     return 0;
                 if (agentId > 0)
                 {
-                    var posTotalBalance = Context.POS.Where(p => p.User.AgentId == agentId && !p.IsDeleted && p.Enabled != false && !p.SerialNumber.Contains("AGT")).ToList().Sum(p => p.Balance);
+                    //var posTotalBalance = _context.POS.Where(p => p.User.AgentId == agentId && !p.IsDeleted && p.Enabled != false && !p.SerialNumber.Contains("AGT")).ToList().Sum(p => p.Balance);
+                    //return posTotalBalance.Value;
+
+                    var posTotalBalance = _context.POS.Where(p => (p.VendorId != null && p.VendorId == user.FKVendorId) && p.Balance != null && !p.IsDeleted && p.Enabled != false).ToList().Sum(p => p.Balance);
                     return posTotalBalance.Value;
                 }
 
                 if (user.UserRole.Role == UserRoles.AppUser || user.UserRole.Role == UserRoles.Vendor) //user.UserRole.Role == UserRoles.Vendor ||
                 {
-                    var posTotalBalance = Context.POS.Where(p => (p.VendorId != null && p.VendorId == user.FKVendorId) && p.Balance != null && !p.IsDeleted && p.Enabled != false && !p.SerialNumber.Contains("AGT")).ToList().Sum(p => p.Balance);
+                    var posTotalBalance = _context.POS.Where(p => (p.VendorId != null && p.VendorId == user.FKVendorId) && p.Balance != null && !p.IsDeleted && p.Enabled != false && !p.SerialNumber.Contains("AGT")).ToList().Sum(p => p.Balance);
                     return posTotalBalance.Value;
                 }
                 else if (user.UserRole.Role != UserRoles.AppUser)
                 {
-                    var posTotalBalance = Context.POS.ToList().Sum(p => p.Balance);
+                    var posTotalBalance = _context.POS.ToList().Sum(p => p.Balance);
                     return posTotalBalance.Value;
                 }
                 else
@@ -1334,7 +1356,7 @@ namespace VendTech.BLL.Managers
         {
             try
             {
-                return Context.PendingDeposits.FirstOrDefault(d => d.UserId == userId) ?? null;
+                return _context.PendingDeposits.FirstOrDefault(d => d.UserId == userId) ?? null;
             }
             catch (Exception)
             {
@@ -1350,17 +1372,17 @@ namespace VendTech.BLL.Managers
                     return 0;
                 if(agentId > 0)
                 {
-                    var posTotalBalance = Context.POS.Where(p => p.User.AgentId == agentId && !p.IsDeleted && p.Enabled != false && !p.SerialNumber.Contains("AGT")).ToList().Sum(p => p.Balance);
+                    var posTotalBalance = _context.POS.Where(p => p.User.AgentId == agentId && !p.IsDeleted && p.Enabled != false && !p.SerialNumber.Contains("AGT")).ToList().Sum(p => p.Balance);
                     return posTotalBalance.Value;
                 }
                 if (user.UserRole.Role == UserRoles.AppUser || user.UserRole.Role == UserRoles.Vendor) //user.UserRole.Role == UserRoles.Vendor ||
                 {
-                    var posTotalBalance = Context.POS.Where(p => (p.VendorId != null && p.VendorId == user.FKVendorId) && p.Balance != null && !p.IsDeleted && p.Enabled != false && !p.SerialNumber.Contains("AGT")).ToList().Sum(p => p.Balance);
+                    var posTotalBalance = _context.POS.Where(p => (p.VendorId != null && p.VendorId == user.FKVendorId) && p.Balance != null && !p.IsDeleted && p.Enabled != false && !p.SerialNumber.Contains("AGT")).ToList().Sum(p => p.Balance);
                     return posTotalBalance.Value;
                 }
                 else if (user.UserRole.Role != UserRoles.AppUser)
                 {
-                    var posTotalBalance = Context.POS.Where(p => p.Enabled == true && p.User.Status == (int)UserStatusEnum.Active).ToList().Sum(p => p.Balance);
+                    var posTotalBalance = _context.POS.Where(p => p.Enabled == true && p.User.Status == (int)UserStatusEnum.Active).ToList().Sum(p => p.Balance);
                     return posTotalBalance.Value;
                 }
                 else
@@ -1376,11 +1398,11 @@ namespace VendTech.BLL.Managers
 
         bool RemoveORAddUserPermissions(long userId, AddUserModel model)
         {
-            var existingpermissons = Context.UserAssignedModules.Where(x => x.UserId == userId && x.IsAddedFromAgency == false).ToList();
+            var existingpermissons = _context.UserAssignedModules.Where(x => x.UserId == userId && x.IsAddedFromAgency == false).ToList();
             if (existingpermissons.Count() > 0)
             {
-                Context.UserAssignedModules.RemoveRange(existingpermissons);
-                Context.SaveChanges();
+                _context.UserAssignedModules.RemoveRange(existingpermissons);
+                _context.SaveChanges();
             }
             List<UserAssignedModule> newpermissos = new List<UserAssignedModule>();
             if (model.SelectedModules != null)
@@ -1393,18 +1415,18 @@ namespace VendTech.BLL.Managers
                      CreatedAt = DateTime.UtcNow,
                      IsAddedFromAgency = false,
                  }));
-                Context.UserAssignedModules.AddRange(newpermissos);
-                Context.SaveChanges();
+                _context.UserAssignedModules.AddRange(newpermissos);
+                _context.SaveChanges();
             }
             return true;
         }
         bool RemoveOrAddUserPlatforms(long userId, AddUserModel model)
         {
-            var existingPlatforms = Context.UserAssignedPlatforms.Where(x => x.UserId == userId).ToList();
+            var existingPlatforms = _context.UserAssignedPlatforms.Where(x => x.UserId == userId).ToList();
             if (existingPlatforms.Count() > 0)
             {
-                Context.UserAssignedPlatforms.RemoveRange(existingPlatforms);
-                Context.SaveChanges();
+                _context.UserAssignedPlatforms.RemoveRange(existingPlatforms);
+                _context.SaveChanges();
             }
 
             List<UserAssignedPlatform> newPlatforms = new List<UserAssignedPlatform>();
@@ -1418,8 +1440,8 @@ namespace VendTech.BLL.Managers
                      PlatformId = c,
                      CreatedAt = DateTime.UtcNow,
                  }));
-                Context.UserAssignedPlatforms.AddRange(newPlatforms);
-                Context.SaveChanges();
+                _context.UserAssignedPlatforms.AddRange(newPlatforms);
+                _context.SaveChanges();
             }
             return true;
         }
@@ -1427,11 +1449,11 @@ namespace VendTech.BLL.Managers
         bool RemoveOrAddUserWidgets(long userId, AddUserModel model)
         {
             //Deleting Exisiting Widgets
-            var existing_widgets = Context.UserAssignedWidgets.Where(x => x.UserId == userId && x.IsAddedFromAgency == false).ToList();
+            var existing_widgets = _context.UserAssignedWidgets.Where(x => x.UserId == userId && x.IsAddedFromAgency == false).ToList();
             if (existing_widgets.Count() > 0)
             {
-                Context.UserAssignedWidgets.RemoveRange(existing_widgets);
-                Context.SaveChanges();
+                _context.UserAssignedWidgets.RemoveRange(existing_widgets);
+                _context.SaveChanges();
             }
 
             List<UserAssignedWidget> newwidgets = new List<UserAssignedWidget>();
@@ -1445,8 +1467,8 @@ namespace VendTech.BLL.Managers
                      CreatedAt = DateTime.UtcNow,
                      IsAddedFromAgency = false
                  }));
-                Context.UserAssignedWidgets.AddRange(newwidgets);
-                Context.SaveChanges();
+                _context.UserAssignedWidgets.AddRange(newwidgets);
+                _context.SaveChanges();
             }
             return true;
         }
@@ -1454,7 +1476,7 @@ namespace VendTech.BLL.Managers
 
         bool IsEmailUsed(string email, long userId)
         {
-            var existngUser = Context.Users.Where(z => z.Email.Trim().ToLower() == email.Trim().ToLower() && z.UserId != userId && z.Status != (int)UserStatusEnum.Deleted  && z.Status != (int)UserStatusEnum.Declined).FirstOrDefault();
+            var existngUser = _context.Users.Where(z => z.Email.Trim().ToLower() == email.Trim().ToLower() && z.UserId != userId && z.Status != (int)UserStatusEnum.Deleted  && z.Status != (int)UserStatusEnum.Declined).FirstOrDefault();
             if (existngUser == null)
                 return false;
             return true;
@@ -1462,13 +1484,13 @@ namespace VendTech.BLL.Managers
 
         List<User> IUserManager.GetAllAdminUsersByAppUserPermission()
         {
-            return Context.Users.Where(p =>
+            return _context.Users.Where(p =>
             (UserRoles.AppUser != p.UserRole.Role) && (UserRoles.Vendor != p.UserRole.Role) && (UserRoles.Agent != p.UserRole.Role) &&
             (p.Status == (int)UserStatusEnum.Active) && p.UserAssignedModules.Select(f => f.ModuleId).Contains(11)).ToList(); // 11 is the Module key for appUsers
         }
         List<User> IUserManager.GetAllAdminUsersByDepositRelease()
         {
-            return Context.Users.Where(p =>
+            return _context.Users.Where(p =>
             (UserRoles.AppUser != p.UserRole.Role) && (UserRoles.Vendor != p.UserRole.Role) && (UserRoles.Agent != p.UserRole.Role) &&
             (p.Status == (int)UserStatusEnum.Active) && p.UserAssignedModules.Select(f => f.ModuleId).Contains(7)).ToList(); // 7 is the Module key for Deposit Release
         }
@@ -1477,12 +1499,12 @@ namespace VendTech.BLL.Managers
         {
             try
             {
-                var notificationDetail = Context.UserAssignedModules.Where(x => x.UserId == currentUserId && (x.ModuleId == 6 || x.ModuleId == 11));
+                var notificationDetail = _context.UserAssignedModules.Where(x => x.UserId == currentUserId && (x.ModuleId == 6 || x.ModuleId == 11));
                 var modelUser = new UserDetails();
                 modelUser.AppUserMessage = notificationDetail.FirstOrDefault(x => x.ModuleId == 11) != null ? "NEW APP USERS APPROVAL" : string.Empty;
                 modelUser.DepositReleaseMessage = notificationDetail.FirstOrDefault(x => x.ModuleId == 6) != null ? "NEW DEPOSITS RELEASE" : string.Empty;
-                modelUser.RemainingAppUser = !string.IsNullOrEmpty(modelUser.AppUserMessage) ? Context.Users.Where(x => (x.UserRole.Role == UserRoles.AppUser || x.UserRole.Role == UserRoles.Vendor) && x.Status == (int)UserStatusEnum.Pending).Count() : 0;
-                modelUser.RemainingDepositRelease = !string.IsNullOrEmpty(modelUser.DepositReleaseMessage) ? Context.PendingDeposits.Where(x => x.Status == (int)DepositPaymentStatusEnum.Pending && x.IsDeleted == false).Count() : 0;
+                modelUser.RemainingAppUser = !string.IsNullOrEmpty(modelUser.AppUserMessage) ? _context.Users.Where(x => (x.UserRole.Role == UserRoles.AppUser || x.UserRole.Role == UserRoles.Vendor) && x.Status == (int)UserStatusEnum.Pending).Count() : 0;
+                modelUser.RemainingDepositRelease = !string.IsNullOrEmpty(modelUser.DepositReleaseMessage) ? _context.PendingDeposits.Where(x => x.Status == (int)DepositPaymentStatusEnum.Pending && x.IsDeleted == false).Count() : 0;
 
                 return modelUser;
             }
@@ -1494,7 +1516,7 @@ namespace VendTech.BLL.Managers
 
         IEnumerable<UserLiteDto> IUserManager.GetVendorNames_API()
         {
-            var result = Context.POS.Where(x => x.User != null).ToList().Select(x => new UserLiteDto
+            var result = _context.POS.Where(x => x.User != null).ToList().Select(x => new UserLiteDto
             {
                 VendorId = Convert.ToInt64(x.VendorId),
                 VendorName = x.User?.Vendor
@@ -1506,13 +1528,13 @@ namespace VendTech.BLL.Managers
             var result = new UserLiteDto();
             try
             {
-                result = Context.POS.Where(p => p.POSId == posId).Select(x => new UserLiteDto
+                result = _context.POS.Where(p => p.POSId == posId).Select(x => new UserLiteDto
                 {
                     POSId = x.POSId,
                     VendorName = x.User.Vendor
                 }).FirstOrDefault();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 throw;
             }
@@ -1521,7 +1543,7 @@ namespace VendTech.BLL.Managers
 
         UserLogo IUserManager.GetUserLogo(long userId)
         {
-            return new UserLogo { Image = Context.Users.FirstOrDefault(d => d.UserId == userId)?.ProfilePic };
+            return new UserLogo { Image = _context.Users.FirstOrDefault(d => d.UserId == userId)?.ProfilePic };
         }
 
 

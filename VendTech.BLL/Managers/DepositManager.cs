@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using Org.BouncyCastle.Asn1.Ocsp;
 using Org.BouncyCastle.Ocsp;
 using System;
 using System.Collections.Generic;
@@ -11,6 +12,7 @@ using System.Linq.Dynamic;
 using System.Net;
 using System.Net.Http;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography.Xml;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web.Configuration;
@@ -24,9 +26,11 @@ namespace VendTech.BLL.Managers
     public class DepositManager : BaseManager, IDepositManager
     {
         private readonly VendtechEntities _context;
-        public DepositManager(VendtechEntities context)
+        private readonly IBalanceDepositOperationsManager _balDepOperations;
+        public DepositManager(VendtechEntities context, IBalanceDepositOperationsManager balanceDepositOperationsManager)
         {
             _context = context;
+            _balDepOperations = balanceDepositOperationsManager;
         }
 
         string IDepositManager.GetWelcomeMessage()
@@ -1074,7 +1078,7 @@ namespace VendTech.BLL.Managers
             return result;
         }
 
-        PagingResult<DepositAuditModel> IDepositManager.GetDepositAuditReports(ReportSearchModel model, bool callFromAdmin = false)
+        PagingResult<DepositAuditModel> IDepositManager.GetDepositAuditReports(ReportSearchModel model, bool callFromAdmin)
         {
             var result = new PagingResult<DepositAuditModel>();
             var query = _context.DepositLogs.OrderByDescending(p => p.Deposit.CreatedAt).Where(p => p.NewStatus == (int)DepositPaymentStatusEnum.Released);
@@ -1883,92 +1887,63 @@ namespace VendTech.BLL.Managers
             return amt;
         }
 
-        ActionOutput IDepositManager.ChangeDepositStatus(long depositId, DepositPaymentStatusEnum status, bool isAutoApprove)
+        async Task<ActionOutput> IDepositManager.ChangeDepositStatus(long depositId, DepositPaymentStatusEnum status, bool isAutoApprove)
         {
-            Deposit dbDeposit = null;
-            var dbpendingDeposit = _context.PendingDeposits.FirstOrDefault(p => p.PendingDepositId == depositId) ?? null;
-            if (dbpendingDeposit == null)
-                return ReturnError("Deposit not exist.");
-            else
+            try
             {
-                if (status == DepositPaymentStatusEnum.Released)
+                Deposit dbDeposit = null;
+                var dbpendingDeposit = await _context.PendingDeposits.FirstOrDefaultAsync(p => p.PendingDepositId == depositId) ?? null;
+                if (dbpendingDeposit == null)
+                    return ReturnError("Deposit not exist.");
+                else
                 {
-                    dbDeposit = ProcessTransaction(dbpendingDeposit, status);
-                    //Send push to all devices where this user logged in when admin released deposit
-                    PushNotificationToMobile(dbDeposit);
-                    PushNotification.Instance
-                       .IncludeUserBalanceOnTheWeb(dbDeposit.UserId)
-                       .IncludeAdminWidgetDeposits()
-                       .IncludeAdminUnreleasedDeposits()
-                       .Send();
-
-                }
-            }
-
-            return ReturnSuccess(isAutoApprove ? Convert.ToInt64(dbDeposit.TransactionId) : dbDeposit.UserId, "Deposit status changed successfully.");
-        }
-
-        private Deposit ProcessTransaction(PendingDeposit dbpendingDeposit, DepositPaymentStatusEnum status)
-        {
-            Deposit dbDeposit = (this as IDepositManager).SaveApprovedDeposit(dbpendingDeposit);
-            //Creating Log entry in deposit logs table
-            var dbDepositLog = new DepositLog();
-            dbDepositLog.UserId = dbpendingDeposit.UserId;
-            dbDepositLog.DepositId = dbDeposit.DepositId;
-            dbDepositLog.PreviousStatus = dbDeposit.Status;
-            dbDepositLog.NewStatus = (int)status;
-            dbDepositLog.CreatedAt = DateTime.UtcNow;
-            _context.DepositLogs.Add(dbDepositLog);
-            dbDeposit.Status = (int)status;
-            dbDeposit.IsDeleted = true;
-            dbDeposit.POS = _context.POS.FirstOrDefault(d => d.POSId == dbDeposit.POSId);
-            dbDeposit.BalanceBefore = dbDeposit.POS.Balance ?? new decimal();
-            dbDeposit.PaymentType = dbDeposit.PaymentType;
-
-            //if (dbDeposit.POS.User.AgentId != Utilities.VENDTECH)
-            //    dbDeposit.CheckNumberOrSlipId = dbDeposit.CheckNumberOrSlipId == "0" ? Utilities.GenerateByAnyLength(7).ToUpper() : dbDeposit.CheckNumberOrSlipId;
-
-            if (dbDeposit.POS != null && status == DepositPaymentStatusEnum.Released)
-            {
-                dbDeposit.POS.Balance = dbDeposit.POS.Balance == null ? dbDeposit.Amount : dbDeposit.POS.Balance + dbDeposit.Amount;
-
-                if (dbDeposit.POS.User.Agency != null)
-                {
-                    var agentPos = _context.POS.FirstOrDefault(a => a.VendorId == dbDeposit.POS.User.Agency.Representative);
-                    if (agentPos != null)
+                    if (status == DepositPaymentStatusEnum.Released)
                     {
-                        var percentage = (dbDeposit.Amount * dbDeposit.POS.User.Agency.Commission.Percentage) / 100;
-                        agentPos.Balance = agentPos.Balance == null ? percentage : agentPos.Balance + percentage;
-                        dbDeposit.AgencyCommission = percentage;
+                        dbDeposit = await ProcessTransaction(dbpendingDeposit, status);
+                        //Push Notification to all devices where this user logged in when admin released deposit
+                        PushNotificationToMobile(dbDeposit);
+                        PushNotification.Instance
+                           .IncludeUserBalanceOnTheWeb(dbDeposit.UserId)
+                           .IncludeAdminWidgetDeposits()
+                           .IncludeAdminUnreleasedDeposits()
+                           .Send();
+
                     }
                 }
 
-
-                dbDeposit.NewBalance = dbDeposit.POS.Balance;
-                dbDeposit.CreatedAt = DateTime.UtcNow;
-                dbDeposit.TransactionId = Utilities.NewDepositTransactionId();
-                dbDeposit.IsDeleted = false;
-
+                return ReturnSuccess(isAutoApprove ? Convert.ToInt64(dbDeposit.TransactionId) : dbDeposit.UserId, "Deposit status changed successfully.");
             }
-            dbpendingDeposit.ApprovedDepId = dbDeposit.DepositId;
-            if (dbDeposit.POS?.CommissionPercentage != null && dbDeposit.POS?.Commission.Percentage > 0)
+            catch (Exception ex)
             {
-                var percentage = dbDeposit.Amount * dbDeposit.POS.Commission.Percentage / 100;
-                dbDeposit.POS.Balance = dbDeposit.POS.Balance + percentage; //will remove
-                dbDeposit.NewBalance = dbDeposit.POS.Balance;
-                _context.SaveChanges();
-                //(this as IDepositManager).CreateCommissionCreditEntry(dbDeposit.POS, percentage, dbDeposit.CheckNumberOrSlipId, currentUserId);
+                Utilities.LogExceptionToDatabase(new Exception($"ChangeDepositStatus.Error"), $"Exception: {ex?.ToString()}");
+                throw;
             }
-            else
+        }
+
+        private async Task<Deposit> ProcessTransaction(PendingDeposit dbpendingDeposit, DepositPaymentStatusEnum status)
+        {
+            var depositDto = new DepositDTOV2
             {
-                _context.SaveChanges();
-            }
-            return dbDeposit;
+                Amount = dbpendingDeposit.Amount,
+                POSId = dbpendingDeposit.POSId,
+                BankAccountId = dbpendingDeposit.PendingBankAccountId,
+                CheckNumberOrSlipId = dbpendingDeposit.CheckNumberOrSlipId,
+                ChequeBankName = dbpendingDeposit.ChequeBankName,
+                PaymentType = dbpendingDeposit.PaymentType,
+                UserId = dbpendingDeposit.UserId,
+                NameOnCheque = dbpendingDeposit.NameOnCheque,
+                Status = (int)status,
+            };
+
+            var deposit = await _balDepOperations.CreateDeposit(depositDto, depositDto.UserId, true);
+
+            dbpendingDeposit.ApprovedDepId = deposit.DepositId;
+            return deposit;
         }
 
         private void PushNotificationToMobile(Deposit dbDeposit)
         {
-            var deviceTokens = dbDeposit.User.TokensManagers.Where(p => p.DeviceToken != null && p.DeviceToken != string.Empty).Select(p => new { p.AppType, p.DeviceToken }).ToList().Distinct();
+            var deviceTokens = _context.Users.FirstOrDefault(d => d.UserId == dbDeposit.UserId).TokensManagers.Where(p => p.DeviceToken != null && p.DeviceToken != string.Empty).Select(p => new { p.AppType, p.DeviceToken }).ToList().Distinct();
             var obj = new PushNotificationModel();
             obj.UserId = dbDeposit.UserId;
             obj.Id = dbDeposit.DepositId;
@@ -2090,7 +2065,7 @@ namespace VendTech.BLL.Managers
             return ReturnSuccess("Deposit status changed successfully.");
         }
 
-        ActionOutput<List<long>> IDepositManager.ChangeMultipleDepositStatus(ReleaseDepositModel model, long userId)
+        async Task<ActionOutput<List<long>>> IDepositManager.ChangeMultipleDepositStatus(ReleaseDepositModel model, long userId)
         {
             List<long> userIds = new List<long>();
             try
@@ -2103,7 +2078,6 @@ namespace VendTech.BLL.Managers
                 {
                     foreach (var depositId in model.CancelDepositIds)
                     {
-                        //userIds.Add((this as IDepositManager).ChangeDepositStatus(depositId, DepositPaymentStatusEnum.Rejected, userId).ID);
                         var pendingDepoosits = _context.PendingDeposits.Where(d => model.CancelDepositIds.Contains(d.PendingDepositId)).ToList();
                         if (pendingDepoosits.Any())
                         {
@@ -2116,12 +2090,12 @@ namespace VendTech.BLL.Managers
                 {
                     foreach (var depositId in model.ReleaseDepositIds)
                     {
-                        (this as IDepositManager).ChangeDepositStatus(depositId, DepositPaymentStatusEnum.Released, false);
+                        await (this as IDepositManager).ChangeDepositStatus(depositId, DepositPaymentStatusEnum.Released, false);
                     }
                 }
                 return ReturnSuccess(userIds, "DEPOSIT APPROVED SUCCESSFULLY");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return ReturnError<List<long>>("Error occured while updating entries.");
             }
@@ -2165,7 +2139,7 @@ namespace VendTech.BLL.Managers
                 }
                 return ReturnSuccess("Deposit status updated successfully.");
             }
-            catch (Exception ed)
+            catch (Exception)
             {
                 return ReturnError("Error occured while updating entries.");
             }
@@ -2293,43 +2267,43 @@ namespace VendTech.BLL.Managers
             return ReturnSuccess(dbDeposit, "Deposit request saved successfully.");//PLEASE DO NOT CHANGE STRING VALUE
         }
 
-        Deposit IDepositManager.SaveApprovedDeposit(PendingDeposit model)
-        {
-            if (model.POSId == 0)
-            {
-                var user = _context.Users.FirstOrDefault(p => p.UserId == model.UserId);
-                var userAssignedPos = new POS();
-                if (user.UserRole.Role == UserRoles.Vendor)
-                    userAssignedPos = user.POS.FirstOrDefault();
-                else if (user.UserRole.Role == UserRoles.AppUser && user.User1 != null)
-                    userAssignedPos = user.User1.POS.FirstOrDefault();
-                if (userAssignedPos != null)
-                    model.POSId = userAssignedPos.POSId;
-            }
+        //Deposit IDepositManager.SaveApprovedDeposit(PendingDeposit model)
+        //{
+        //    if (model.POSId == 0)
+        //    {
+        //        var user = _context.Users.FirstOrDefault(p => p.UserId == model.UserId);
+        //        var userAssignedPos = new POS();
+        //        if (user.UserRole.Role == UserRoles.Vendor)
+        //            userAssignedPos = user.POS.FirstOrDefault();
+        //        else if (user.UserRole.Role == UserRoles.AppUser && user.User1 != null)
+        //            userAssignedPos = user.User1.POS.FirstOrDefault();
+        //        if (userAssignedPos != null)
+        //            model.POSId = userAssignedPos.POSId;
+        //    }
 
-            var dbDeposit = new Deposit();
-            dbDeposit.Amount = model.Amount;
-            dbDeposit.UserId = model.UserId;
-            dbDeposit.POSId = model.POSId;
-            dbDeposit.IsDeleted = false;
-            dbDeposit.PaymentType = (int)model.PaymentType;
-            dbDeposit.ChequeBankName = model.ChequeBankName;
-            dbDeposit.NameOnCheque = model.NameOnCheque;
-            dbDeposit.BankAccountId = model.PendingBankAccountId;
-            dbDeposit.CheckNumberOrSlipId = model.CheckNumberOrSlipId;
-            dbDeposit.Comments = model.Comments;
-            dbDeposit.PercentageAmount = model.PercentageAmount;
-            dbDeposit.TransactionId = "0"; //Utilities.GetLastDepositTransactionId();
-            dbDeposit.CreatedAt = model.CreatedAt;
-            dbDeposit.BalanceBefore =  new decimal();
-            dbDeposit.Status = (int)DepositPaymentStatusEnum.Pending;
-            dbDeposit.ValueDate = model.ValueDate;// + //" 12:00";//.ToString("dd/MM/yyyy hh:mm");
-            //dbDeposit.ValueDateStamp = Convert.ToDateTime(model.ValueDate);
-            dbDeposit.NextReminderDate = DateTime.UtcNow.AddDays(15);
-            _context.Deposits.Add(dbDeposit);
-            _context.SaveChanges(); 
-            return dbDeposit;
-        }
+        //    var dbDeposit = new Deposit();
+        //    dbDeposit.Amount = model.Amount;
+        //    dbDeposit.UserId = model.UserId;
+        //    dbDeposit.POSId = model.POSId;
+        //    dbDeposit.IsDeleted = false;
+        //    dbDeposit.PaymentType = (int)model.PaymentType;
+        //    dbDeposit.ChequeBankName = model.ChequeBankName;
+        //    dbDeposit.NameOnCheque = model.NameOnCheque;
+        //    dbDeposit.BankAccountId = model.PendingBankAccountId;
+        //    dbDeposit.CheckNumberOrSlipId = model.CheckNumberOrSlipId;
+        //    dbDeposit.Comments = model.Comments;
+        //    dbDeposit.PercentageAmount = model.PercentageAmount;
+        //    dbDeposit.TransactionId = "0"; //Utilities.GetLastDepositTransactionId();
+        //    dbDeposit.CreatedAt = model.CreatedAt;
+        //    dbDeposit.BalanceBefore =  new decimal();
+        //    dbDeposit.Status = (int)DepositPaymentStatusEnum.Pending;
+        //    dbDeposit.ValueDate = model.ValueDate;// + //" 12:00";//.ToString("dd/MM/yyyy hh:mm");
+        //    //dbDeposit.ValueDateStamp = Convert.ToDateTime(model.ValueDate);
+        //    dbDeposit.NextReminderDate = DateTime.UtcNow.AddDays(15);
+        //    _context.Deposits.Add(dbDeposit);
+        //    _context.SaveChanges(); 
+        //    return dbDeposit;
+        //}
 
         DepositAuditModel IDepositManager.UpdateDepositAuditRequest(DepositAuditModel depositAuditModel)
         {
@@ -2382,7 +2356,6 @@ namespace VendTech.BLL.Managers
         {
             CultureInfo provider = CultureInfo.InvariantCulture;
             var pos = new POS();
-            //.Include(x => x.POS) .Include(x => x.User).Include(x => x.BankAccount)
             var dbDeposit = _context.Deposits
                 .FirstOrDefault(x => x.DepositId == depositAuditModel.DepositId);
 
@@ -2395,7 +2368,6 @@ namespace VendTech.BLL.Managers
                 dbDeposit.NameOnCheque = depositAuditModel.Payer != null ? depositAuditModel.Payer : "";
                 dbDeposit.CheckNumberOrSlipId = depositAuditModel.DepositRef != null ? depositAuditModel.DepositRef : "";
                 dbDeposit.UpdatedAt = DateTime.UtcNow;
-
                 dbDeposit.ValueDate = DateTime.UtcNow.ToString("dd/MM/yyyy hh:mm");
 
                 if (dbDeposit.NextReminderDate == null)
@@ -2407,22 +2379,12 @@ namespace VendTech.BLL.Managers
                 dbDeposit.PaymentType = depositAuditModel.Type != null ? int.Parse(depositAuditModel.Type) : _context.PaymentTypes.FirstOrDefault().PaymentTypeId;
                 dbDeposit.BankAccountId = _context.BankAccounts.FirstOrDefault(d => d.BankName.Contains(depositAuditModel.GTBank))?.BankAccountId ?? 0;
                 dbDeposit.Comments = string.IsNullOrEmpty(depositAuditModel.Comment) ? "" : depositAuditModel.Comment;
-                //dbDeposit.BalanceBefore = dbDeposit.BalanceBefore == null ? 0: dbDeposit.BalanceBefore;
-                if (dbDeposit.CheckNumberOrSlipId.StartsWith("VTSL"))
+                var recordsWithSimilarRef = GetUnclearedRelatedDeposits(dbDeposit);
+                if (recordsWithSimilarRef.Any())
                 {
-                    var recordWithSimilarRef = _context.Deposits.FirstOrDefault(d => d.CheckNumberOrSlipId == dbDeposit.CheckNumberOrSlipId && d.DepositId != dbDeposit.DepositId);
-                    if(recordWithSimilarRef != null)
+                    foreach (var item in recordsWithSimilarRef)
                     {
-                        //recordWithSimilarRef.ChequeBankName = depositAuditModel.IssuingBank != null ? depositAuditModel.IssuingBank : "";
-                        //recordWithSimilarRef.NameOnCheque = depositAuditModel.Payer != null ? depositAuditModel.Payer : "";
-                        //recordWithSimilarRef.CheckNumberOrSlipId = depositAuditModel.DepositRef != null ? depositAuditModel.DepositRef : "";
-                        //recordWithSimilarRef.UpdatedAt = DateTime.UtcNow;
-                        //recordWithSimilarRef.ValueDate = depositAuditModel.ValueDateModel;
-                        recordWithSimilarRef.isAudit = depositAuditModel.isAudit;
-                        //recordWithSimilarRef.PaymentType = depositAuditModel.Type != null ? int.Parse(depositAuditModel.Type) : _context.PaymentTypes.FirstOrDefault().PaymentTypeId;
-                        ////recordWithSimilarRef.BankAccountId = _context.BankAccounts.FirstOrDefault(d => d.BankName.Contains(depositAuditModel.GTBank))?.BankAccountId ?? 0;
-                        //recordWithSimilarRef.Comments = string.IsNullOrEmpty(depositAuditModel.Comment) ? "" : depositAuditModel.Comment;
-                        //recordWithSimilarRef.BalanceBefore = dbDeposit.BalanceBefore == null ? 0 : dbDeposit.BalanceBefore;
+                        item.isAudit = depositAuditModel.isAudit;
                     }
                 }
                 _context.SaveChanges();
@@ -2446,7 +2408,10 @@ namespace VendTech.BLL.Managers
             depositAuditModel.TransactionId = dbDeposit.TransactionId;
             return depositAuditModel;
         }
-        
+
+        List<Deposit> GetUnclearedRelatedDeposits(Deposit deposit) => _context.Deposits.Where(d => d.DepositId != deposit.DepositId
+            && d.InitiatingTransactionId == deposit.InitiatingTransactionId).ToList();
+
         List<Deposit> IDepositManager.GetUnclearedDeposits()
         {
             var currentDate = DateTime.UtcNow;
@@ -2461,9 +2426,9 @@ namespace VendTech.BLL.Managers
             _context.SaveChanges();
         }
 
-        List<PendingDeposit> IDepositManager.GetListOfDeposits(List<long> depositIds)
+        async Task<List<PendingDeposit>> IDepositManager.GetListOfDeposits(List<long> depositIds)
         {
-            return _context.PendingDeposits.Where(d => depositIds.Contains(d.PendingDepositId)).ToList() ?? new List<PendingDeposit>();
+            return await _context.PendingDeposits.Where(d => depositIds.Contains(d.PendingDepositId)).ToListAsync() ?? new List<PendingDeposit>();
         }
 
         PendingDeposit IDepositManager.GetDeposit(long depositId)
@@ -2478,15 +2443,15 @@ namespace VendTech.BLL.Managers
             //PushNotificationToWeb(deposits.FirstOrDefault().UserId).Wait();
         }
 
-        void IDepositManager.DeletePendingDeposits(PendingDeposit deposit)
+        async Task IDepositManager.DeletePendingDeposits(PendingDeposit deposit)
         {
             using(var ctx = new VendtechEntities())
             {
-                var de = ctx.PendingDeposits.FirstOrDefault(d => d.PendingDepositId == deposit.PendingDepositId);
+                var de = await ctx.PendingDeposits.FirstOrDefaultAsync(d => d.PendingDepositId == deposit.PendingDepositId);
                 if(de != null)
                 {
                     ctx.PendingDeposits.Remove(de);
-                    ctx.SaveChanges();
+                    await ctx.SaveChangesAsync();
                 }
             }
            
@@ -2509,9 +2474,9 @@ namespace VendTech.BLL.Managers
                             Reference = a.CheckNumberOrSlipId,
                             TransactionId = a.TransactionId,
                             TransactionType = "Deposit",
-                            DepositAmount = a.PercentageAmount ?? 0,
+                            DepositAmount = a.Amount,
                             SaleAmount = 0,
-                            Balance = 0,
+                            Balance = a.NewBalance.Value,
                             POSId = a.POSId,
                             BalanceBefore = a.BalanceBefore.Value,
                         };
@@ -2525,9 +2490,9 @@ namespace VendTech.BLL.Managers
                             Reference = a.CheckNumberOrSlipId,
                             TransactionId = a.TransactionId,
                             TransactionType = "Deposit",
-                            DepositAmount = a.PercentageAmount ?? 0,
+                            DepositAmount = a.Amount,
                             SaleAmount = 0,
-                            Balance = 0,
+                            Balance = a.NewBalance.Value,
                             POSId = a.POSId,
                             BalanceBefore = a.BalanceBefore.Value,
                         };
@@ -2621,79 +2586,71 @@ namespace VendTech.BLL.Managers
             });
         }
 
-        async Task<ActionOutput> IDepositManager.CreateDepositDebitTransfer(Deposit dbDeposit, long currentUserId, string otp, long toPos, long fromPosId)
+        async Task<Deposit> IDepositManager.CreateDepositDebitTransfer(DepositDTOV2 depositDto, long currentUserId, string otp, long toPos, long fromPosId)
+        {
+            var beneficiaryPos = _context.POS.FirstOrDefault(er => er.POSId == toPos);
+            var fromPos = _context.POS.FirstOrDefault(er => er.POSId == fromPosId);
+            if (beneficiaryPos == null)
+                throw new ArgumentException("POS NOT FOUND");
+
+            if (fromPos == null)
+                throw new ArgumentException("POT NOT FOUND");
+
+            if (depositDto.Amount > fromPos.Balance.Value)
+                throw new ArgumentException("INSUFFICIENT BALANCE TO MAKE TRANSFER");
+
+            if (!IsOtpValid(otp))
+                throw new ArgumentException("WRONG OTP ENTERED");
+
+            depositDto.Status = (int)DepositPaymentStatusEnum.Released;
+            depositDto.UserId = fromPos?.VendorId ?? 0;
+            depositDto.NameOnCheque = fromPos.User.Vendor;
+            depositDto.IsAudit = false;
+
+            var deposit = await _balDepOperations.CreateDeposit(depositDto, currentUserId, false);
+
+            var deviceTokens = fromPos.User.TokensManagers.Where(p => p.DeviceToken != null && p.DeviceToken != string.Empty).Select(p => new { p.AppType, p.DeviceToken }).ToList().Distinct();
+            var obj = new PushNotificationModel();
+            obj.UserId = depositDto.UserId;
+            obj.Id = depositDto.DepositId;
+            obj.Balance = deposit.POS.Balance.Value;
+            var notyAmount = Utilities.FormatAmount(depositDto.Amount);
+
+            obj.Title = $"Account Debited";
+            obj.Message = "Your wallet has been updated with  " + Utilities.GetCountry().CurrencyCode + " " + notyAmount;
+
+            obj.NotificationType = NotificationTypeEnum.DepositStatusChange;
+            foreach (var item in deviceTokens)
+            {
+                obj.DeviceToken = item.DeviceToken;
+                obj.DeviceType = item.AppType.Value;
+                PushNotification.SendNotificationTOMobile(obj);
+            }
+            return deposit;
+        }
+
+        async Task<ActionOutput> IDepositManager.CreateDepositCreditTransfer(DepositDTOV2 depositDto, long currentUserId, POS fromPos)
         {
             try
-            {
-                var beneficiaryPos = _context.POS.FirstOrDefault(er => er.POSId == toPos);
-                var fromPos = _context.POS.FirstOrDefault(er => er.POSId == fromPosId);
-                if (beneficiaryPos == null)
-                    return ReturnError("POS NOT FOUND");
+            { 
+                if(fromPos == null)
+                    return await Task.Run(() => ReturnError("POS NOT FOUND"));
 
-                if (fromPos == null)
-                    return ReturnError("POT NOT FOUND");
+                var toPos = _context.POS.FirstOrDefault(d => d.POSId == depositDto.POSId);
+                depositDto.UserId = toPos?.VendorId??0;
+                depositDto.NameOnCheque = toPos.User.Vendor;
 
-                if (dbDeposit.Amount > fromPos.Balance.Value)
-                    return ReturnError("INSUFFICIENT BALANCE TO MAKE TRANSFER");
-
-                if (!IsOtpValid(otp))
-                    return ReturnError("WRONG OTP ENTERED");
-
-                dbDeposit.Status = (int)DepositPaymentStatusEnum.Released;
-                dbDeposit.POS = fromPos;
-                dbDeposit.UserId = fromPos?.VendorId ?? 0;
-                dbDeposit.Comments = "";
-                dbDeposit.ChequeBankName = "OWN ACC TRANSFER - (AGENCY TRANSFER)";
-                dbDeposit.NameOnCheque = fromPos.User.Vendor;
-                dbDeposit.BankAccountId = 1;
-                dbDeposit.isAudit = false;
-                dbDeposit.PaymentType = (int)DepositPaymentTypeEnum.AdminTransferOut;
-                dbDeposit.TransactionId = Utilities.NewDepositTransactionId();
-                dbDeposit.IsDeleted = false;
-                dbDeposit.BalanceBefore = fromPos.Balance ?? new decimal();
-                dbDeposit.POS.Balance = dbDeposit.POS.Balance == null ? dbDeposit.Amount : dbDeposit.POS.Balance + dbDeposit.Amount;
-                dbDeposit.AgencyCommission = 0;
-
-                decimal commision = 0;
-                dbDeposit.isAudit = false;
-                dbDeposit.ValueDate = DateTime.UtcNow.ToString();
-                if (_context.Agencies.Select(s => s.Representative).Contains(fromPos.VendorId))
-                {
-                    //dbDeposit.ChequeBankName = "OWN ACC TRANSFER - (AGENCY TRANSFER)";
-                    var amt = Decimal.Parse(dbDeposit.Amount.ToString().TrimStart('-'));
-                    var percntage = fromPos.User.Agency.Commission.Percentage;
-                    commision = amt * percntage / 100;
-                    dbDeposit.POS.Balance = dbDeposit.POS.Balance + commision;
-                    dbDeposit.AgencyCommission = commision;
-                }
-                dbDeposit.NewBalance = dbDeposit.POS.Balance;
-
-
-                _context.Deposits.Add(dbDeposit);
-                _context.SaveChanges();
-
-                //Creating Log entry in deposit logs table
-                var dbDepositLog = new DepositLog();
-                dbDepositLog.UserId = currentUserId;
-                dbDepositLog.DepositId = dbDeposit.DepositId;
-                dbDepositLog.PreviousStatus = (int)DepositPaymentStatusEnum.Released;
-                dbDepositLog.NewStatus = (int)DepositPaymentStatusEnum.Released;
-                dbDepositLog.CreatedAt = DateTime.UtcNow;
-                _context.DepositLogs.Add(dbDepositLog);
-                _context.SaveChanges();
-
-
-                //(this as IDepositManager).CreateCommissionCreditEntry(fromPos, commision, dbDeposit.CheckNumberOrSlipId, currentUserId);
+                var deposit = await _balDepOperations.CreateDeposit(depositDto, currentUserId, false);
+                
                 //Send push to all devices where this user logged in when admin released deposit
-                var deviceTokens = fromPos.User.TokensManagers.Where(p => p.DeviceToken != null && p.DeviceToken != string.Empty).Select(p => new { p.AppType, p.DeviceToken }).ToList().Distinct();
+                var deviceTokens = toPos.User.TokensManagers.Where(p => p.DeviceToken != null && p.DeviceToken != string.Empty).Select(p => new { p.AppType, p.DeviceToken }).ToList().Distinct();
                 var obj = new PushNotificationModel();
-                obj.UserId = dbDeposit.UserId;
-                obj.Id = dbDeposit.DepositId;
-                obj.Balance = dbDeposit.POS.Balance.Value;
-                var notyAmount = Utilities.FormatAmount(dbDeposit.Amount);
+                obj.UserId = depositDto.UserId;
+                obj.Id = depositDto.DepositId;
+                var notyAmount = Utilities.FormatAmount(depositDto.Amount);
 
-                obj.Title = $"Account Debited";
-                obj.Message = "Your wallet has been updated with  "+ Utilities.GetCountry().CurrencyCode+ " " + notyAmount;
+                obj.Title = $"Transfer from {fromPos.User.Vendor}";
+                obj.Message = "Your wallet has been updated with "+ Utilities.GetCountry().CurrencyCode+ " " + notyAmount;
 
                 obj.NotificationType = NotificationTypeEnum.DepositStatusChange;
                 foreach (var item in deviceTokens)
@@ -2705,91 +2662,12 @@ namespace VendTech.BLL.Managers
                 return await Task.Run(() => ReturnSuccess("TRANSFER SUCCESSFUL"));
             }
             catch (Exception e)
-            {;
-                throw e;
-            }
-            finally
-            {
-
-            }
-        }
-
-        async Task<ActionOutput> IDepositManager.CreateDepositCreditTransfer(Deposit dbDeposit, long currentUserId, POS fromPos)
-        {
-            try
-            { 
-                if(fromPos == null)
-                    return await Task.Run(() => ReturnError("POS NOT FOUND"));
-
-                var toPos = _context.POS.FirstOrDefault(d => d.POSId == dbDeposit.POSId);
-                dbDeposit.Status = (int)DepositPaymentStatusEnum.Released;
-                dbDeposit.POS = toPos;
-                dbDeposit.UserId = toPos?.VendorId??0;
-                dbDeposit.Comments = "";
-                dbDeposit.ChequeBankName = "OWN ACC TRANSFER - (AGENCY TRANSFER)";
-                dbDeposit.NameOnCheque = toPos.User.Vendor;
-                dbDeposit.BankAccountId = 1;
-                dbDeposit.isAudit = false;
-                dbDeposit.BalanceBefore = toPos.Balance ?? new decimal();
-                dbDeposit.POS.Balance = dbDeposit.POS.Balance == null ? dbDeposit.Amount : dbDeposit.POS.Balance + dbDeposit.Amount;
-                dbDeposit.AgencyCommission = 0;
-                dbDeposit.isAudit = false;
-                dbDeposit.PaymentType = (int)DepositPaymentTypeEnum.VendorFloatIn;
-
-                dbDeposit.ValueDate = DateTime.UtcNow.ToString();
-                if (_context.Agencies.Select(s => s.Representative).Contains(fromPos.VendorId))
-                {
-                    var amt = dbDeposit.Amount;
-                    var percntage = toPos.Commission.Percentage;
-                    var commision = amt * percntage / 100;
-                    dbDeposit.AgencyCommission = 0;
-                    dbDeposit.PercentageAmount = amt + commision;
-                    dbDeposit.POS.Balance = dbDeposit.POS.Balance + commision;
-                }
-
-                //Adds to  Reciever Balance
-                dbDeposit.NewBalance = dbDeposit.POS.Balance;
-                dbDeposit.TransactionId = Utilities.NewDepositTransactionId();
-                dbDeposit.IsDeleted = false;
-                _context.Deposits.Add(dbDeposit);
-                _context.SaveChanges();
-
-                //Creating Log entry in deposit logs table
-                var dbDepositLog = new DepositLog();
-                dbDepositLog.UserId = currentUserId;
-                dbDepositLog.DepositId = dbDeposit.DepositId;
-                dbDepositLog.PreviousStatus = (int)DepositPaymentStatusEnum.Released;
-                dbDepositLog.NewStatus = (int)DepositPaymentStatusEnum.Released;
-                dbDepositLog.CreatedAt = DateTime.UtcNow.AddSeconds(1);
-                _context.DepositLogs.Add(dbDepositLog);
-                _context.SaveChanges();
-
-                //Send push to all devices where this user logged in when admin released deposit
-                var deviceTokens = toPos.User.TokensManagers.Where(p => p.DeviceToken != null && p.DeviceToken != string.Empty).Select(p => new { p.AppType, p.DeviceToken }).ToList().Distinct();
-                var obj = new PushNotificationModel();
-                obj.UserId = dbDeposit.UserId;
-                obj.Id = dbDeposit.DepositId;
-                var notyAmount = Utilities.FormatAmount(dbDeposit.Amount);
-
-                obj.Title = $"Transfer from {fromPos.User.Vendor}";
-                obj.Message = "Your wallet has been updated with "+ Utilities.GetCountry().CurrencyCode+ " " + notyAmount;
-
-                obj.NotificationType = NotificationTypeEnum.DepositStatusChange;
-                foreach (var item in deviceTokens)
-                {
-                    obj.DeviceToken = item.DeviceToken;
-                    obj.DeviceType = item.AppType.Value;
-                    //PushNotification.SendNotification(obj);
-                }
-                return await Task.Run(() => ReturnSuccess("TRANSFER SUCCESSFUL"));
-            }
-            catch (Exception e)
             {
                 throw e;
             }
         }
 
-        ActionOutput IDepositManager.DepositToAgencyAdminAccount(Deposit dbDeposit, long currentUserId, string OTP)
+        async Task<ActionOutput> IDepositManager.DepositToAgencyAdminAccount(DepositDTOV2 depositDto, long currentUserId, string OTP)
         {
             try
             {
@@ -2797,43 +2675,20 @@ namespace VendTech.BLL.Managers
                     return ReturnError("WRONG OTP ENTERED");
 
                 var admin = _context.Users.FirstOrDefault(e => e.UserId == currentUserId);
-                var toPos = _context.POS.FirstOrDefault(d => d.POSId == dbDeposit.POSId);
-                dbDeposit.Status = (int)DepositPaymentStatusEnum.Released;
-                dbDeposit.POS = toPos;
-                dbDeposit.UserId = toPos?.VendorId ?? 0;
-                dbDeposit.Comments = "";
-                dbDeposit.isAudit = false;
-                dbDeposit.NameOnCheque = toPos.User.Vendor;
-                dbDeposit.AgencyCommission = new decimal();
-                dbDeposit.BalanceBefore = toPos.Balance ?? new decimal();
-                dbDeposit.ValueDate = DateTime.UtcNow.ToString();
-                dbDeposit.PaymentType = dbDeposit.PaymentType;
-                dbDeposit.POS.Balance = dbDeposit.POS.Balance == null ? dbDeposit.Amount : dbDeposit.POS.Balance + dbDeposit.Amount;
-              
-                //Adds to  Reciever Balance
-                dbDeposit.NewBalance = dbDeposit.POS.Balance;
-                dbDeposit.TransactionId = Utilities.NewDepositTransactionId();
-                dbDeposit.IsDeleted = false;
-                _context.Deposits.Add(dbDeposit);
-                _context.SaveChanges();
+                var toPos = _context.POS.FirstOrDefault(d => d.POSId == depositDto.POSId);
+                depositDto.Status = (int)DepositPaymentStatusEnum.Released;
+                depositDto.NameOnCheque = toPos.User.Vendor;
+                depositDto.UserId = toPos.VendorId.Value;
 
-                //Creating Log entry in deposit logs table
-                var dbDepositLog = new DepositLog();
-                dbDepositLog.UserId = currentUserId;
-                dbDepositLog.DepositId = dbDeposit.DepositId;
-                dbDepositLog.PreviousStatus = (int)DepositPaymentStatusEnum.Released;
-                dbDepositLog.NewStatus = (int)DepositPaymentStatusEnum.Released;
-                dbDepositLog.CreatedAt = DateTime.UtcNow;
-                _context.DepositLogs.Add(dbDepositLog);
-                _context.SaveChanges();
+                var deposit = await _balDepOperations.CreateDeposit(depositDto, currentUserId, true);
 
                 //Send push to all devices where this user logged in when admin released deposit
                 var deviceTokens = toPos.User.TokensManagers.Where(p => p.DeviceToken != null && p.DeviceToken != string.Empty).Select(p => new { p.AppType, p.DeviceToken }).ToList().Distinct();
                 var obj = new PushNotificationModel();
-                obj.UserId = dbDeposit.UserId;
-                obj.Id = dbDeposit.DepositId;
-                obj.Balance = dbDeposit.POS.Balance.Value;
-                var notyAmount = Utilities.FormatAmount(dbDeposit.Amount);
+                obj.UserId = deposit.UserId;
+                obj.Id = deposit.DepositId;
+                obj.Balance = deposit.POS.Balance.Value;
+                var notyAmount = Utilities.FormatAmount(deposit.Amount);
 
                 obj.Title = $"Vendtech Deposit";
                 obj.Message = "Your wallet has been credited with NLe " + notyAmount;
@@ -2853,9 +2708,9 @@ namespace VendTech.BLL.Managers
             }
         }
 
-        PendingDeposit IDepositManager.GetPendingDepositByPOS(long posId, decimal amount)
+        async Task<PendingDeposit> IDepositManager.GetPendingDepositByPOS(long posId, decimal amount)
         {
-            return _context.PendingDeposits.FirstOrDefault(d => d.POSId == posId && d.Amount == amount);
+            return await _context.PendingDeposits.FirstOrDefaultAsync(d => d.POSId == posId && d.Amount == amount);
         }
         void IDepositManager.CreateCommissionCreditEntry(POS toPos, decimal amount, string reference, long currentUserId)
         {

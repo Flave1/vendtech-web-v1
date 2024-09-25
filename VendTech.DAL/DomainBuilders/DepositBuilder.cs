@@ -10,7 +10,8 @@ namespace VendTech.DAL.DomainBuilders
         {
             _deposit = new Deposit
             {
-                CreatedAt = DateTime.Now,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
             };
         }
 
@@ -40,6 +41,11 @@ namespace VendTech.DAL.DomainBuilders
         public DepositBuilder WithTransactionId(string transactionId)
         {
             _deposit.TransactionId = transactionId;
+            return this;
+        }
+        public DepositBuilder WithInitiatingTransactionId(string initiatingTransactionId)
+        {
+            _deposit.InitiatingTransactionId = initiatingTransactionId;
             return this;
         }
 

@@ -74,6 +74,7 @@ namespace VendTech.DAL
         public virtual DbSet<UserSchedule> UserSchedules { get; set; }
         public virtual DbSet<Vendor> Vendors { get; set; }
         public virtual DbSet<Widget> Widgets { get; set; }
+        public virtual DbSet<RTS_DATA_VTWEB_TRANSACTIONDETALS__JULY_13___AUG_8___2024> RTS_DATA_VTWEB_TRANSACTIONDETALS__JULY_13___AUG_8___2024 { get; set; }
     
         public virtual ObjectResult<CalculateRunningBalance_Result> CalculateRunningBalance()
         {

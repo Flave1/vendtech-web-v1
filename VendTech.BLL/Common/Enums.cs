@@ -178,7 +178,9 @@ namespace VendTech.BLL.Models
         [Description("AGENCY ADMIN - COMMISION IN")]
         AgencyCommision = 8,
         [Description("AGENCY VENDOR - IN")]
-        VendorFloatIn = 9
+        VendorFloatIn = 9,
+        [Description("VENDOR - COMMISION IN")]
+        VendorCommision = 12,
     }
     public enum DepositPaymentStatusEnum
     {

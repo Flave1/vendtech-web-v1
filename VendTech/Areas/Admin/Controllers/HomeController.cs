@@ -23,7 +23,7 @@ namespace VendTech.Areas.Admin.Controllers
     public class HomeController : AdminBaseV2Controller
     {
         #region Variable Declaration
-        private readonly IUserManager _userManager;
+        private new readonly IUserManager _userManager;
         private readonly IEmailTemplateManager _templateManager;
         private readonly ICMSManager _cmsManager;
         private readonly IAuthenticateManager _authenticateManager;
@@ -440,7 +440,7 @@ namespace VendTech.Areas.Admin.Controllers
                 }
                 return Json(new { result = "success" }, JsonRequestBehavior.AllowGet);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return null;
             }

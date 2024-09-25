@@ -256,7 +256,7 @@ namespace VendTech.Controllers
                           $"Please use this temporal password to login. {result.Message}\n" +
                           "VENDTECH"
                     };
-                    await _smsManager.SendSmsAsync(msg);
+                    Utilities.SendSms(msg);
                 }
 
                 return JsonResult(result);

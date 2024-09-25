@@ -327,13 +327,13 @@ namespace VendTech.Controllers
             var depositsBS = _depositManager.GetBalanceSheetReportsPagedList(model, false, LOGGEDIN_USER.AgencyId);
             var salesBS = _meterManager.GetBalanceSheetReportsPagedList(model, false, LOGGEDIN_USER.AgencyId);
 
-            var result = depositsBS.Concat(salesBS).OrderBy(d => d.DateTime).ToList();
+            var result = depositsBS.ToList().Concat(salesBS.ToList()).OrderBy(d => d.DateTime).ToList();
 
             balanceSheet = _posManager.CalculateBalancesheet(result);
 
             balanceSheet.Status = ActionStatus.Successfull;
             balanceSheet.Message = "Balance Sheet List";
-            balanceSheet.TotalCount = depositsBS.Concat(salesBS).Count();
+            balanceSheet.TotalCount = result.Count();
 
             var resultString = new List<string> { RenderRazorViewToString("Partials/_balanceSheetReportListing", balanceSheet), balanceSheet.TotalCount.ToString()
            };

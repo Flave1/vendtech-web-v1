@@ -176,6 +176,9 @@
     <Compile Include="ReferralCode.cs">
       <DependentUpon>DataModel.tt</DependentUpon>
     </Compile>
+    <Compile Include="RTS_DATA_VTWEB_TRANSACTIONDETALS__JULY_13___AUG_8___2024.cs">
+      <DependentUpon>DataModel.tt</DependentUpon>
+    </Compile>
     <Compile Include="SMS_LOG.cs">
       <DependentUpon>DataModel.tt</DependentUpon>
     </Compile>

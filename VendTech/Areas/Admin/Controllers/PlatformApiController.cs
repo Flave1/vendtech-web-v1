@@ -20,7 +20,7 @@ namespace VendTech.Areas.Admin.Controllers
 
         private readonly IPlatformApiManager _platformApiManager;
         private readonly ICurrencyManager _currencyManager;
-        private readonly IPlatformManager _platformManager;
+        private new readonly IPlatformManager _platformManager;
 
         public PlatformApiController(
             ICurrencyManager currencyManager,

@@ -38,7 +38,7 @@ namespace VendTech.BLL.Interfaces
         List<PosSelectItem> GetAgencyPos(long userId);
         POS ReturnAgencyAdminPOS(long userId);
         PagingResultWithDefaultAmount<BalanceSheetListingModel2> CalculateBalancesheet(List<BalanceSheetListingModel> result);
-        List<SelectListItem> GetPOSWithNameSelectList(long userId, long agentId);
+        List<SelectListItem> GetPOSWithNameSelectList(long userId, long agentId, bool includeAdminPos = false);
         List<UserScheduleDTO> GetAllUserRunningLow();
         bool BalanceLowMessageIsSent(long userId, UserScheduleTypes type);
         void SaveUserSchedule(long userId, string balance);

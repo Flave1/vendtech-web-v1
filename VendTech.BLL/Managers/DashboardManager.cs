@@ -233,7 +233,7 @@ namespace VendTech.BLL.Managers
                     };
                 }
             }
-            catch (Exception e)
+            catch (Exception)
             { 
                 return new DashboardViewModel();
             }

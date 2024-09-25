@@ -81,7 +81,7 @@ namespace VendTech.Areas.Agent.Controllers
                         LOGGEDIN_USER = new JavaScriptSerializer().Deserialize<UserDetails>(auth_ticket.UserData);
                         System.Web.HttpContext.Current.User = new System.Security.Principal.GenericPrincipal(new FormsIdentity(auth_ticket), null);
                     }
-                    catch (Exception exc)
+                    catch (Exception)
                     {
                         if (auth_cookie != null)
                         {

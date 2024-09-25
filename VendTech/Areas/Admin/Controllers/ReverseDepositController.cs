@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using System.Web.Mvc;
 using VendTech.Attributes;
 using VendTech.BLL.Common;
@@ -10,7 +11,7 @@ namespace VendTech.Areas.Admin.Controllers
     public class ReverseDepositController : AdminBaseV2Controller
     {
         #region Variable Declaration
-        private readonly IUserManager _userManager;
+        private new readonly IUserManager _userManager;
         private readonly IEmailTemplateManager _templateManager;
         private readonly IDepositManager _depositManager;
         #endregion
@@ -51,10 +52,10 @@ namespace VendTech.Areas.Admin.Controllers
             return JsonResult(_depositManager.ReverseDepositStatus(depositId, DepositPaymentStatusEnum.Reversed, LOGGEDIN_USER.UserID));
         }
         [AjaxOnly, HttpPost]
-        public JsonResult RejectReverseDeposit(long depositId)
+        public async Task<JsonResult> RejectReverseDeposit(long depositId)
         {
             ViewBag.SelectedTab = SelectedAdminTab.Deposits;
-            return JsonResult(_depositManager.ChangeDepositStatus(depositId, DepositPaymentStatusEnum.Rejected));
+            return JsonResult(await _depositManager.ChangeDepositStatus(depositId, DepositPaymentStatusEnum.Rejected));
         }
         [AjaxOnly, HttpPost]
         public JsonResult SendOTP()

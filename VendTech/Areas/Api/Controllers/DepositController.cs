@@ -4,6 +4,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Threading.Tasks;
 using System.Web;
 using System.Web.Http;
 using System.Web.Http.Description;
@@ -40,7 +41,7 @@ namespace VendTech.Areas.Api.Controllers
 
         [HttpPost]
         [ResponseType(typeof(ResponseBase))]
-        public HttpResponseMessage SaveDepositRequest(DepositModel model)
+        public async Task<HttpResponseMessage> SaveDepositRequest(DepositModel model)
         {
             ActionOutput<PendingDeposit> pd = null;
             model.UserId = LOGGEDIN_USER.UserId;
@@ -61,14 +62,14 @@ namespace VendTech.Areas.Api.Controllers
             string mesg = pd.Message;
             if (pd.Object.User.AutoApprove.Value)
             {
-                ActionOutput result = _depositManager.ChangeDepositStatus(pd.Object.PendingDepositId, DepositPaymentStatusEnum.Released, true);
+                ActionOutput result = await _depositManager.ChangeDepositStatus(pd.Object.PendingDepositId, DepositPaymentStatusEnum.Released, true);
 
                 var deposit = _depositManager.GetDeposit(pd.Object.PendingDepositId);
                 SendEmailOnDepositApproval(deposit);
                 SendEmailToAdminOnDepositApproval(deposit, result.ID);
                 SendSmsOnDepositApproval(deposit);
 
-                _depositManager.DeletePendingDeposits(deposit);
+                await _depositManager.DeletePendingDeposits(deposit);
             }
             else
             {

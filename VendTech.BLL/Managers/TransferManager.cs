@@ -1,16 +1,8 @@
 ﻿using VendTech.BLL.Interfaces;
 using VendTech.BLL.Models;
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Linq.Dynamic;
 using VendTech.DAL;
-using VendTech.BLL.Common;
-using System.Web;
-using System.IO;
-using System.Web.Mvc;
 
 namespace VendTech.BLL.Managers
 {
