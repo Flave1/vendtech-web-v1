@@ -33,10 +33,11 @@ namespace VendTech.Controllers
         private new readonly IPlatformManager _platformManager;
         private readonly IPOSManager _posManager;
         private readonly IPlatformTransactionManager _platformTransactionManager;
+        private readonly IVendtechExtensionSales _vendtechExtensionSales;
 
         #endregion
 
-        public MeterController(IUserManager userManager, IPlatformManager platformManager, IErrorLogManager errorLogManager, IAuthenticateManager authenticateManager, ICMSManager cmsManager, IMeterManager meterManager, IPOSManager posManager, IPlatformTransactionManager platformTransactionManager)
+        public MeterController(IUserManager userManager, IPlatformManager platformManager, IErrorLogManager errorLogManager, IAuthenticateManager authenticateManager, ICMSManager cmsManager, IMeterManager meterManager, IPOSManager posManager, IPlatformTransactionManager platformTransactionManager, IVendtechExtensionSales vendtechExtensionSales)
             : base(errorLogManager)
         {
             _userManager = userManager;
@@ -46,6 +47,7 @@ namespace VendTech.Controllers
             _platformManager = platformManager;
             _posManager = posManager;
             _platformTransactionManager = platformTransactionManager;
+            _vendtechExtensionSales = vendtechExtensionSales;
         }
 
         /// <summary>
@@ -313,6 +315,7 @@ namespace VendTech.Controllers
         [HttpPost, AjaxOnly]
         public async Task<JsonResult> RechargeReturn(RechargeMeterModel model)
         {
+            return null;
             model.UserId = LOGGEDIN_USER.UserID;
             try
             {
@@ -349,6 +352,34 @@ namespace VendTech.Controllers
             try
             {
                 var result = await _meterManager.RechargeMeterReturnIMPROVED(model);
+                if (result.ReceiptStatus.Status == "unsuccessful")
+                {
+                    return Json(new { Success = false, Code = 302, Msg = result.ReceiptStatus.Message });
+                }
+
+                if (result != null)
+                {
+                    return Json(new { Success = true, Code = 200, Msg = "Meter recharged successfully.", Data = result });
+                }
+                Utilities.LogExceptionToDatabase(new Exception($"Result is null {DateTime.UtcNow} for traxId {model.TransactionId}"), $"result null: {JsonConvert.SerializeObject(model)}");
+                return Json(new { Success = false, Code = 302, Msg = "Meter recharged not successful.", Data = result });
+            }
+            catch (Exception ex)
+            {
+                Utilities.LogExceptionToDatabase(new Exception($"Exception on contoller at {DateTime.UtcNow} for traxId {model.TransactionId}", ex), $"Exception: {JsonConvert.SerializeObject(model)}");
+                return Json(new { Success = false, Code = 302, Msg = "Meter recharged not successful." });
+            }
+
+        }
+
+        [HttpPost, AjaxOnly, Public]
+        public async Task<JsonResult> RechargeFromVendtechExt(RechargeMeterModel model)
+        {
+            try
+            {
+
+                model.UserId = LOGGEDIN_USER.UserID;
+                var result = await _vendtechExtensionSales.RechargeFromVendtechExtension(model);
                 if (result.ReceiptStatus.Status == "unsuccessful")
                 {
                     return Json(new { Success = false, Code = 302, Msg = result.ReceiptStatus.Message });

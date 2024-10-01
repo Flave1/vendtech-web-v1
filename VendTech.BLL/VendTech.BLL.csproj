@@ -181,6 +181,7 @@
     <Compile Include="Interfaces\IAgencyManager.cs" />
     <Compile Include="Interfaces\IUserManager.cs" />
     <Compile Include="Interfaces\IRTSEDSAManager.cs" />
+    <Compile Include="Interfaces\IVendtechExtensionSales.cs" />
     <Compile Include="Jobs\JobSchedular.cs" />
     <Compile Include="Jobs\BalanceLowSheduleJob.cs" />
     <Compile Include="Jobs\PendingTransactionCheckJob.cs" />
@@ -209,6 +210,7 @@
     <Compile Include="Managers\AuthenticateManager.cs" />
     <Compile Include="Managers\AgencyManager.cs" />
     <Compile Include="Managers\UserManager.cs" />
+    <Compile Include="Managers\VendtechExtensionSales.cs" />
     <Compile Include="Models\AgentModels.cs" />
     <Compile Include="Models\BankAccountModel.cs" />
     <Compile Include="Models\CMSPageModels.cs" />
@@ -242,6 +244,7 @@
     <Compile Include="Models\UserAssignedModuleModel.cs" />
     <Compile Include="Models\UserModels.cs" />
     <Compile Include="Models\VendorModels.cs" />
+    <Compile Include="Models\VendtechExtensionModels.cs" />
     <Compile Include="PlatformApi\AbstractPlatformApiConnection.cs" />
     <Compile Include="PlatformApi\IPlatformApi.cs" />
     <Compile Include="PlatformApi\PlatformApiConfig.cs" />

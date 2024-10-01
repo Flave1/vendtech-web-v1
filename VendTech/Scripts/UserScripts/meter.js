@@ -182,9 +182,9 @@ var UserMeters = {
         }
         
         var redirectToAddMeter = $("#saveMeterChk").prop("checked");
-
+        //RechargeReturn
         $.ajax({
-            url: baseUrl + '/Meter/RechargeReturn',
+            url: baseUrl + '/Meter/RechargeFromVendtechExt',
             data: $("form#rechargeForm").serialize(),
             type: "POST",
             success: function (data) {
