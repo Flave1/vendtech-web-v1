@@ -1355,6 +1355,7 @@ namespace VendTech.BLL.Managers
                             string traxId = Utilities.NewTransactionId();
                             model.TransactionId = Convert.ToInt64(traxId);
                             transactionDetail.TransactionId = traxId;
+                            await _context.SaveChangesAsync();
                             return await MakeRechargeRequest(model, transactionDetail);
                         }
                         response.Status = error_response?.Status;

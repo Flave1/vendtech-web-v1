@@ -12,7 +12,10 @@ function updateBillVendor() {
 }
 
 // Attach the event listener to the checkbox
-document.getElementById('shouldBillVendor').addEventListener('change', updateBillVendor);
+const updateBillVendorChb = document.getElementById('shouldBillVendor');
+
+if (updateBillVendorChb)
+    updateBillVendorChb.addEventListener('change', updateBillVendor)
 
 function onViewDepositDetails(depositId) {
     debugger

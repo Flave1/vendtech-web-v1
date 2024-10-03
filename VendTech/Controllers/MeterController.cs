@@ -315,7 +315,6 @@ namespace VendTech.Controllers
         [HttpPost, AjaxOnly]
         public async Task<JsonResult> RechargeReturn(RechargeMeterModel model)
         {
-            return null;
             model.UserId = LOGGEDIN_USER.UserID;
             try
             {
