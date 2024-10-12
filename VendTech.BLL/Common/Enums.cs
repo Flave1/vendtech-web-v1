@@ -203,6 +203,12 @@ namespace VendTech.BLL.Models
         Android = 1
     }
 
+    public enum VoucherClaimStatus
+    {
+        claimed = 1,
+        unclaimed = 2,
+    }
+
     public enum NotificationTypeEnum
     {
         MeterRecharge=1,

@@ -756,30 +756,10 @@ namespace VendTech.BLL.Managers
                     await _context.SaveChangesAsync();
 
                     ReadErrorMessage(vendResponse.Content?.Data?.Error, transactionDetail);
-
                     transactionDetail.QueryStatusCount = 1;
+
                     var vendStatus = await QueryVendStatus(model, transactionDetail);
-                    
-                    if (vendStatus != null && vendStatus.FirstOrDefault().Value == null)
-                    {
-                        FlagTransaction(transactionDetail, RechargeMeterStatusEnum.Pending);
-                        throw new ArgumentException("Unable To Reach EDSA Services");
-                    }
-
-                    if (vendStatus.FirstOrDefault().Key != "success" && vendStatus.FirstOrDefault().Key != "newtranx")
-                    {
-                        FlagTransaction(transactionDetail, RechargeMeterStatusEnum.Failed);
-                        throw new ArgumentException(vendResponse.Content.Data?.Error);
-                    }
-
-                    if (vendStatus.FirstOrDefault().Key != "newtranx")
-                    {
-                        transactionDetail = await UpdateTransactionOnStatusSuccessIMPROVED(vendStatus.FirstOrDefault().Value, transactionDetail);
-                    }
-                    Common.PushNotification.Instance
-                        .IncludeAdminWidgetSales()
-                        .IncludeUserBalanceOnTheWeb(transactionDetail.UserId)
-                        .Send();
+                    transactionDetail = await ProcessQueryVendStatus(vendStatus, transactionDetail, model);
                 }
                 else
                 {
@@ -790,7 +770,6 @@ namespace VendTech.BLL.Managers
                         .Send();
                 }
 
-                transactionDetail.MeterId = await UpdateMeterOrSaveAsNewIMPROVED(model);
                 return transactionDetail;
             }
             else
@@ -798,35 +777,7 @@ namespace VendTech.BLL.Managers
                 model.UpdateRequestModel(transactionDetail);
 
                 var vendStatus = await QueryVendStatus(model, transactionDetail);
-
-                if (vendStatus != null && vendStatus.FirstOrDefault().Value == null)
-                {
-                    FlagTransaction(transactionDetail, RechargeMeterStatusEnum.Pending);
-                    throw new ArgumentException("Unable To Reach EDSA Services");
-                }
-
-                var response = vendStatus.FirstOrDefault().Value;
-
-                if (vendStatus.FirstOrDefault().Key != "success" && vendStatus.FirstOrDefault().Key != "newtranx")
-                {
-                    FlagTransaction(transactionDetail, RechargeMeterStatusEnum.Failed);
-                    if (response == null) throw new ArgumentException("Unable to fetch sale, Please try again");
-                    if (string.IsNullOrEmpty(response.Content.VoucherPin))
-                    {
-                        throw new ArgumentException("Unable to fetch sale, Please try again");
-                    }
-                    throw new ArgumentException("Unable to fetch sale, Please try again");
-                }
-                if (vendStatus.FirstOrDefault().Key != "newtranx")
-                {
-                    transactionDetail.MeterId = await UpdateMeterOrSaveAsNewIMPROVED(model);
-                    transactionDetail = await UpdateTransactionOnStatusSuccessIMPROVED(response, transactionDetail, billVendor);
-                }
-
-                Common.PushNotification.Instance
-                        .IncludeAdminWidgetSales()
-                        .IncludeUserBalanceOnTheWeb(transactionDetail.UserId)
-                        .Send();
+                transactionDetail = await ProcessQueryVendStatus(vendStatus, transactionDetail, model);
                 return transactionDetail;
             }
         }
@@ -2009,6 +1960,109 @@ namespace VendTech.BLL.Managers
                 body = body.Replace("%pin%", pins);
             }
             return body;
+        }
+
+        private async Task<TransactionDetail> ProcessQueryVendStatus(
+           Dictionary<string, IcekloudQueryResponse> vendStatus,
+           TransactionDetail current_transaction_record, RechargeMeterModel model)
+        {
+            if (vendStatus != null && vendStatus.FirstOrDefault().Value == null)
+            {
+                FlagTransaction(current_transaction_record, RechargeMeterStatusEnum.Pending);
+                throw new ArgumentException("Unable To Reach EDSA Services");
+            }
+            Utilities.LogExceptionToDatabase(new Exception($"ProcessQueryVendStatus 2 for trxId {model.TransactionId}"), $"{JsonConvert.SerializeObject(model)}");
+
+            var response = vendStatus.FirstOrDefault().Value;
+
+            if (vendStatus.FirstOrDefault().Value.Content.StatusDescription.Contains("Unclaimed Voucher of"))
+            {
+                Utilities.LogExceptionToDatabase(new Exception($"ProcessQueryVendStatus 11 for trxId {model.TransactionId}"), $"{JsonConvert.SerializeObject(model)}");
+
+                var unclaimedVoucherMessage = vendStatus.FirstOrDefault().Value.Content.StatusDescription.Split(' ');
+                decimal.TryParse(unclaimedVoucherMessage[3], out decimal amount);
+                TransactionDetail unclaimed_transaction = await FindUnclaimedVoucherFromTDtable(model.MeterNumber, amount);
+
+                if (unclaimed_transaction != null)
+                {
+                    Utilities.LogExceptionToDatabase(new Exception($"ProcessQueryVendStatus 12 for trxId {model.TransactionId}"), $"{JsonConvert.SerializeObject(model)}");
+                    model.TransactionId = Convert.ToInt64(unclaimed_transaction.TransactionId);
+                    var unclaimedVo_vendStatus = await QueryVendStatus(model, unclaimed_transaction);
+
+                    if (string.IsNullOrEmpty(unclaimedVo_vendStatus?.Values?.FirstOrDefault()?.Content?.VoucherPin))
+                    {
+                        await Task.Run(() => FlagTransaction(current_transaction_record, RechargeMeterStatusEnum.Pending));
+                        return await ProcessTransaction(false, model, current_transaction_record, true, true);
+                    }
+
+                    if (!string.IsNullOrEmpty(unclaimedVo_vendStatus?.Values?.FirstOrDefault()?.Content?.VoucherPin))
+                    {
+                        POS vendorPos = _context.POS.Find(current_transaction_record.POSId);
+                        if (!IsPOSBalanceSufficeint(vendorPos.Balance.Value, unclaimed_transaction.Amount))
+                        {
+                            string msg = $"Meter number has an unclaimed voucher of {Utilities.GetCountry().CurrencyCode}: {unclaimed_transaction.Amount}.  " +
+                                $"\nPlease top up to claim voucher for this meter number";
+
+                            current_transaction_record.StatusResponse = msg;
+                            FlagTransaction(current_transaction_record, RechargeMeterStatusEnum.Failed);
+
+                            unclaimed_transaction.isClaimed = (int)VoucherClaimStatus.unclaimed;
+                            FlagTransaction(unclaimed_transaction, RechargeMeterStatusEnum.Pending);
+
+                            throw new ArgumentException("unclaimed_voucher", new Exception(msg));
+                        }
+                        else if (unclaimed_transaction.Amount > model.Amount && IsPOSBalanceSufficeint(vendorPos.Balance.Value, unclaimed_transaction.Amount))
+                        {
+                            string msg = $"Meter number has an unclaimed voucher of {Utilities.GetCountry().CurrencyCode}: {unclaimed_transaction.Amount}";
+                            current_transaction_record.StatusResponse = msg;
+                            FlagTransaction(current_transaction_record, RechargeMeterStatusEnum.Failed);
+                        }
+
+                        return await ProcessQueryVendStatus(unclaimedVo_vendStatus, unclaimed_transaction, model);
+                    }
+                }
+                else
+                {
+                    FlagTransaction(current_transaction_record, RechargeMeterStatusEnum.Failed);
+                    throw new ArgumentException("Unresolved unclaimed voucher! Please try again");
+                }
+            }
+
+            if (vendStatus.FirstOrDefault().Key != "success" && vendStatus.FirstOrDefault().Key != "newtranx")
+            {
+                FlagTransaction(current_transaction_record, RechargeMeterStatusEnum.Failed);
+                if (response == null) throw new ArgumentException("Unable to fetch sale, Please try again");
+                if (string.IsNullOrEmpty(response.Content.VoucherPin))
+                {
+                    throw new ArgumentException("Unable to fetch sale, Please try again");
+                }
+                throw new ArgumentException("Unable to fetch sale, Please try again");
+
+            }
+            else if (vendStatus.FirstOrDefault().Key != "newtranx")
+            {
+                Utilities.LogExceptionToDatabase(new Exception($"ProcessQueryVendStatus 1 for trxId {model.TransactionId}"), $"{JsonConvert.SerializeObject(model)}");
+                current_transaction_record = await UpdateTransactionOnStatusSuccessIMPROVED(response, current_transaction_record);
+            }
+
+            Common.PushNotification.Instance
+                    .IncludeAdminWidgetSales()
+                    .IncludeUserBalanceOnTheWeb(current_transaction_record.UserId)
+                    .Send();
+            Utilities.LogExceptionToDatabase(new Exception($"ProcessQueryVendStatus 3 for trxId {model.TransactionId}"), $"{JsonConvert.SerializeObject(model)}");
+            return current_transaction_record;
+        }
+        private async Task<TransactionDetail> FindUnclaimedVoucherFromTDtable(string meterNumber, decimal amount)
+        {
+            var voucher = await _context.TransactionDetails
+                .Where(d => d.MeterNumber1 == meterNumber && d.Amount == amount && d.Status != (int)RechargeMeterStatusEnum.Success)
+                .OrderByDescending(d => d.CreatedAt).FirstOrDefaultAsync();
+
+            return voucher ?? null;
+        }
+        private bool IsPOSBalanceSufficeint(decimal posBalance, decimal transactionAmount)
+        {
+            return posBalance >= transactionAmount;
         }
     }
 }

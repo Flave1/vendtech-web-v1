@@ -36,7 +36,7 @@ namespace VendTech.BLL.Common
 
         public PushNotification IncludeUserBalanceOnTheWeb(long user)
         {
-            var url = WebConfigurationManager.AppSettings["SignaRServer"] + "Balance/update";
+            var url = WebConfigurationManager.AppSettings["SignaRServer"] + "vendtech/balance";
             userId = user;
             notification_urls.Add(url);
             return this;
@@ -44,26 +44,26 @@ namespace VendTech.BLL.Common
 
         public PushNotification IncludeAdminWidgetSales()
         {
-            var url = WebConfigurationManager.AppSettings["SignaRServer"] + "Widgets/updatewigdetsales";
+            var url = WebConfigurationManager.AppSettings["SignaRServer"] + "vendtech/updatewigdetsales";
             notification_urls.Add(url);
             return this;
         }
 
         public PushNotification IncludeAdminWidgetDeposits()
         {
-            var url = WebConfigurationManager.AppSettings["SignaRServer"] + "Widgets/updatewigdetdeposit";
+            var url = WebConfigurationManager.AppSettings["SignaRServer"] + "vendtech/updatewigdetdeposit";
             notification_urls.Add(url);
             return this;
         }
         public PushNotification IncludeAdminNotificationCount()
         {
-            var url = WebConfigurationManager.AppSettings["SignaRServer"] + "Notifications/admin_notification_count";
+            var url = WebConfigurationManager.AppSettings["SignaRServer"] + "vendtech/admin_notification_count";
             notification_urls.Add(url);
             return this;
         }
         public PushNotification IncludeAdminUnreleasedDeposits()
         {
-            var url = WebConfigurationManager.AppSettings["SignaRServer"] + "Widgets/updateunreleaseddeposit";
+            var url = WebConfigurationManager.AppSettings["SignaRServer"] + "vendtech/updateunreleaseddeposit";
             notification_urls.Add(url);
             return this;
         }
