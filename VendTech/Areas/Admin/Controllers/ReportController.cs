@@ -129,6 +129,7 @@ namespace VendTech.Areas.Admin.Controllers
                     if (val == "17")
                     {
                         deposits = _depositManager.GetReportsPagedList(model, true);
+
                         return View("ManageReportsV2", deposits);
                     }
                     /// This Is Used For Fetching SALES REPORT

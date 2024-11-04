@@ -133,10 +133,7 @@ namespace VendTech.BLL.Managers
                 Name = user.Name,
                 SurName = user.SurName,
                 Phone = user.Phone,
-
-
-
-
+                Email = user.Email
             };
         }
         ActionOutput IUserManager.UpdateUserProfile(long userId, UpdateProfileModel model)

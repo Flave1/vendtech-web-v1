@@ -208,16 +208,17 @@ namespace VendTech.Controllers
         [AjaxOnly, HttpPost]
         public async Task<JsonResult> SendOTP()
         {
-
-            //return JsonResult(new ActionOutput { Message = "Please try again later", Status = ActionStatus.Error });
             if (LOGGEDIN_USER.UserID == 0 || LOGGEDIN_USER == null)
             {
                 SignOut();
+                return JsonResult(new ActionOutput { Message = "Session Expired!", Status = ActionStatus.Unauthorized });
             }
             ViewBag.SelectedTab = SelectedAdminTab.Deposits;
             var result = _depositManager.SendOTP();
             if (result.Status == ActionStatus.Successfull)
             {
+
+                var user = _userManager.GetAppUserProfile(LOGGEDIN_USER.UserID);
                 var emailTemplate = _templateManager.GetEmailTemplateByTemplateType(TemplateTypes.DepositOTP);
                 if (emailTemplate.TemplateStatus)
                 {
@@ -225,10 +226,8 @@ namespace VendTech.Controllers
                     body = body.Replace("%otp%", result.Object);
                     body = body.Replace("%USER%", LOGGEDIN_USER.FirstName);
                     var currentUser = LOGGEDIN_USER.UserID;
-                    Utilities.SendEmail(User.Identity.Name, emailTemplate.EmailSubject, body);
+                    Utilities.SendEmail(user.Email, emailTemplate.EmailSubject, body);
                 }
-
-                var user = _userManager.GetAppUserProfile(LOGGEDIN_USER.UserID);
                 if(user != null)
                 {
                     var requestmsg = new SendSMSRequest

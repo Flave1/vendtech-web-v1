@@ -917,7 +917,7 @@ namespace VendTech.BLL.Managers
                 }
                 else
                 {
-                    transDetail.QueryStatusCount = (int)statusResponse.Content.StatusRequestCount;
+                    transDetail.QueryStatusCount = transDetail.QueryStatusCount >= 0 ? transDetail.QueryStatusCount + (int)statusResponse.Content.StatusRequestCount : transDetail.QueryStatusCount;
                     if (string.IsNullOrEmpty(statusResponse.Content.VoucherPin))
                     {
                         Utilities.LogExceptionToDatabase(new Exception($"QueryVendStatus 4 ends at {DateTime.UtcNow} for traxId {model.TransactionId}"), $"statusResponse: {JsonConvert.SerializeObject(statusResponse)}");

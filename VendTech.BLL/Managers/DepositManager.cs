@@ -1935,7 +1935,7 @@ namespace VendTech.BLL.Managers
                 Status = (int)status,
             };
 
-            var deposit = await _balDepOperations.CreateDeposit(depositDto, depositDto.UserId, true);
+            var deposit = await _balDepOperations.CreateDeposit(depositDto, true);
 
             dbpendingDeposit.ApprovedDepId = deposit.DepositId;
             return deposit;
@@ -2607,7 +2607,7 @@ namespace VendTech.BLL.Managers
             depositDto.NameOnCheque = fromPos.User.Vendor;
             depositDto.IsAudit = false;
 
-            var deposit = await _balDepOperations.CreateDeposit(depositDto, currentUserId, false);
+            var deposit = await _balDepOperations.CreateDeposit(depositDto, false);
 
             var deviceTokens = fromPos.User.TokensManagers.Where(p => p.DeviceToken != null && p.DeviceToken != string.Empty).Select(p => new { p.AppType, p.DeviceToken }).ToList().Distinct();
             var obj = new PushNotificationModel();
@@ -2640,7 +2640,7 @@ namespace VendTech.BLL.Managers
                 depositDto.UserId = toPos?.VendorId??0;
                 depositDto.NameOnCheque = toPos.User.Vendor;
 
-                var deposit = await _balDepOperations.CreateDeposit(depositDto, currentUserId, false);
+                var deposit = await _balDepOperations.CreateDeposit(depositDto, false);
                 
                 //Send push to all devices where this user logged in when admin released deposit
                 var deviceTokens = toPos.User.TokensManagers.Where(p => p.DeviceToken != null && p.DeviceToken != string.Empty).Select(p => new { p.AppType, p.DeviceToken }).ToList().Distinct();
@@ -2680,7 +2680,7 @@ namespace VendTech.BLL.Managers
                 depositDto.NameOnCheque = toPos.User.Vendor;
                 depositDto.UserId = toPos.VendorId.Value;
 
-                var deposit = await _balDepOperations.CreateDeposit(depositDto, currentUserId, true);
+                var deposit = await _balDepOperations.CreateDeposit(depositDto, true);
 
                 //Send push to all devices where this user logged in when admin released deposit
                 var deviceTokens = toPos.User.TokensManagers.Where(p => p.DeviceToken != null && p.DeviceToken != string.Empty).Select(p => new { p.AppType, p.DeviceToken }).ToList().Distinct();

@@ -18,12 +18,12 @@ namespace VendTech.BLL.Managers
             _context = context;
         }
 
-        public async Task<Deposit> CreateDeposit(DepositDTOV2 depositDto, long currentUserId, bool giveAgencyAdminCommission)
+        public async Task<Deposit> CreateDeposit(DepositDTOV2 depositDto, bool giveAgencyAdminCommission)
         {
             try
             {
                 var deposit = await CreateNewDeposit(depositDto, giveAgencyAdminCommission);
-                await GenerateDepositLog(deposit, currentUserId);
+                await GenerateDepositLog(deposit, depositDto.Approver);
                 return deposit;
             }
             catch (Exception e)
@@ -91,7 +91,7 @@ namespace VendTech.BLL.Managers
             await CalculateBalance(deposit, pos);
             _context.Deposits.Add(deposit);
             await _context.SaveChangesAsync();
-            await GenerateDepositLog(deposit, deposit.UserId);
+            await GenerateDepositLog(deposit, depositDto.Approver);
             return;
         }
 

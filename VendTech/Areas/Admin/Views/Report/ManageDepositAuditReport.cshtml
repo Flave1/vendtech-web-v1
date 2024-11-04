@@ -503,10 +503,10 @@
             }
             $("#issuingbank").find("option[value='" + issuingbank.substr(0, issuingbank.lastIndexOf("-")) + "']").attr("selected", "selected");
 
-
-            if ($("#issuingbank").val().length < 1) {
-                $("#issuingbank").val("GTB - (GUARANTEE TRUST BANK)");
-            }
+            $("#issuingbank").val("GTB - (GUARANTEE TRUST BANK)");
+            //if ($("#issuingbank").val().length < 1) {
+            //    $("#issuingbank").val("GTB - (GUARANTEE TRUST BANK)");
+            //}
             $("#depositref").val(depositref);
             $("#gtbank").val(gtbank);
             $("#deposittype").val(Type);

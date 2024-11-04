@@ -388,6 +388,7 @@ namespace VendTech.BLL.Models
         public HttpPostedFileBase ImagefromWeb { get; set; }
 
         public string ProfilePicUrl { get; set; }
+        public string Email { get; set; }
     }
 
     public class CountryModel

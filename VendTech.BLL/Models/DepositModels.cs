@@ -101,12 +101,11 @@ namespace VendTech.BLL.Models
         public DepositListingModel() { }
         public DepositListingModel(Deposit obj, bool changeStatusForApi = false)
         {
+            var log = obj.DepositLogs.FirstOrDefault(s => s.DepositId == obj.DepositId);
+            var approver = log?.User?.Name + " " + log?.User?.SurName;
             NotType = "deposit";
             Type = obj.PaymentType1.Name;
-            UserName = "";
-            //UserName = obj.DepositLogs.Any() ?
-            //    obj.DepositLogs.FirstOrDefault(s => s.DepositId == obj.DepositId)?.User?.Name + " " + obj.DepositLogs.FirstOrDefault(s => s.DepositId == obj.DepositId)?.User?.SurName :
-            //    obj.User.Name +" "+ obj.User.SurName;
+            UserName = approver;
             PosNumber = obj.POS != null ? obj.POS.SerialNumber : "";
             VendorName = obj.POS.User.Vendor;
             ChkNoOrSlipId = obj.CheckNumberOrSlipId; 
@@ -553,7 +552,7 @@ namespace VendTech.BLL.Models
 
             GTBank = obj.BankAccount.BankName;
             Payer = string.IsNullOrEmpty(obj.NameOnCheque) ? "" : obj.NameOnCheque; //obj.PaymentType != 4 ? !string.IsNullOrEmpty(obj.NameOnCheque) ? obj.NameOnCheque : "": obj.User.Agency.User.Vendor;
-            IssuingBank = obj.ChequeBankName != null ? obj.ChequeBankName + '-' + obj.BankAccount.AccountNumber.Replace("/", string.Empty).Substring(obj.BankAccount.AccountNumber.Replace("/", string.Empty).Length - 3) : "";
+            IssuingBank = obj.ChequeBankName != null ? obj.ChequeBankName + '-' + obj.BankAccount.AccountNumber.Replace("/", string.Empty).Substring(obj.BankAccount.AccountNumber.Replace("/", string.Empty).Length - 3) : "GTB - (GUARANTEE TRUST BANK)";
             Amount = obj.Amount;
             CreatedAt = obj.CreatedAt.ToString("dd/MM/yyyy hh:mm");
             TransactionId = obj.TransactionId;
@@ -657,6 +656,7 @@ namespace VendTech.BLL.Models
             Status = (int)DepositPaymentStatusEnum.Released;
             NextReminderDate = DateTime.UtcNow;
             ValueDateStamp = DateTime.UtcNow;
+            Approver = 40249;
         }
         public long DepositId { get; set; }
         public long UserId { get; set; }
@@ -676,6 +676,7 @@ namespace VendTech.BLL.Models
         public int BankAccountId { get; set; }
         public bool IsAudit { get; set; }
         public string ValueDate { get; set; }
+        public long Approver { get; set; } = 40249;
         public DateTime? NextReminderDate { get; set; }
         public DateTime? ValueDateStamp { get; set; }
     }

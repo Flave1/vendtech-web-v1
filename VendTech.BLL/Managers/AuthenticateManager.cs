@@ -220,7 +220,6 @@ namespace VendTech.BLL.Managers
         {
             try
             {
-
                 var userModel = new UserModel(); 
                 var userPos = Context.POS.FirstOrDefault(p => p.VendorId == userId); 
                 if (userPos == null) 
