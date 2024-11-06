@@ -550,9 +550,22 @@ namespace VendTech.Areas.Admin.Controllers
                         row.Cells[5].HorizontalAlign = HorizontalAlign.Right;
                         row.Cells[6].HorizontalAlign = HorizontalAlign.Left;
                         row.Cells[7].HorizontalAlign = HorizontalAlign.Right;
+
+                        // Get the value of the cell, convert to a number if necessary
                         var token = row.Cells[6].Text.ToString();
 
-                        row.Cells[6].Text = token != "&nbsp;" ? token : string.Empty;
+                        // Check if the cell has a valid number
+                        if (decimal.TryParse(token, out decimal tokenValue))
+                        {
+                            // Format the number without scientific notation
+                            row.Cells[6].Text = tokenValue.ToString("F0");
+                        }
+                        else
+                        {
+                            // If no valid number, keep it as empty
+                            row.Cells[6].Text = token != "&nbsp;" ? token : string.Empty;
+                        }
+
                         row.Cells[6].Wrap = true;
                     }
                 }
