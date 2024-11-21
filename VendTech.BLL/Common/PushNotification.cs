@@ -1,19 +1,18 @@
-﻿using Newtonsoft.Json;
+﻿//using FirebaseAdmin;
+//using Google.Apis.Auth.OAuth2;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Linq.Dynamic;
-using System.Linq.Expressions;
 using System.Net;
 using System.Net.Http;
-using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web.Configuration;
 using VendTech.BLL.Models;
-using VendTech.BLL.PlatformApi;
 using VendTech.DAL;
 
 namespace VendTech.BLL.Common
@@ -99,7 +98,36 @@ namespace VendTech.BLL.Common
 
         }
 
-        public static string SendNotificationTOMobile(PushNotificationModel model)
+        public static void IncludeAndroidPush(PushNotificationModel model)
+        {
+            using (HttpClient client = new HttpClient())
+            {
+                try
+                {
+                    var url = WebConfigurationManager.AppSettings["SignaRServer"] + "vendtech/push_to_mobile";
+
+                    var responses = new ConcurrentBag<string>();
+                    var requestBody = new MessageRequest { 
+                        Body = model.Message, 
+                        DeviceToken = model.DeviceToken,
+                        Id = model.Id.ToString(),
+                        Title = model.Title, 
+                        NotificationType = ((int)model.NotificationType).ToString()
+                    };
+                    string jsonPayload = JsonConvert.SerializeObject(requestBody);
+
+                    var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+                    HttpResponseMessage response = client.PostAsync(url, content).Result;
+                    string responseBody = response.Content.ReadAsStringAsync().Result;
+
+                    SaveNotificationToDB(model, (int)NotificationStatusEnum.Success);
+                }
+                catch (Exception) { }
+            }
+        }
+
+
+        public static string ASendNotificationTOMobile(PushNotificationModel model)
         {
             try
             {
@@ -110,8 +138,8 @@ namespace VendTech.BLL.Common
                 tRequest = WebRequest.Create(Config.FCMUrl);
                 tRequest.Method = "post";
                 tRequest.ContentType = "application/json";
-                tRequest.Headers.Add(string.Format("Authorization: key={0}", GoogleAppID));
-
+                //tRequest.Headers.Add(string.Format("Authorization: key={0}", GoogleAppID));
+                tRequest.Headers.Add("Authorization", $"Bearer {GoogleAppID}");
                 tRequest.Headers.Add(string.Format("Sender: id={0}", SENDER_ID));
 
 
@@ -171,6 +199,9 @@ namespace VendTech.BLL.Common
                             balance = model.Balance
                         }
                     };
+
+
+
                     string postData = JsonConvert.SerializeObject(payload).ToString();
 
                     Byte[] byteArray = Encoding.UTF8.GetBytes(postData);
@@ -194,6 +225,21 @@ namespace VendTech.BLL.Common
                     return sResponseFromServer;
                 }
 
+            }
+            catch (WebException ex)
+            {
+                if (ex.Response is HttpWebResponse response && response.StatusCode == HttpStatusCode.MovedPermanently)
+                {
+                    string redirectUrl = response.Headers["Location"];
+                    Console.WriteLine("Redirected to: " + redirectUrl);
+                    // Update your request URL to redirectUrl if needed.
+                }
+                else
+                {
+                    throw;
+                }
+                SaveNotificationToDB(model, (int)NotificationStatusEnum.Failed);
+                return ex.Message;
             }
             catch (Exception ex)
             {

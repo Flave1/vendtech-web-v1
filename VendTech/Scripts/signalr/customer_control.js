@@ -4,7 +4,6 @@ import { connection } from './customer_connection.js';
 
 const userId = userBalanceHandler.userId;
 
-
 connection.on("SendBalanceUpdate", function (user) {
     if (userId.toString() === user) {
         updateBalance(true);

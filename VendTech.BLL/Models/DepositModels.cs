@@ -378,6 +378,7 @@ namespace VendTech.BLL.Models
 
         public string TransactionId { get; set; }
         public long DepositLogId { get; set; }
+        public string NameOnCheque { get; set; }
         public DepositLogListingModel(DepositLog obj)
         {
             UserName = obj.User.Name + " " + obj.User.SurName;
@@ -392,6 +393,7 @@ namespace VendTech.BLL.Models
             DepositLogId = obj.DepositLogId;
             DepositerName = obj.Deposit.User.Name + " " + obj.Deposit.User.SurName;
             //Balance = obj.Deposit.User.Balance == null ? 0 : obj.Deposit.User.Balance.Value;
+            NameOnCheque = obj.Deposit.NameOnCheque;
         }
     }
 
@@ -654,7 +656,7 @@ namespace VendTech.BLL.Models
             ValueDate = Utilities.formatDate(DateTime.UtcNow);
             UpdatedAt = DateTime.UtcNow;
             Status = (int)DepositPaymentStatusEnum.Released;
-            NextReminderDate = DateTime.UtcNow;
+            NextReminderDate = DateTime.UtcNow.AddDays(15);
             ValueDateStamp = DateTime.UtcNow;
             Approver = 40249;
         }

@@ -1,15 +1,9 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Security.Authentication;
-using System.Security.Policy;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
-using VendTech.BLL.Interfaces;
 
 namespace VendTech.BLL.PlatformApi
 {

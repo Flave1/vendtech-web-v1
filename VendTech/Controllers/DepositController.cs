@@ -9,14 +9,7 @@ using VendTech.Attributes;
 using VendTech.BLL.Interfaces;
 using VendTech.BLL.Models;
 using VendTech.BLL.Common;
-using static VendTech.Controllers.MeterController;
 using VendTech.DAL;
-using Newtonsoft.Json;
-using System.Collections.Generic;
-using System.Net.Http.Headers;
-using System.Net.Http;
-using System.Net;
-using System.Text;
 using System.Threading.Tasks;
 #endregion
 
@@ -39,17 +32,19 @@ namespace VendTech.Controllers
         private readonly IPOSManager _posManager;
         private readonly IEmailTemplateManager _templateManager;
         private readonly IPaymentTypeManager _paymentTypeManager;
+        private readonly EmailNotification emailNotification;
+        private readonly MobileNotification mobileNotification;
 
 
         #endregion
 
-        public DepositController(IUserManager userManager, 
-            IErrorLogManager errorLogManager, 
-            IAuthenticateManager authenticateManager, 
-            ICMSManager cmsManager, IDepositManager depositManager, 
-            IMeterManager meterManager, IVendorManager vendorManager, 
-            IBankAccountManager bankAccountManager, IPOSManager posManager, 
-            IEmailTemplateManager templateManager, IPaymentTypeManager paymentTypeManager)
+        public DepositController(IUserManager userManager,
+            IErrorLogManager errorLogManager,
+            IAuthenticateManager authenticateManager,
+            ICMSManager cmsManager, IDepositManager depositManager,
+            IMeterManager meterManager, IVendorManager vendorManager,
+            IBankAccountManager bankAccountManager, IPOSManager posManager,
+            IEmailTemplateManager templateManager, IPaymentTypeManager paymentTypeManager, EmailNotification emailNotification, MobileNotification mobileNotification)
             : base(errorLogManager)
         {
             _userManager = userManager;
@@ -62,6 +57,8 @@ namespace VendTech.Controllers
             _posManager = posManager;
             _templateManager = templateManager;
             _paymentTypeManager = paymentTypeManager;
+            this.emailNotification = emailNotification;
+            this.mobileNotification = mobileNotification;
         }
 
         /// <summary>
@@ -153,106 +150,37 @@ namespace VendTech.Controllers
                 ActionOutput result = await _depositManager.ChangeDepositStatus(pd.Object.PendingDepositId, DepositPaymentStatusEnum.Released, true);
 
                 var deposit = _depositManager.GetDeposit(pd.Object.PendingDepositId);
-                SendEmailOnDepositApproval(deposit);
-                SendEmailToAdminOnDepositApproval(deposit, result.ID);
-                SendSmsOnDepositApproval(deposit);
+                emailNotification.SendEmailToUserOnDepositApproval(deposit);
+                emailNotification.SendEmailToAdminOnDepositAutoApproval(deposit, result.ID);
+                emailNotification.SendSmsToUserOnDepositApproval(deposit);
 
                 await _depositManager.DeletePendingDeposits(deposit);
+
+                mobileNotification.PushNotificationToMobile(deposit.ApprovedDepId);
+                PushNotification.Instance
+                   .IncludeAdminNotificationCount()
+                   .IncludeUserBalanceOnTheWeb(pd.Object.UserId)
+                   .IncludeAdminWidgetDeposits()
+                   .IncludeAdminUnreleasedDeposits()
+                   .Send();
+
             }
             else
             {
+                mobileNotification.Notify(pd.Object.PendingDepositId, pd.Object.UserId, "Deposit Requested");
+                emailNotification.SendEmailToAdminOnDepositRequest(pd.Object);
+                PushNotification.Instance
+                   .IncludeAdminNotificationCount()
+                   .IncludeUserBalanceOnTheWeb(pd.Object.UserId)
+                   .IncludeAdminWidgetDeposits()
+                   .IncludeAdminUnreleasedDeposits()
+                   .Send();
 
-                PushNotification.Instance.IncludeAdminNotificationCount()
-                    .IncludeAdminUnreleasedDeposits()
-                    .IncludeUserBalanceOnTheWeb(pd.Object.UserId).Send();
-                var adminUsers = _userManager.GetAllAdminUsersByDepositRelease();
-                var pos = _posManager.GetSinglePos(pd.Object.POSId);
-                if (pos != null)
-                {
-                    foreach (var admin in adminUsers)
-                    {
-                        var emailTemplate = _templateManager.GetEmailTemplateByTemplateType(TemplateTypes.DepositRequestNotification);
-                        if (emailTemplate != null)
-                        {
-                            if (emailTemplate.TemplateStatus)
-                            {
-                                string body = emailTemplate.TemplateContent;
-                                body = body.Replace("%AdminUserName%", admin.Name);
-                                body = body.Replace("%VendorName%", pos.User.Vendor);
-                                body = body.Replace("%POSID%", pos.SerialNumber);
-                                body = body.Replace("%REF%", pd.Object.CheckNumberOrSlipId);
-                                body = body.Replace("%Amount%", Utilities.FormatAmount(pd.Object.Amount));
-                                body = body.Replace("%CurrencyCode%", Utilities.GetCountry().CurrencyCode);
-                                Utilities.SendEmail(admin.Email, emailTemplate.EmailSubject, body);
-                                Utilities.SendEmail("vblell@gmail.com", emailTemplate.EmailSubject, body);
-                            }
-
-                        }
-                    }
-                }
+             
             }
 
             
             return JsonResult(new ActionOutput { Message = mesg, Status = pd.Status });
-        }
-
-        private void SendEmailOnDepositApproval(PendingDeposit deposit)
-        {
-           
-            var user = _userManager.GetUserDetailsByUserId(deposit.UserId);
-            if (user != null)
-            {
-                var emailTemplate = _templateManager.GetEmailTemplateByTemplateType(TemplateTypes.DepositApprovedNotification);
-
-                if (emailTemplate.TemplateStatus)
-                {
-                    string body = emailTemplate.TemplateContent;
-                    body = body.Replace("%USER%", user.FirstName);
-                    Utilities.SendEmail(user.Email, emailTemplate.EmailSubject, body);
-                }
-            }
-        }
-        private void SendEmailToAdminOnDepositApproval(PendingDeposit dep, long trxId)
-        {
-            var adminUsers = _userManager.GetAllAdminUsersByDepositRelease();
-
-            if (dep.POS!= null)
-            {
-                foreach (var admin in adminUsers)
-                {
-                    string body =$"<p>Greetings {admin.Name}, </p>" +
-                                 $"<b>This is to inform you that a deposit has been AUTO APPROVED for</b> </br>" +
-                                 "</br>" +
-                                 $"Vendor Name: <b>{dep.POS.User.Vendor}</b> </br></br>" +
-                                 $"POSID: <b>{dep.POS.SerialNumber}</b>  </br></br>" +
-                                 $"DEPOSIT ID: <b>{trxId}</b> </br></br>" +
-                                 $"REF#: <b>{dep.CheckNumberOrSlipId}</b> </br></br>" +
-                                 $"Amount: <b>{Utilities.GetCountry().CurrencyCode} {Utilities.FormatAmount(dep.Amount)}</b> </br>" +
-                                 $"</br>" +
-                                 $"Thank You" +
-                                 $"<br/>" +
-                                 $"<p>{Utilities.EMAILFOOTERTEMPLATE}</p>";
-
-                    Utilities.SendEmail(admin.Email, "VENDTECH SUPPORT | DEPOSIT AUTO APPROVAL EMAIL", body);
-                }
-            }
-        }
-        private bool SendSmsOnDepositApproval(PendingDeposit deposit)
-        {
-            if (deposit.POS.SMSNotificationDeposit ?? true)
-            {
-                var requestmsg = new SendSMSRequest
-                {
-                    Recipient = Utilities.GetCountry().CountryCode  + deposit.POS.Phone,
-                    Payload = $"Greetings {deposit.POS.User.Name} \n" +
-                   "Your last deposit has been approved\n" +
-                   "Please confirm the amount deposited reflects in your wallet correctly.\n" +
-                   $"{Utilities.GetCountry().CurrencyCode}: {Utilities.FormatAmount(deposit.Amount)} \n" +
-                   "VENDTECH"
-                };
-                return Utilities.SendSms(requestmsg);
-            }
-            return false;
         }
 
         [AjaxOnly]

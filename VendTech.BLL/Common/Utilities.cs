@@ -24,7 +24,6 @@ using Newtonsoft.Json;
 using System.Net.Http.Headers;
 using System.Net.Http;
 using System.Data.Entity;
-using System.IdentityModel.Protocols.WSTrust;
 
 namespace VendTech.BLL.Common
 {

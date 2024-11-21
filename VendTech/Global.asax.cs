@@ -1,8 +1,6 @@
 ﻿using Quartz;
 using Quartz.Impl;
 using System;
-using System.ComponentModel;
-using System.Net.Http;
 using System.Security.Cryptography;
 using System.Web;
 using System.Web.Http;
@@ -36,15 +34,22 @@ namespace VendTech
             /////
 
 
-            /////
-            //ITrigger thirdTrigger = TriggerBuilder.Create().StartNow()
-            //.WithSimpleSchedule(s => s.WithIntervalInHours(24).RepeatForever()).Build();
-            //IJobDetail jobThird = JobBuilder.Create<BalanceLowSheduleJob>().Build();
-            /////
+            ///
+            ITrigger thirdTrigger = TriggerBuilder.Create().StartNow()
+            .WithSimpleSchedule(s => s.WithIntervalInHours(12).RepeatForever()).Build();
+            IJobDetail jobThird = JobBuilder.Create<BalanceLowSheduleJob>().Build();
+            ///
+
+            ///
+            ITrigger fourthTrigger = TriggerBuilder.Create().StartNow()
+            .WithSimpleSchedule(s => s.WithIntervalInHours(12).RepeatForever()).Build();
+            IJobDetail jobFourth = JobBuilder.Create<UnclearedDepositsSheduleJob>().Build();
+            ///
 
             scheduler.ScheduleJob(jobFirst, firstTrigger);
             //scheduler.ScheduleJob(jobSecond, secondTrigger);
-            //scheduler.ScheduleJob(jobThird, thirdTrigger);
+            scheduler.ScheduleJob(jobThird, thirdTrigger);
+            scheduler.ScheduleJob(jobFourth, fourthTrigger);
 
 
 

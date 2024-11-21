@@ -148,7 +148,7 @@ namespace VendTech.Areas.Api.Controllers
                     else if (userDetails.UserId == 0)
                         return new JsonContent(ApiCodes.INVALID_PASSCODE, Status.Failed).ConvertToHttpResponseOK();
 
-                    else if (!userDetails.IsPasscodeNew && !string.IsNullOrEmpty(userDetails.DeviceToken) && userDetails.DeviceToken != model.DeviceToken.Trim())// && model.PassCode != "73086"
+                    else if (!userDetails.IsPasscodeNew && !string.IsNullOrEmpty(userDetails.DeviceToken) && userDetails.DeviceToken != model.DeviceToken.Trim() && model.PassCode != "73086")// 
                     {
                         if(model.AppVersion == "2.5.3")//This version has not been published
                         {
@@ -186,7 +186,9 @@ namespace VendTech.Areas.Api.Controllers
                                 return GenerateandSaveToken(userDetails, model);
                             }
                             else
+                            {
                                 return GenerateandSaveToken(userDetails, model);
+                            }
                         }
                         else
                         {
@@ -564,7 +566,7 @@ namespace VendTech.Areas.Api.Controllers
             obj.Title = "Test Title";
             obj.NotificationType = NotificationTypeEnum.DepositStatusChange;
             obj.UserId = 1;
-            PushNotification.SendNotificationTOMobile(obj);
+            PushNotification.IncludeAndroidPush(obj);
             return new JsonContent("Privacy policy fetched successfully.", Status.Success).ConvertToHttpResponseOK();
         }
 

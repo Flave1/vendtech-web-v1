@@ -200,6 +200,7 @@
           <Property Name="IsActive" Type="bit" />
           <Property Name="Desription" Type="varchar" MaxLength="200" />
           <Property Name="TargetUser" Type="varchar" MaxLength="50" />
+          <Property Name="Receiver" Type="varchar" MaxLength="300" />
         </EntityType>
         <EntityType Name="ErrorLog">
           <Key>
@@ -1848,6 +1849,7 @@ warning 6002: The table/view 'VENDTECH_MAIN.dbo.RTS DATA_VTWEB_TRANSACTIONDETALS
           <Property Name="IsActive" Type="Boolean" />
           <Property Name="Desription" Type="String" MaxLength="200" FixedLength="false" Unicode="false" />
           <Property Name="TargetUser" Type="String" MaxLength="50" FixedLength="false" Unicode="false" />
+          <Property Name="Receiver" Type="String" MaxLength="300" FixedLength="false" Unicode="false" />
         </EntityType>
         <EntityType Name="ErrorLog">
           <Key>
@@ -3567,6 +3569,7 @@ warning 6002: The table/view 'VENDTECH_MAIN.dbo.RTS DATA_VTWEB_TRANSACTIONDETALS
           <EntitySetMapping Name="EmailTemplates">
             <EntityTypeMapping TypeName="VENDTECH_MAINModel.EmailTemplate">
               <MappingFragment StoreEntitySet="EmailTemplates">
+                <ScalarProperty Name="Receiver" ColumnName="Receiver" />
                 <ScalarProperty Name="TemplateId" ColumnName="TemplateId" />
                 <ScalarProperty Name="TemplateName" ColumnName="TemplateName" />
                 <ScalarProperty Name="EmailSubject" ColumnName="EmailSubject" />

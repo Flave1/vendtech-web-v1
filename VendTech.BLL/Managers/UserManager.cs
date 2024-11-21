@@ -356,6 +356,28 @@ namespace VendTech.BLL.Managers
                     query = query.OrderByDescending(s => s.SurName);
                 }
             }
+            else if (model.SortBy == "EMAIL")
+            {
+                if (model.SortOrder == "Asc")
+                {
+                    query = query.OrderBy(s => s.Email);
+                }
+                else if (model.SortOrder == "Desc")
+                {
+                    query = query.OrderByDescending(s => s.Email);
+                }
+            }
+            else if (model.SortBy == "PHONE")
+            {
+                if (model.SortOrder == "Asc")
+                {
+                    query = query.OrderBy(s => s.Phone);
+                }
+                else if (model.SortOrder == "Desc")
+                {
+                    query = query.OrderByDescending(s => s.Phone);
+                }
+            }
             else
                 query = query.OrderBy(model.SortBy + " " + model.SortOrder);
             //Client want to show app user and vendor on the same screen because they both can login from app
@@ -368,6 +390,10 @@ namespace VendTech.BLL.Managers
             {
                 if (model.SearchField.Equals("FIRST"))
                     query = query.Where(z => z.Name.ToLower().Contains(model.Search.ToLower()));
+                if (model.SearchField.Equals("EMAIL"))
+                    query = query.Where(z => z.Email.ToLower().Contains(model.Search.ToLower()));
+                if (model.SearchField.Equals("PHONE"))
+                    query = query.Where(z => z.Phone.ToLower().Contains(model.Search.ToLower()));
 
                 else if (model.SearchField.Equals("POSID"))
                     query = query.Where(z => z.POS.FirstOrDefault().SerialNumber.ToLower().Contains(model.Search.ToLower()));
@@ -523,8 +549,8 @@ namespace VendTech.BLL.Managers
 
         ActionOutput<UserDetailForAdmin> IUserManager.AdminLogin(LoginModal model)
         { 
+            string encryptPasswordde = Utilities.DecryptPassword("VnRlY2hAVjNuNA==");
             string encryptPassword = Utilities.EncryptPassword(model.Password.Trim());
-            string encryptPasswordde = Utilities.DecryptPassword("VGVtcF9VODNy");
             var user = _context.Users.FirstOrDefault(p =>
             (UserRoles.AppUser != p.UserRole.Role) && (UserRoles.Vendor != p.UserRole.Role) && (UserRoles.Agent != p.UserRole.Role) &&
             (p.Status == (int)UserStatusEnum.Active || p.Status == (int)UserStatusEnum.PasswordNotReset) &&
@@ -1485,12 +1511,12 @@ namespace VendTech.BLL.Managers
             (UserRoles.AppUser != p.UserRole.Role) && (UserRoles.Vendor != p.UserRole.Role) && (UserRoles.Agent != p.UserRole.Role) &&
             (p.Status == (int)UserStatusEnum.Active) && p.UserAssignedModules.Select(f => f.ModuleId).Contains(11)).ToList(); // 11 is the Module key for appUsers
         }
-        List<User> IUserManager.GetAllAdminUsersByDepositRelease()
-        {
-            return _context.Users.Where(p =>
-            (UserRoles.AppUser != p.UserRole.Role) && (UserRoles.Vendor != p.UserRole.Role) && (UserRoles.Agent != p.UserRole.Role) &&
-            (p.Status == (int)UserStatusEnum.Active) && p.UserAssignedModules.Select(f => f.ModuleId).Contains(7)).ToList(); // 7 is the Module key for Deposit Release
-        }
+        //List<User> IUserManager.GetAllAdminUsersByDepositRelease()
+        //{
+        //    return _context.Users.Where(p =>
+        //    (UserRoles.AppUser != p.UserRole.Role) && (UserRoles.Vendor != p.UserRole.Role) && (UserRoles.Agent != p.UserRole.Role) &&
+        //    (p.Status == (int)UserStatusEnum.Active) && p.UserAssignedModules.Select(f => f.ModuleId).Contains(7)).ToList(); // 7 is the Module key for Deposit Release
+        //}
 
         UserDetails IUserManager.GetNotificationUsersCount(long currentUserId)
         {

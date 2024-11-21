@@ -1,21 +1,10 @@
-﻿using Newtonsoft.Json;
-using Org.BouncyCastle.Asn1.Ocsp;
-using Org.BouncyCastle.Ocsp;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data.Entity;
 using System.Globalization;
-using System.IdentityModel.Protocols.WSTrust;
 using System.Linq;
 using System.Linq.Dynamic;
-using System.Net;
-using System.Net.Http;
-using System.Runtime.InteropServices;
-using System.Security.Cryptography.Xml;
-using System.Text;
 using System.Threading.Tasks;
-using System.Web.Configuration;
 using VendTech.BLL.Common;
 using VendTech.BLL.Interfaces;
 using VendTech.BLL.Models;
@@ -1900,14 +1889,6 @@ namespace VendTech.BLL.Managers
                     if (status == DepositPaymentStatusEnum.Released)
                     {
                         dbDeposit = await ProcessTransaction(dbpendingDeposit, status);
-                        //Push Notification to all devices where this user logged in when admin released deposit
-                        PushNotificationToMobile(dbDeposit);
-                        PushNotification.Instance
-                           .IncludeUserBalanceOnTheWeb(dbDeposit.UserId)
-                           .IncludeAdminWidgetDeposits()
-                           .IncludeAdminUnreleasedDeposits()
-                           .Send();
-
                     }
                 }
 
@@ -1938,47 +1919,11 @@ namespace VendTech.BLL.Managers
             var deposit = await _balDepOperations.CreateDeposit(depositDto, true);
 
             dbpendingDeposit.ApprovedDepId = deposit.DepositId;
+            await _context.SaveChangesAsync();
             return deposit;
         }
 
-        private void PushNotificationToMobile(Deposit dbDeposit)
-        {
-            var deviceTokens = _context.Users.FirstOrDefault(d => d.UserId == dbDeposit.UserId).TokensManagers.Where(p => p.DeviceToken != null && p.DeviceToken != string.Empty).Select(p => new { p.AppType, p.DeviceToken }).ToList().Distinct();
-            var obj = new PushNotificationModel();
-            obj.UserId = dbDeposit.UserId;
-            obj.Id = dbDeposit.DepositId;
-            obj.Balance = dbDeposit.POS.Balance.Value;
-            var notyAmount = Utilities.FormatAmount(dbDeposit.Amount);
-            if (dbDeposit.Status == (int)DepositPaymentStatusEnum.Rejected || dbDeposit.Status == (int)DepositPaymentStatusEnum.RejectedByAccountant)
-            {
-                obj.Title = "Deposit request rejected";
-                obj.Message = "Your deposit request has been rejected of NLe " + notyAmount;
-            }
-            else if (dbDeposit.Status == (int)DepositPaymentStatusEnum.Released)
-            {
-                obj.Title = "Wallet updated successfully";
-                obj.Message = "Your wallet has been updated with NLe " + notyAmount;
-            }
-            else if (dbDeposit.Status == (int)DepositPaymentStatusEnum.ApprovedByAccountant)
-            {
-                obj.Title = "Deposit request in progress";
-                obj.Message = "Your deposit request has been in processed of NLe " + notyAmount;
-            }
-            obj.NotificationType = NotificationTypeEnum.DepositStatusChange;
-            foreach (var item in deviceTokens)
-            {
-                obj.DeviceToken = item.DeviceToken;
-                obj.DeviceType = item.AppType.Value;
-                PushNotification.SendNotificationTOMobile(obj);
-            }
-        }
-        private void GenerateReferenceIfUserIsUnderAnyAgency(Deposit dbDeposit, User user)
-        {
-            if (user.AgentId != Utilities.VENDTECH) 
-                dbDeposit.CheckNumberOrSlipId = dbDeposit.CheckNumberOrSlipId == "0" ? Utilities.GenerateByAnyLength(7).ToUpper() : dbDeposit.CheckNumberOrSlipId;
-
-        }
-
+      
         ActionOutput IDepositManager.ReverseDepositStatus(long depositId, DepositPaymentStatusEnum status, long currentUserId)
         {
             var dbDeposit = _context.Deposits.FirstOrDefault(p => p.DepositId == depositId);
@@ -2060,7 +2005,7 @@ namespace VendTech.BLL.Managers
             {
                 obj.DeviceToken = item.DeviceToken;
                 obj.DeviceType = item.AppType.Value;
-                PushNotification.SendNotificationTOMobile(obj);
+                PushNotification.IncludeAndroidPush(obj);
             }
             return ReturnSuccess("Deposit status changed successfully.");
         }
@@ -2233,7 +2178,7 @@ namespace VendTech.BLL.Managers
         ActionOutput<PendingDeposit> IDepositManager.SaveDepositRequest(DepositModel model, bool forAgents)
         {
             var userAssignedPos = new POS();
-          
+
 
             userAssignedPos = _context.POS.FirstOrDefault(d => d.POSId == model.PosId) ?? null;
             if (userAssignedPos == null)
@@ -2250,7 +2195,12 @@ namespace VendTech.BLL.Managers
             dbDeposit.IsDeleted = false;
             dbDeposit.PaymentType = (int)model.DepositType;
             dbDeposit.ChequeBankName = model.ChkBankName;
-            dbDeposit.NameOnCheque = userAssignedPos.User.Vendor; //model.NameOnCheque;
+
+            if (model.NameOnCheque != null && model.NameOnCheque != "")
+                dbDeposit.NameOnCheque = model.NameOnCheque;
+            else
+                dbDeposit.NameOnCheque = userAssignedPos.User.Vendor;
+
             dbDeposit.PendingBankAccountId = 1; //(GTB - 116 - xxxxxx/1/6) //model.BankAccountId;
             dbDeposit.CheckNumberOrSlipId = Utilities.TrimLeadingZeros(model.ChkOrSlipNo);
             dbDeposit.Comments = model.Comments;
@@ -2259,11 +2209,12 @@ namespace VendTech.BLL.Managers
             dbDeposit.TransactionId = "0";
             dbDeposit.CreatedAt = DateTime.UtcNow;
             dbDeposit.Status = (int)DepositPaymentStatusEnum.Pending;
-            dbDeposit.ValueDate = forAgents ? model.ValueDate: model.ValueDate+ " 12:00";//.ToString("dd/MM/yyyy hh:mm");
-            //dbDeposit.ValueDateStamp = Convert.ToDateTime(model.ValueDate);
+            dbDeposit.ValueDate = forAgents ? model.ValueDate : model.ValueDate + " 12:00";//.ToString("dd/MM/yyyy hh:mm");
+                                                                                           //dbDeposit.ValueDateStamp = Convert.ToDateTime(model.ValueDate);
             dbDeposit.NextReminderDate = DateTime.UtcNow.AddDays(15);
             _context.PendingDeposits.Add(dbDeposit);
             _context.SaveChanges();
+            dbDeposit.User = userAssignedPos.User;
             return ReturnSuccess(dbDeposit, "Deposit request saved successfully.");//PLEASE DO NOT CHANGE STRING VALUE
         }
 
@@ -2415,8 +2366,12 @@ namespace VendTech.BLL.Managers
         List<Deposit> IDepositManager.GetUnclearedDeposits()
         {
             var currentDate = DateTime.UtcNow;
-           var result = _context.Deposits.Where(d => d.NextReminderDate != null
-           && DbFunctions.TruncateTime(currentDate) >= DbFunctions.TruncateTime(d.NextReminderDate)).ToList();
+            var result = _context.Deposits.Where(
+                d => d.NextReminderDate != null
+                && DbFunctions.TruncateTime(currentDate) >= DbFunctions.TruncateTime(d.NextReminderDate)
+                && d.isAudit == false 
+                && d.User.Status == (int)UserStatusEnum.Active
+                ).ToList();
             return result;
         }
 
@@ -2434,6 +2389,10 @@ namespace VendTech.BLL.Managers
         PendingDeposit IDepositManager.GetDeposit(long depositId)
         {
             return _context.PendingDeposits.FirstOrDefault(d => depositId  == d.PendingDepositId) ?? new PendingDeposit();
+        }
+        Deposit IDepositManager.GetMainDeposit(long depositId)
+        {
+            return _context.Deposits.FirstOrDefault(d => depositId == d.DepositId) ?? new Deposit();
         }
 
         void IDepositManager.DeletePendingDeposits(List<PendingDeposit> deposits)
@@ -2624,7 +2583,7 @@ namespace VendTech.BLL.Managers
             {
                 obj.DeviceToken = item.DeviceToken;
                 obj.DeviceType = item.AppType.Value;
-                PushNotification.SendNotificationTOMobile(obj);
+                PushNotification.IncludeAndroidPush(obj);
             }
             return deposit;
         }
@@ -2657,7 +2616,7 @@ namespace VendTech.BLL.Managers
                 {
                     obj.DeviceToken = item.DeviceToken;
                     obj.DeviceType = item.AppType.Value;
-                    PushNotification.SendNotificationTOMobile(obj);
+                    PushNotification.IncludeAndroidPush(obj);
                 }
                 return await Task.Run(() => ReturnSuccess("TRANSFER SUCCESSFUL"));
             }
@@ -2698,7 +2657,7 @@ namespace VendTech.BLL.Managers
                 {
                     obj.DeviceToken = item.DeviceToken;
                     obj.DeviceType = item.AppType.Value;
-                    PushNotification.SendNotificationTOMobile(obj);
+                    PushNotification.IncludeAndroidPush(obj);
                 }
                 return ReturnSuccess("DEPOSIT TRANSFER SUCCESSFUL");
             }

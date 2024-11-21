@@ -384,7 +384,7 @@ namespace VendTech.BLL.Models
             PRODUCT_TYPE = x.Platform.Title;
             if (x.PlatFormId == 1)
             {
-                PIN = x.MeterToken1;
+                PIN = Utilities.FormatThisToken(x.MeterToken1);
                 if(!string.IsNullOrEmpty(x.MeterToken1) && !string.IsNullOrEmpty(x.MeterToken2) && !string.IsNullOrEmpty(x.MeterToken3))
                 {
                     PIN = x.MeterToken1 + "\n" + x.MeterToken2 + "\n" + x.MeterToken3;

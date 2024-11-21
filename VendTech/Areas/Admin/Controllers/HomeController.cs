@@ -411,41 +411,41 @@ namespace VendTech.Areas.Admin.Controllers
             }
         }
 
-        [HttpGet, Public]
-        public JsonResult CheckForUnClearedDeposits()
-        {
-            try
-            {
-                var uncleardDeposits = _depositManager.GetUnclearedDeposits();
+        //[HttpGet, Public]
+        //public JsonResult CheckForUnClearedDeposits()
+        //{
+        //    try
+        //    {
+        //        var uncleardDeposits = _depositManager.GetUnclearedDeposits();
 
-                if (uncleardDeposits.Any())
-                {
-                    var emailTemplate = _templateManager.GetEmailTemplateByTemplateType(TemplateTypes.UnclearedDepositNotification);
-                    if (emailTemplate.TemplateStatus)
-                    {
-                        foreach(var deposit in uncleardDeposits)
-                        {
-                            string body = emailTemplate.TemplateContent;
-                            body = body.Replace("%USER%", deposit.POS.User.Name +" "+ deposit.POS.User.SurName);
-                            body = body.Replace("%POSID%", deposit.POS.SerialNumber);
-                            body = body.Replace("%VENDOR%", deposit.User.Vendor);
-                            body = body.Replace("%AMOUNT%", string.Format("{0:0N}", deposit.Amount));
-                            body = body.Replace("%DEPOSITAPPROVEDDATE%", deposit.DepositLogs.FirstOrDefault()?.CreatedAt.ToString("f"));
-                            body = body.Replace("%TODAY%", DateTime.UtcNow.ToString("f"));
-                            //Utilities.SendEmail(deposit.User.Email, emailTemplate.EmailSubject, body); 
-                            //Utilities.SendEmail("vblell@gmail.com", emailTemplate.EmailSubject, body);
-                            //_depositManager.UpdateNextReminderDate(deposit);
-                        }
-                    }
-                }
-                return Json(new { result = "success" }, JsonRequestBehavior.AllowGet);
-            }
-            catch (Exception)
-            {
-                return null;
-            }
+        //        if (uncleardDeposits.Any())
+        //        {
+        //            var emailTemplate = _templateManager.GetEmailTemplateByTemplateType(TemplateTypes.UnclearedDepositNotification);
+        //            if (emailTemplate.TemplateStatus)
+        //            {
+        //                foreach(var deposit in uncleardDeposits)
+        //                {
+        //                    string body = emailTemplate.TemplateContent;
+        //                    body = body.Replace("%USER%", deposit.POS.User.Name +" "+ deposit.POS.User.SurName);
+        //                    body = body.Replace("%POSID%", deposit.POS.SerialNumber);
+        //                    body = body.Replace("%VENDOR%", deposit.User.Vendor);
+        //                    body = body.Replace("%AMOUNT%", string.Format("{0:0N}", deposit.Amount));
+        //                    body = body.Replace("%DEPOSITAPPROVEDDATE%", deposit.DepositLogs.FirstOrDefault()?.CreatedAt.ToString("f"));
+        //                    body = body.Replace("%TODAY%", DateTime.UtcNow.ToString("f"));
+        //                    //Utilities.SendEmail(deposit.User.Email, emailTemplate.EmailSubject, body); 
+        //                    //Utilities.SendEmail("vblell@gmail.com", emailTemplate.EmailSubject, body);
+        //                    //_depositManager.UpdateNextReminderDate(deposit);
+        //                }
+        //            }
+        //        }
+        //        return Json(new { result = "success" }, JsonRequestBehavior.AllowGet);
+        //    }
+        //    catch (Exception)
+        //    {
+        //        return null;
+        //    }
 
-        }
+        //}
 
 
         [HttpGet, Public]

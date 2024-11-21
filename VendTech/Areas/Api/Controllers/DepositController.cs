@@ -8,10 +8,12 @@ using System.Threading.Tasks;
 using System.Web;
 using System.Web.Http;
 using System.Web.Http.Description;
+using Twilio.TwiML.Fax;
 using VendTech.Attributes;
 using VendTech.BLL.Common;
 using VendTech.BLL.Interfaces;
 using VendTech.BLL.Models;
+using VendTech.BLL.PlatformApi;
 using VendTech.DAL;
 using VendTech.Framework.Api;
 
@@ -21,22 +23,29 @@ namespace VendTech.Areas.Api.Controllers
     public class DepositController : BaseAPIController
     {
         private readonly IUserManager _userManager;
-        private readonly IAuthenticateManager _authenticateManager;
-        private readonly IMeterManager _meterManager;
         private readonly IDepositManager _depositManager;
         private readonly IPOSManager _posManager;
         private readonly IEmailTemplateManager _templateManager;
         private readonly IPaymentTypeManager _paymentTypeManager;
-        public DepositController(IUserManager userManager, IErrorLogManager errorLogManager, IMeterManager meterManager, IAuthenticateManager authenticateManager, IDepositManager depositManager, IPOSManager pOSManager, IEmailTemplateManager emailTemplateManager, IPaymentTypeManager paymentTypeManager)
+        private readonly EmailNotification emailNotification;
+        private readonly MobileNotification mobileNotification;
+        public DepositController(IUserManager userManager,
+            IErrorLogManager errorLogManager,
+            IDepositManager depositManager,
+            IPOSManager pOSManager,
+            IEmailTemplateManager emailTemplateManager,
+            IPaymentTypeManager paymentTypeManager,
+            MobileNotification mobileNotification,
+            EmailNotification emailNotification)
             : base(errorLogManager)
         {
             _userManager = userManager;
-            _authenticateManager = authenticateManager;
-            _meterManager = meterManager;
             _depositManager = depositManager;
             _posManager = pOSManager;
             _templateManager = emailTemplateManager;
             _paymentTypeManager = paymentTypeManager;
+            this.mobileNotification = mobileNotification;
+            this.emailNotification = emailNotification;
         }
 
         [HttpPost]
@@ -62,112 +71,37 @@ namespace VendTech.Areas.Api.Controllers
             string mesg = pd.Message;
             if (pd.Object.User.AutoApprove.Value)
             {
-                ActionOutput result = await _depositManager.ChangeDepositStatus(pd.Object.PendingDepositId, DepositPaymentStatusEnum.Released, true);
+                await _depositManager.ChangeDepositStatus(pd.Object.PendingDepositId, DepositPaymentStatusEnum.Released, true);
 
                 var deposit = _depositManager.GetDeposit(pd.Object.PendingDepositId);
-                SendEmailOnDepositApproval(deposit);
-                SendEmailToAdminOnDepositApproval(deposit, result.ID);
-                SendSmsOnDepositApproval(deposit);
+                emailNotification.SendEmailToUserOnDepositApproval(deposit);
+                emailNotification.SendEmailToAdminOnDepositAutoApproval(deposit, 40249);
+                emailNotification.SendSmsToUserOnDepositApproval(deposit);
 
                 await _depositManager.DeletePendingDeposits(deposit);
+
+                mobileNotification.PushNotificationToMobile(deposit.ApprovedDepId);
+                PushNotification.Instance
+                   .IncludeAdminNotificationCount()
+                   .IncludeUserBalanceOnTheWeb(deposit.UserId)
+                   .IncludeAdminWidgetDeposits()
+                   .IncludeAdminUnreleasedDeposits()
+                   .Send();
             }
             else
             {
-                PushNotification.Instance.IncludeAdminNotificationCount()
-                    .IncludeAdminUnreleasedDeposits()
-                    .IncludeUserBalanceOnTheWeb(pd.Object.UserId).Send();
-                var adminUsers = _userManager.GetAllAdminUsersByDepositRelease();
+                mobileNotification.Notify(pd.Object.PendingDepositId, pd.Object.UserId, "Deposit Requested");
+                emailNotification.SendEmailToAdminOnDepositRequest(pd.Object);
+                PushNotification.Instance
+                   .IncludeAdminNotificationCount()
+                   .IncludeUserBalanceOnTheWeb(pd.Object.UserId)
+                   .IncludeAdminWidgetDeposits()
+                   .IncludeAdminUnreleasedDeposits()
+                   .Send();
 
-                var pos = _posManager.GetSinglePos(pd.Object.POSId);
-                if (pos != null)
-                {
-                    foreach (var admin in adminUsers)
-                    {
-                        var emailTemplate = _templateManager.GetEmailTemplateByTemplateType(TemplateTypes.DepositRequestNotification);
-                        if (emailTemplate != null)
-                        {
-                            if (emailTemplate.TemplateStatus)
-                            {
-                                string body = emailTemplate.TemplateContent;
-                                body = body.Replace("%AdminUserName%", admin.Name);
-                                body = body.Replace("%VendorName%", pos.User.Vendor);
-                                body = body.Replace("%POSID%", pos.SerialNumber);
-                                body = body.Replace("%REF%", pd.Object.CheckNumberOrSlipId);
-                                body = body.Replace("%Amount%", BLL.Common.Utilities.FormatAmount(pd.Object.Amount));
-                                body = body.Replace("%CurrencyCode%", BLL.Common.Utilities.GetCountry().CurrencyCode);
-                                BLL.Common.Utilities.SendEmail(admin.Email, emailTemplate.EmailSubject, body);
-                                BLL.Common.Utilities.SendEmail("vblell@gmail.com", emailTemplate.EmailSubject, body);
-                            }
-
-                        }
-                    }
-                }
             }
-
-
             return new JsonContent(mesg, pd.Status == ActionStatus.Successfull ? Status.Success : Status.Failed).ConvertToHttpResponseOK();
         }
-
-
-        private void SendEmailOnDepositApproval(PendingDeposit deposit)
-        {
-
-            var user = _userManager.GetUserDetailsByUserId(deposit.UserId);
-            if (user != null)
-            {
-                var emailTemplate = _templateManager.GetEmailTemplateByTemplateType(TemplateTypes.DepositApprovedNotification);
-
-                if (emailTemplate.TemplateStatus)
-                {
-                    string body = emailTemplate.TemplateContent;
-                    body = body.Replace("%USER%", user.FirstName);
-                    BLL.Common.Utilities.SendEmail(user.Email, emailTemplate.EmailSubject, body);
-                }
-            }
-        }
-        private void SendEmailToAdminOnDepositApproval(PendingDeposit dep, long trxId)
-        {
-            var adminUsers = _userManager.GetAllAdminUsersByDepositRelease();
-
-            if (dep.POS != null)
-            {
-                foreach (var admin in adminUsers)
-                {
-                    string body = $"<p>Greetings {admin.Name}, </p>" +
-                                 $"<b>This is to inform you that a deposit has been AUTO APPROVED for</b> </br>" +
-                                 "</br>" +
-                                 $"Vendor Name: <b>{dep.POS.User.Vendor}</b> </br></br>" +
-                                 $"POSID: <b>{dep.POS.SerialNumber}</b>  </br></br>" +
-                                 $"DEPOSIT ID: <b>{trxId}</b> </br></br>" +
-                                 $"REF#: <b>{dep.CheckNumberOrSlipId}</b> </br></br>" +
-                                 $"Amount: <b>{BLL.Common.Utilities.GetCountry().CurrencyCode} {BLL.Common.Utilities.FormatAmount(dep.Amount)}</b> </br>" +
-                                 $"</br>" +
-                                 $"Thank You" +
-                                 $"<br/>" +
-                                 $"<p>{BLL.Common.Utilities.EMAILFOOTERTEMPLATE}</p>";
-
-                    BLL.Common.Utilities.SendEmail(admin.Email, "VENDTECH SUPPORT | DEPOSIT AUTO APPROVAL EMAIL", body);
-                }
-            }
-        }
-        private bool SendSmsOnDepositApproval(PendingDeposit deposit)
-        {
-            if (deposit.POS.SMSNotificationDeposit ?? true)
-            {
-                var requestmsg = new SendSMSRequest
-                {
-                    Recipient = BLL.Common.Utilities.GetCountry().CountryCode + deposit.POS.Phone,
-                    Payload = $"Greetings {deposit.POS.User.Name} \n" +
-                   "Your last deposit has been approved\n" +
-                   "Please confirm the amount deposited reflects in your wallet correctly.\n" +
-                   $"{BLL.Common.Utilities.GetCountry().CurrencyCode}: {BLL.Common.Utilities.FormatAmount(deposit.Amount)} \n" +
-                   "VENDTECH"
-                };
-                return BLL.Common.Utilities.SendSms(requestmsg);
-            }
-            return false;
-        }
-
 
 
         [HttpPost]
@@ -191,38 +125,35 @@ namespace VendTech.Areas.Api.Controllers
             var result = _depositManager.SaveDepositRequest(model);
 
 
-            var adminUsers = _userManager.GetAllAdminUsersByDepositRelease();
 
             var pos = _posManager.GetSinglePos(result.Object.POSId);
             if (pos != null)
             {
-                foreach (var admin in adminUsers)
-                {
-                    var emailTemplate = _templateManager.GetEmailTemplateByTemplateType(TemplateTypes.DepositRequestNotification);
-                    if (emailTemplate != null)
+                var emailTemplate = _templateManager.GetEmailTemplateByTemplateType(TemplateTypes.DepositRequestNotification);
+                if(emailTemplate.Receivers.Count > 0)
+                    foreach (var email in emailTemplate.Receivers)
                     {
-                        if (emailTemplate.TemplateStatus)
+                        if (emailTemplate != null)
                         {
-                            string body = emailTemplate.TemplateContent;
-                            body = body.Replace("%AdminUserName%", admin.Name);
-                            body = body.Replace("%VendorName%", pos.User.Vendor);
-                            body = body.Replace("%POSID%", pos.SerialNumber);
-                            body = body.Replace("%REF%", result.Object.CheckNumberOrSlipId);
-                            body = body.Replace("%Amount%", BLL.Common.Utilities.FormatAmount(result.Object.Amount));
-                            body = body.Replace("%CurrencyCode%", BLL.Common.Utilities.GetCountry().CurrencyCode);
-                            VendTech.BLL.Common.Utilities.SendEmail(admin.Email, emailTemplate.EmailSubject, body);
+                            var userAccount = _userManager.GetUserDetailByEmail(email);
+                            if (emailTemplate.TemplateStatus)
+                            {
+                                string body = emailTemplate.TemplateContent;
+                                body = body.Replace("%AdminUserName%", userAccount?.Name + " " + userAccount?.SurName);
+                                body = body.Replace("%VendorName%", pos.User.Vendor);
+                                body = body.Replace("%POSID%", pos.SerialNumber);
+                                body = body.Replace("%REF%", result.Object.CheckNumberOrSlipId);
+                                body = body.Replace("%Amount%", BLL.Common.Utilities.FormatAmount(result.Object.Amount));
+                                body = body.Replace("%CurrencyCode%", BLL.Common.Utilities.GetCountry().CurrencyCode);
+                                BLL.Common.Utilities.SendEmail(email, emailTemplate.EmailSubject, body);
+                            }
+
                         }
-
                     }
-                }
             }
-
 
             return new JsonContent(result.Message, result.Status == ActionStatus.Successfull ? Status.Success : Status.Failed).ConvertToHttpResponseOK();
         }
-
-
-
 
         [HttpGet]
          [ResponseType(typeof(ResponseBase))]

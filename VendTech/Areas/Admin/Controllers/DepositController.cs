@@ -165,26 +165,27 @@ namespace VendTech.Areas.Admin.Controllers
             model.UserId = model.VendorId;
             var result = _depositManager.SaveDepositRequest(model);
 
-            var adminUsers = _userManager.GetAllAdminUsersByDepositRelease();
 
             var pos = _posManager.GetSinglePos(result.Object.POSId);
             if(pos != null)
             {
-                foreach (var admin in adminUsers)
-                {
-                    var emailTemplate = _templateManager.GetEmailTemplateByTemplateType(TemplateTypes.DepositRequestNotification);
-                    if (emailTemplate != null)
+                var emailTemplate = _templateManager.GetEmailTemplateByTemplateType(TemplateTypes.DepositRequestNotification);
+                if(emailTemplate.Receivers.Count > 0)
+                    foreach (var email in emailTemplate.Receivers)
                     {
-                        string body = emailTemplate.TemplateContent;
-                        body = body.Replace("%AdminUserName%", admin.Name);
-                        body = body.Replace("%VendorName%", pos.User.Vendor);
-                        body = body.Replace("%POSID%", pos.SerialNumber);
-                        body = body.Replace("%REF%", result.Object.CheckNumberOrSlipId);
-                        body = body.Replace("%Amount%", Utilities.FormatAmount(result.Object.Amount));
-                        body = body.Replace("%CurrencyCode%", Utilities.GetCountry().CurrencyCode);
-                        Utilities.SendEmail(admin.Email, emailTemplate.EmailSubject, body);
+                        var userAccount = _userManager.GetUserDetailByEmail(email);
+                        if (emailTemplate != null)
+                        {
+                            string body = emailTemplate.TemplateContent;
+                            body = body.Replace("%AdminUserName%", userAccount?.Name +" "+ userAccount?.SurName);
+                            body = body.Replace("%VendorName%", pos.User.Vendor);
+                            body = body.Replace("%POSID%", pos.SerialNumber);
+                            body = body.Replace("%REF%", result.Object.CheckNumberOrSlipId);
+                            body = body.Replace("%Amount%", Utilities.FormatAmount(result.Object.Amount));
+                            body = body.Replace("%CurrencyCode%", Utilities.GetCountry().CurrencyCode);
+                            Utilities.SendEmail(email, emailTemplate.EmailSubject, body);
+                        }
                     }
-                }
             }
             
             return JsonResult(new ActionOutput {Message = result.Message, Status = result.Status });

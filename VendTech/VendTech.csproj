@@ -6660,7 +6660,6 @@
     <Content Include="Views\SavedPhoneNumbers\AddEditPhoneNumbers.cshtml" />
     <Content Include="Views\Home\ChangePassword_old.cshtml" />
     <Content Include="Views\Report\SalesReport.cshtml" />
-    <Content Include="Views\Deposit\Index.cshtml" />
     <Content Include="Views\Deposit\Index_e.cshtml" />
     <Content Include="Views\Deposit\Partials\_depositListing.cshtml" />
     <Content Include="Views\Shared\Sms\_smsModal.cshtml" />
@@ -6669,6 +6668,7 @@
     <Content Include="Views\Home\Learn.cshtml" />
     <Content Include="Views\Home\Account.cshtml" />
     <Content Include="Views\Home\Signalr.cshtml" />
+    <Content Include="Views\Deposit\Index.cshtml" />
     <None Include="Views\Shared\Spinner\spinner.cshtml" />
     <Content Include="Web.config">
       <SubType>Designer</SubType>

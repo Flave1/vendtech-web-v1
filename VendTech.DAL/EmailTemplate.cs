@@ -26,5 +26,6 @@ namespace VendTech.DAL
         public Nullable<bool> IsActive { get; set; }
         public string Desription { get; set; }
         public string TargetUser { get; set; }
+        public string Receiver { get; set; }
     }
 }

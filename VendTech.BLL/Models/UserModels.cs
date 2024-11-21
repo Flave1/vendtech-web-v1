@@ -34,6 +34,7 @@ namespace VendTech.BLL.Models
         public string FirstName { get; set; }
         public string LastName { get; set; }
         public string Email { get; set; }
+        public string Phone { get; set; }
         public DateTime CreatedOn { get; set; }
         public UserStatusEnum Status { get; set; }
         public string UserType { get; set; }
@@ -55,6 +56,7 @@ namespace VendTech.BLL.Models
             this.FirstName = userObj.Name;
             this.LastName = userObj.SurName;
             this.Email = userObj.Email;
+            this.Phone = userObj.Phone;
             this.UserId = userObj.UserId;
             this.UserSerialNo = userObj?.UserSerialNo ?? 0;
             this.UserType = userObj.UserRole.Role;

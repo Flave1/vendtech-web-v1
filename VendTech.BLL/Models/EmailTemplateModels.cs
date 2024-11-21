@@ -22,6 +22,7 @@ namespace VendTech.BLL.Models
         public string Description { get; set; }
         public string TargetUser { get; set; }
         public DateTime UpdatedOn { get; set; }
+        public List<string> Receivers { get; set; }
         public TemplateViewModel()
         {
 
@@ -39,6 +40,8 @@ namespace VendTech.BLL.Models
             this.EmailSubject = emailTemplate.EmailSubject;
             this.Description = emailTemplate.Desription;
             this.TargetUser = emailTemplate.TargetUser;
+            if (!string.IsNullOrEmpty(emailTemplate.Receiver))
+                this.Receivers = emailTemplate.Receiver.Split(',').ToList();
         }
     }
 
@@ -59,6 +62,7 @@ namespace VendTech.BLL.Models
 
         [Required(ErrorMessage = "*Required")]
         public int TemplateType { get; set; }
+        public List<string> Receivers { get; set; }
 
         public List<SelectListItem> TemplateTypeList { get; set; }
         public AddEditEmailTemplateModel()
@@ -78,6 +82,8 @@ namespace VendTech.BLL.Models
             this.TemplateStatus = emailTemplate.TemplateStatus;
             this.TemplateTypeList = new List<SelectListItem>();
             this.TemplateTypeList = Utilities.EnumToList(typeof(TemplateTypes));
+            if(!string.IsNullOrEmpty(emailTemplate.Receiver))
+                this.Receivers = emailTemplate.Receiver.Split(',').ToList();
         }
     }
 }

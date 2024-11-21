@@ -3,6 +3,16 @@
     ViewBag.Title = Model.TemplateId > 0 ? "Edit Email Template" : "Add Email Template";
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayOut.cshtml";
 }
+
+<style>
+    .input-group .form-control {
+        flex-grow: 1;
+    }
+
+    .input-group .remove-receiver {
+        white-space: nowrap;
+    }
+</style>
 <div class="container-fluid" id="pcont">
     <div class="page-head">
         <h2>@ViewBag.Title</h2>
@@ -23,8 +33,8 @@
                                     <div class=" col-md-12">
                                         <label for="inputEmail3" class="col-md-2 control-label">TEMPLATE TYPE<em>*</em></label>
                                         <div class="col-md-8">
-                                            @Html.DropDownListFor(x => x.TemplateType, Model.TemplateTypeList, "Select Template Type", new { @class = "form-control", @readonly="true" })
-                                            @Html.ValidationMessageFor(x=>x.TemplateType)
+                                            @Html.DropDownListFor(x => x.TemplateType, Model.TemplateTypeList, "Select Template Type", new { @class = "form-control", @readonly = "true" })
+                                            @Html.ValidationMessageFor(x => x.TemplateType)
                                         </div>
                                     </div>
 
@@ -49,6 +59,20 @@
                                     </div>
 
                                 </div>
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <label for="receivers" class="col-md-2 control-label">Add Receivers<em>*</em></label>
+                                        <div class="col-md-8">
+                                            <div id="receivers-container">
+                                                <!-- JavaScript will populate this container with existing receivers if they are present -->
+                                            </div>
+                                            <!-- Button to add new receiver input fields -->
+                                            <button type="button" id="add-receiver" class="btn btn-primary mt-2">Add Another Receiver</button>
+                                        </div>
+                                    </div>
+                                </div>
+
+
                                 <div class="row">
                                     <div class="col-md-12">
                                         <label for="inputEmail3" class="col-md-2 control-label">TEMPLATE CONTENT<em>*</em></label>
@@ -94,5 +118,56 @@
 
         });
     </script>
-<script src="~/Scripts/AdminScripts/templates.js"></script>
+    <script>
+    // Assuming the backend provides an array of receivers, e.g., through Razor or other templating engines
+    var existingReceivers = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.Receivers ?? new List<string>()));
+
+    function createReceiverInput(value = '') {
+        // Create a new input group for a receiver with a remove button
+        var newInputGroup = document.createElement('div');
+        newInputGroup.className = 'input-group mb-2 receiver-input';
+
+        // Create the input field
+        var newInput = document.createElement('input');
+        newInput.type = 'text';
+        newInput.name = 'Receivers[]';
+        newInput.className = 'form-control';
+        newInput.value = value; // Populate with existing value if available
+        newInput.placeholder = 'Enter receiver';
+
+        // Create the remove button
+        var removeButton = document.createElement('button');
+        removeButton.type = 'button';
+        removeButton.className = 'btn btn-danger remove-receiver';
+        removeButton.innerText = 'Remove';
+
+        // Append input and button to the input group
+        newInputGroup.appendChild(newInput);
+        newInputGroup.appendChild(removeButton);
+
+        // Append the new input group to the receivers container
+        document.getElementById('receivers-container').appendChild(newInputGroup);
+    }
+
+    // Populate the fields with existing receivers, if any
+    if (existingReceivers.length > 0) {
+        existingReceivers.forEach(receiver => createReceiverInput(receiver));
+    } else {
+        // Add an empty input by default if no receivers exist
+        createReceiverInput();
+    }
+
+    // Add new input field on "Add Another Receiver" click
+    document.getElementById('add-receiver').addEventListener('click', function () {
+        createReceiverInput();
+    });
+
+    // Remove input field on "Remove" button click
+    document.getElementById('receivers-container').addEventListener('click', function (e) {
+        if (e.target && e.target.classList.contains('remove-receiver')) {
+            e.target.closest('.receiver-input').remove();
+        }
+    });
+    </script>
+    <script src="~/Scripts/AdminScripts/templates.js"></script>
 }

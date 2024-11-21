@@ -1,17 +1,8 @@
-﻿using DocumentFormat.OpenXml.Drawing.Charts;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http;
-using System.Threading.Tasks;
-using System.Web.Configuration;
+﻿using System.Net.Http;
 using System.Web.Http;
 using System.Web.Http.Description;
-using System.Web.WebPages.Html;
 using VendTech.Attributes;
-using VendTech.BLL.Common;
 using VendTech.BLL.Interfaces;
-using VendTech.BLL.Models;
 using VendTech.Framework.Api;
 
 namespace VendTech.Areas.Api.Controllers

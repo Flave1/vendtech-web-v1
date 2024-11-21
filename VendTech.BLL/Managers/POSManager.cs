@@ -637,21 +637,9 @@ namespace VendTech.BLL.Managers
             var balanceSheet = new PagingResultWithDefaultAmount<BalanceSheetListingModel2>();
             balanceSheet.List = new List<BalanceSheetListingModel2>();
             decimal openingBalance = 0;
-            //decimal prevBal = 0;
 
             foreach (var item in result)
             {
-                //if (item.TransactionType == "Deposit")
-                //{
-                //    item.Balance = prevBal == 0 ? item.DepositAmount : item.BalanceBefore.Value + item.DepositAmount;
-                //    prevBal = prevBal + item.DepositAmount;
-                //}
-                //else
-                //{
-                //    item.Balance = prevBal == 0 ? item.BalanceBefore.Value - item.SaleAmount : prevBal - item.SaleAmount;
-                //    prevBal = item.Balance;
-                //}
-
                 if (openingBalance == 0)
                     openingBalance = item.BalanceBefore.Value;
 
@@ -727,6 +715,6 @@ namespace VendTech.BLL.Managers
         }
 
         bool IPOSManager.IsWalletFunded(long userId) =>
-           _context.POS.FirstOrDefault(d => d.VendorId == userId && d.Balance != null).Balance > 1;
+           _context.POS.FirstOrDefault(d => d.VendorId == userId && d.Balance != null)?.Balance.Value > 1;
     }
 }

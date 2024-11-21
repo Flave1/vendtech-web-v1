@@ -56,6 +56,8 @@
                         <th class="sorting" data-sortby="UserSerialNo">USERID</th>
                         <th class="sorting" data-sortby="Name">FIRST NAME</th>
                         <th class="sorting" data-sortby="SurName">LAST NAME</th>
+                        <th class="sorting" data-sortby="EMAIL">EMAIL</th>
+                        <th class="sorting" data-sortby="PHONE">PHONE</th>
                         <th class="sorting" data-sortby="Vendor">VENDOR NAME</th>
                         <th class="sorting" data-sortby="POS">POS ID</th>
                         <th class="sorting" data-sortby="Balance">BALANCE</th>
@@ -89,7 +91,7 @@
         }
 
         $("#searchField").show();
-        var searchFields = ["FIRST NAME", "LAST NAME","VENDOR NAME", "POSID","BALANCE","LASTLOGIN", "STATUS"];
+        var searchFields = ["FIRST NAME", "LAST NAME", "EMAIL", "PHONE","VENDOR NAME", "POSID","BALANCE","LASTLOGIN", "STATUS"];
 
         for (var i = 0; i < searchFields.length; i++) {
             $("#searchField").append("<option value=" + searchFields[i] + ">" + searchFields[i] + "  </option>")

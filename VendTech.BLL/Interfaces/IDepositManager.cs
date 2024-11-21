@@ -69,6 +69,7 @@ namespace VendTech.BLL.Interfaces
         bool IsOtpValid(string otp);
         List<PendingDeposit> GetPendingDeposits(List<long> pdepositIds);
         Task<PendingDeposit> GetPendingDepositByPOS(long posId, decimal amount);
+        Deposit GetMainDeposit(long depositId);
     }
 
 }

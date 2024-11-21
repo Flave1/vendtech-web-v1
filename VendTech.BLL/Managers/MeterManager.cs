@@ -268,7 +268,7 @@ namespace VendTech.BLL.Managers
             {
                 query = query.OrderBy(model.SortBy + " " + model.SortOrder);
             }
-            var list = query.ToList().Select(x => new SalesReportExcelModel(x)).ToList();
+            var list = query.AsEnumerable().Select(x => new SalesReportExcelModel(x)).ToList();
             if (model.SortBy == "VendorName" || model.SortBy == "MeterNumber" || model.SortBy == "POS")
             {
                 if (model.SortBy == "VendorName")
@@ -473,6 +473,14 @@ namespace VendTech.BLL.Managers
             }
             if (!string.IsNullOrEmpty(model.Product))
             {
+                if (model.Product == "EDSA")
+                    model.Product = "1";
+                else if(model.Product == "ORANGE")
+                    model.Product = "2";
+                else if (model.Product == "AFRICELL")
+                    model.Product = "3";
+                else if (model.Product == "QCELL")
+                    model.Product = "4";
                 int parsedProductId = int.Parse(model.Product);
                 if (parsedProductId > 0)
                 {
@@ -1017,7 +1025,7 @@ namespace VendTech.BLL.Managers
             {
                 obj.DeviceToken = item.DeviceToken;
                 obj.DeviceType = item.AppType.Value;
-                Common.PushNotification.SendNotificationTOMobile(obj);
+                Common.PushNotification.IncludeAndroidPush(obj);
             }
         }
 
@@ -1049,6 +1057,7 @@ namespace VendTech.BLL.Managers
                 trans.VendStatusDescription = response_data?.Content?.StatusDescription;
                 trans.StatusResponse = response_data.Content?.StatusDescription;
                 trans.DebitRecovery = "0";
+                trans.CreatedAt = DateTime.UtcNow;
                 //BALANCE DEDUCTION
                 await Deductbalace(trans, trans.User.POS.FirstOrDefault(s => s.POSId == trans.POSId), billVendor);
             }
@@ -1086,6 +1095,7 @@ namespace VendTech.BLL.Managers
                 trans.Sold = true;
                 trans.VoucherSerialNumber = response_data?.SerialNumber;
                 trans.VendStatus = "";
+                trans.CreatedAt = DateTime.UtcNow;
                 //BALANCE DEDUCTION
                 await Deductbalace(trans, pos);
             }
@@ -1380,7 +1390,7 @@ namespace VendTech.BLL.Managers
             token = Utilities.ReplaceWhitespace(token, "");
             if (token.EndsWith("(+2)"))
                 token = token.Replace("(+2)", "");
-            var transaction_by_token = _context.TransactionDetails.Where(e => e.MeterToken1 == token).ToList().FirstOrDefault();
+            var transaction_by_token = _context.TransactionDetails.FirstOrDefault(e => e.MeterToken1 == token);
             if (transaction_by_token != null)
             {
                 var receipt = Build_receipt_model_from_dbtransaction_detail(transaction_by_token);

@@ -4,6 +4,7 @@ using System;
 using System.Linq;
 using System.Linq.Dynamic;
 using VendTech.DAL;
+using System.Data.Entity.Validation;
 
 namespace VendTech.BLL.Managers
 {
@@ -47,7 +48,7 @@ namespace VendTech.BLL.Managers
                     TemplateContent = templateModel.TemplateContent,
                     TemplateStatus = templateModel.TemplateStatus,
                     CreatedOn = DateTime.UtcNow,
-                    TemplateType = templateModel.TemplateType
+                    TemplateType = templateModel.TemplateType,
                 });
                 _context.SaveChanges();
                 return new ActionOutput
@@ -63,7 +64,38 @@ namespace VendTech.BLL.Managers
                 existingTemplate.TemplateStatus = templateModel.TemplateStatus;
                 existingTemplate.UpdatedOn = DateTime.UtcNow;
                 existingTemplate.TemplateType = templateModel.TemplateType;
-                _context.SaveChanges();
+                if(templateModel.Receivers != null && templateModel.Receivers.Count > 0)
+                    existingTemplate.Receiver = string.Join(",", templateModel.Receivers);
+                else
+                    existingTemplate.Receiver = string.Empty;
+
+
+                try
+                {
+                    _context.SaveChanges();
+                }
+
+                catch (DbEntityValidationException dbEx)
+                {
+                    Exception raise = dbEx;
+                    foreach (var validationErrors in dbEx.EntityValidationErrors)
+                    {
+                        foreach (var validationError in validationErrors.ValidationErrors)
+                        {
+                            string message = string.Format("{0}:{1}",
+                                validationErrors.Entry.Entity.ToString(),
+                                validationError.ErrorMessage);
+                            // raise a new exception nesting
+                            // the current instance as InnerException
+                            raise = new InvalidOperationException(message, raise);
+                        }
+                    }
+                    throw raise;
+                }
+                catch (Exception ec)
+                {
+
+                }
                 return new ActionOutput
                 {
                     Status = ActionStatus.Successfull,
