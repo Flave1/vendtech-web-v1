@@ -516,10 +516,12 @@
             } else {
                 $("#payer").val(payer);
             }
+
             $("#issuingbank").find("option[value='" + issuingbank.substr(0, issuingbank.lastIndexOf("-")) + "']").attr("selected", "selected");
 
+            const issBank = $("#issuingbank").val();
 
-            if ($("#issuingbank").val().length < 1) {
+            if (issBank.length < 1) {
                 $("#issuingbank").val("GTB - (GUARANTEE TRUST BANK)");
             }
             $("#depositref").val(depositref);
@@ -760,6 +762,17 @@
             });
         });
 
+        document.addEventListener("DOMContentLoaded", function () {
+            const depositModal = document.getElementById("depositModal");
+            const issuingBankDropdown = document.getElementById("issuingbank");
+            if (depositModal) {
+                $(depositModal).on('hidden.bs.modal', function () {
+                    if (issuingBankDropdown) {
+                        issuingBankDropdown.value = "";
+                    }
+                });
+            }
+        });
 
 </script>
 }

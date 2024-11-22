@@ -34,7 +34,7 @@ namespace VendTech.Areas.Admin.Controllers
         {
             ViewBag.SelectedTab = SelectedAdminTab.Users;
             var users = _userManager.GetUserPagedList(PagingModel.DefaultModel("CreatedAt", "Desc"));
-            return View(users);
+            return View("ManageUsersV2", users);
         }
 
         [AjaxOnly, HttpPost]

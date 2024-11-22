@@ -106,7 +106,7 @@ namespace VendTech.BLL.Managers
             }
             IQueryable<POS> query = null;
 
-            query = Context.POS.Where(f => f.IsDeleted == false && f.User.AgentId == agency && !f.IsAdmin && !f.SerialNumber.StartsWith("AGT") && f.User.Status != 3).OrderBy("User.Agency.AgencyName" + " " + model.SortOrder);
+            query = Context.POS.Where(f => f.IsDeleted == false && f.User.AgentId == agency && !f.IsAdmin && !f.SerialNumber.StartsWith("AGT")).OrderBy("User.Agency.AgencyName" + " " + model.SortOrder);
 
             if (model.SortBy.Equals("AGENCY"))
             {

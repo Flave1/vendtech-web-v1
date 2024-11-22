@@ -237,6 +237,7 @@ function Paging(sender) {
     obj.SortBy = $('#SortBy').val();
     obj.SortOrder = $('#SortOrder').val();
     obj.SearchField = $('#searchField').val();
+    obj.IsActive = $('#IsActive').val();
     $.ajaxExt({
         type: "POST",
         validate: false,

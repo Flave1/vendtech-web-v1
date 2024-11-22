@@ -111,7 +111,7 @@ https://go.microsoft.com/fwlink/?LinkID=208121.
       <publishTime>11/04/2024 07:36:07</publishTime>
     </File>
     <File Include="Areas/Admin/Views/Report/ManageDepositAuditReportV2.cshtml">
-      <publishTime>09/25/2024 09:31:13</publishTime>
+      <publishTime>11/22/2024 02:54:38</publishTime>
     </File>
     <File Include="Areas/Admin/Views/Report/ManageGSTSalesReportsV2.cshtml">
       <publishTime>06/04/2024 17:09:47</publishTime>
@@ -161,6 +161,9 @@ https://go.microsoft.com/fwlink/?LinkID=208121.
     <File Include="Areas/Admin/Views/User/EditUser.cshtml">
       <publishTime>08/27/2024 13:58:32</publishTime>
     </File>
+    <File Include="Areas/Admin/Views/User/ManageUsersV2.cshtml">
+      <publishTime>11/22/2024 02:24:59</publishTime>
+    </File>
     <File Include="Areas/Admin/Views/Vendor/AddEditVendorV2.cshtml">
       <publishTime>06/05/2024 12:54:28</publishTime>
     </File>
@@ -174,7 +177,7 @@ https://go.microsoft.com/fwlink/?LinkID=208121.
       <publishTime>01/27/2021 21:48:32</publishTime>
     </File>
     <File Include="bin/VendTech.BLL.dll">
-      <publishTime>11/20/2024 13:19:18</publishTime>
+      <publishTime>11/22/2024 03:06:13</publishTime>
     </File>
     <File Include="bin/VendTech.BLL.dll.config">
       <publishTime>11/13/2024 17:19:03</publishTime>
@@ -192,13 +195,13 @@ https://go.microsoft.com/fwlink/?LinkID=208121.
       <publishTime>11/13/2024 17:20:38</publishTime>
     </File>
     <File Include="bin/VendTech.dll">
-      <publishTime>11/21/2024 10:23:48</publishTime>
+      <publishTime>11/22/2024 03:06:17</publishTime>
     </File>
     <File Include="bin/VendTech.dll.config">
-      <publishTime>11/18/2024 12:04:04</publishTime>
+      <publishTime>11/21/2024 17:59:13</publishTime>
     </File>
     <File Include="bin/VendTech.Framework.dll">
-      <publishTime>11/20/2024 13:19:19</publishTime>
+      <publishTime>11/22/2024 03:06:15</publishTime>
     </File>
     <File Include="bin/VendTech.Framework.dll.config">
       <publishTime>11/13/2024 17:17:36</publishTime>
@@ -247,6 +250,9 @@ https://go.microsoft.com/fwlink/?LinkID=208121.
     </File>
     <File Include="Scripts/AdminScripts/superAdminTransfer.js">
       <publishTime>09/16/2024 14:12:27</publishTime>
+    </File>
+    <File Include="Scripts/AdminScripts/users.js">
+      <publishTime>11/22/2024 02:31:35</publishTime>
     </File>
     <File Include="Scripts/AdminScripts/vendor.js">
       <publishTime>06/11/2024 10:19:51</publishTime>

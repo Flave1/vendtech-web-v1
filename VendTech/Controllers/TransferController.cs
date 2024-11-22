@@ -95,7 +95,8 @@ namespace VendTech.Controllers
                     BankAccountId = 1,
                     CheckNumberOrSlipId = reference,
                     PaymentType = (int)DepositPaymentTypeEnum.AdminTransferOut,
-                    ChequeBankName = "OWN ACC TRANSFER - (AGENCY TRANSFER)"
+                    ChequeBankName = "OWN ACC TRANSFER - (AGENCY TRANSFER)",
+                    IsAudit = true
                 };
 
                 var debitDeposit = await _depositManager.CreateDepositDebitTransfer(depositDr, LOGGEDIN_USER.UserID, request.otp, request.ToPosId, frompos.POSId);
@@ -111,7 +112,8 @@ namespace VendTech.Controllers
                         CheckNumberOrSlipId = reference,
                         ChequeBankName = "OWN ACC TRANSFER - (AGENCY TRANSFER)",
                         PaymentType = (int)DepositPaymentTypeEnum.VendorFloatIn,
-                        FirstDepositTransactionId = debitDeposit.TransactionId
+                        FirstDepositTransactionId = debitDeposit.TransactionId,
+                        IsAudit = true
                     };
                     var creditDeposit = await _depositManager.CreateDepositCreditTransfer(depositCr, LOGGEDIN_USER.UserID, frompos);
 

@@ -88,27 +88,22 @@ namespace VendTech.Controllers
                 ViewBag.WalletHistory = depositsPendLIst.Concat(deposits.List).ToList();
 
                 ViewBag.ChkBankName = new SelectList(_bankAccountManager.GetBankNames_API().ToList(), "BankName", "BankName");
-                var posList = _posManager.GetPOSWithNameSelectList(LOGGEDIN_USER.UserID, LOGGEDIN_USER.AgencyId, true);
+                var posList = _posManager.GetPOSWithNameSelectList(LOGGEDIN_USER.UserID, LOGGEDIN_USER.AgencyId, true).OrderBy(f => f.Value).ToList();
                 ViewBag.userPos = posList;
                 if (string.IsNullOrEmpty(posId) && posList.Count > 0)
                 {
                     //posId = Convert.ToInt64(posList[0].Value);
-                    ViewBag.posId = posList[0].Value;
+                    ViewBag.posId = posList.FirstOrDefault(d => d.Text.Contains("AGT-")).Value;
+                    ViewBag.Percentage = _posManager.GetPosCommissionPercentage(long.Parse(ViewBag.posId));
+                    ViewBag.balance = _posManager.GetPosBalance(long.Parse(ViewBag.posId));
                 }
                 else
                 {
                     ViewBag.posId = posId;
-                }
-                if (!string.IsNullOrEmpty(posId))
-                {
                     ViewBag.Percentage = _posManager.GetPosCommissionPercentage(long.Parse(posId));
                     ViewBag.balance = _posManager.GetPosBalance(long.Parse(posId));
                 }
-                else
-                {
-                    ViewBag.Percentage = _posManager.GetPosCommissionPercentage(long.Parse(posList[0].Value));
-                    ViewBag.balance = _posManager.GetPosBalance(long.Parse(posList[0].Value));
-                }
+
                 var bankAccounts = _bankAccountManager.GetBankAccounts();
 
                 ViewBag.bankAccounts = bankAccounts.ToList().Select(p => new SelectListItem { Text = "(" + p.BankName + " - " + Utilities.FormatBankAccount(p.AccountNumber) + ")", Value = p.BankAccountId.ToString() }).ToList();

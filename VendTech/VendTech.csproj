@@ -6585,6 +6585,7 @@
     <Content Include="Areas\Admin\Views\B2busers\Partials\_modulesListing.cshtml" />
     <Content Include="Areas\Admin\Views\B2busers\Partials\_platformsListing.cshtml" />
     <Content Include="Areas\Admin\Views\B2busers\Partials\_widgetsListing.cshtml" />
+    <Content Include="Areas\Admin\Views\User\ManageUsersV2.cshtml" />
     <None Include="Scripts\VendorScripts\_references.js" />
     <Content Include="Scripts\worker.js" />
     <Content Include="Views\Meter\Partials\_downTimeNotification.cshtml" />

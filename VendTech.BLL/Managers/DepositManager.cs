@@ -2585,6 +2585,11 @@ namespace VendTech.BLL.Managers
                 obj.DeviceType = item.AppType.Value;
                 PushNotification.IncludeAndroidPush(obj);
             }
+
+            PushNotification.Instance.IncludeUserBalanceOnTheWeb(beneficiaryPos.VendorId.Value)
+                .IncludeAdminWidgetDeposits()
+                .Send();
+
             return deposit;
         }
 
@@ -2618,6 +2623,9 @@ namespace VendTech.BLL.Managers
                     obj.DeviceType = item.AppType.Value;
                     PushNotification.IncludeAndroidPush(obj);
                 }
+                PushNotification.Instance.IncludeUserBalanceOnTheWeb(toPos.VendorId.Value)
+               .IncludeAdminWidgetDeposits()
+               .Send();
                 return await Task.Run(() => ReturnSuccess("TRANSFER SUCCESSFUL"));
             }
             catch (Exception e)
@@ -2659,6 +2667,9 @@ namespace VendTech.BLL.Managers
                     obj.DeviceType = item.AppType.Value;
                     PushNotification.IncludeAndroidPush(obj);
                 }
+                PushNotification.Instance.IncludeUserBalanceOnTheWeb(toPos.VendorId.Value)
+              .IncludeAdminWidgetDeposits()
+              .Send();
                 return ReturnSuccess("DEPOSIT TRANSFER SUCCESSFUL");
             }
             catch (Exception e)
