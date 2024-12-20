@@ -1,6 +1,4 @@
-﻿//using FirebaseAdmin;
-//using Google.Apis.Auth.OAuth2;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -98,7 +96,7 @@ namespace VendTech.BLL.Common
 
         }
 
-        public static void IncludeAndroidPush(PushNotificationModel model)
+        public static void PushNotificationToMobile(PushNotificationModel model)
         {
             using (HttpClient client = new HttpClient())
             {
@@ -127,7 +125,7 @@ namespace VendTech.BLL.Common
         }
 
 
-        public static string ASendNotificationTOMobile(PushNotificationModel model)
+        public static string SendNotificationTOMobile_OLD(PushNotificationModel model)
         {
             try
             {

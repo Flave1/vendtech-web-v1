@@ -88,6 +88,7 @@ namespace VendTech.BLL.Models
         [Required(ErrorMessage = "Amount is Required")]
         public decimal Amount { get; set; }
 
+        public string UserClickId { get; set; }
         public string MeterToken1 { get; set; }
         public string MeterToken2 { get; set; }
         public string MeterToken3 { get; set; }
@@ -100,6 +101,9 @@ namespace VendTech.BLL.Models
         public List<MeterRechargeApiListingModel> History { get; set; }
         public void UpdateRequestModel(string number = null)
         {
+            if (string.IsNullOrEmpty(UserClickId))
+                UserClickId = "web";
+
             if (MeterId != null)
             {
                 MeterNumber = number;

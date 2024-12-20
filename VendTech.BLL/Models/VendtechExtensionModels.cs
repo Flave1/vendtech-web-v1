@@ -1,4 +1,6 @@
-﻿using System;
+﻿using iTextSharp.xmp.impl;
+using System;
+using System.Transactions;
 
 namespace VendTech.BLL.Models
 {
@@ -7,6 +9,10 @@ namespace VendTech.BLL.Models
     {
         public decimal Amount { get; set; }
         public string MeterNumber { get; set; }
+        public string TransactionId { get; set; }
+    }
+    public class VtechElectricitySaleStatus
+    {
         public string TransactionId { get; set; }
     }
     public class VtechExtensionResponse
@@ -27,26 +33,25 @@ namespace VendTech.BLL.Models
 
     }
 
-    public class FailedResponse
-    {
-        public string ErrorMessage { get; set; }
-        public string ErrorDetail { get; set; }
-    }
-
     public class SuccessResponse
     {
         public string TransactionId { get; set; }
         public DateTime RequestDate { get; set; }
         public decimal Amount { get; set; }
-        public decimal? CurrentDealerBalance { get; set; }
         public string MeterNumber { get; set; }
         public int TransactionStatus { get; set; }
+        public string VendtechTransactionId { get; set; }
+        public string WalleBalance { get; set; }
+        public Voucher Voucher { get; set; } = new Voucher();
+
+    }
+    public class Voucher
+    {
         public string MeterToken1 { get; set; }
         public string MeterToken2 { get; set; }
         public string MeterToken3 { get; set; }
         public string AccountNumber { get; set; }
         public string Customer { get; set; }
-        public string RTSUniqueID { get; set; }
         public string ReceiptNumber { get; set; }
         public string ServiceCharge { get; set; }
         public string Tariff { get; set; }
@@ -54,18 +59,17 @@ namespace VendTech.BLL.Models
         public string CostOfUnits { get; set; }
         public string Units { get; set; }
         public string DebitRecovery { get; set; }
-        public string SerialNumber { get; set; }
         public string CustomerAddress { get; set; }
-        public string VProvider { get; set; }
-        public bool Finalised { get; set; }
         public int StatusRequestCount { get; set; }
-        public bool Sold { get; set; }
         public string VoucherSerialNumber { get; set; }
         public string VendStatusDescription { get; set; }
-        public string VendStatus { get; set; }
-        public string DateAndTimeSold { get; set; }
-        public string DateAndTimeFinalised { get; set; }
-        public string DateAndTimeLinked { get; set; }
-        public int QueryStatusCount { get; set; }
+
+    }
+    public class FailedResponse
+    {
+        public string ErrorMessage { get; set; }
+        public string ErrorDetail { get; set; }
+     
+     
     }
 }

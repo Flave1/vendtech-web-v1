@@ -4,7 +4,7 @@ import { connection } from './admin_connection.js';
 
 connection.on("UpdateWigdetSales", function (message) {
     refreshBalances();
-    refreshVendStatus();
+    //refreshVendStatus();
     refreshSalesStatus();
 });
 
@@ -21,12 +21,14 @@ connection.on("UpdateAdminUnreleasedDeposits", function (message) {
 
 $(document).ready(function () {
     refreshBalances();
-    refreshVendStatus();
+    //refreshVendStatus();
     refreshSalesStatus();
     refreshUnreleasedDeposits();
 });
 
-
+//setInterval(() => {
+//    refreshVendStatus();
+//}, 200000)
 
 function refreshVendStatus() {
     $.ajax({

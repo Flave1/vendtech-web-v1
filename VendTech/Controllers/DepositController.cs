@@ -119,7 +119,7 @@ namespace VendTech.Controllers
             }
         }
     
-        [AjaxOnly, HttpPost]
+        [AjaxOnly, HttpPost, Public]
         public async Task<JsonResult> AddDeposit(DepositModel model)
         {
             ActionOutput<PendingDeposit> pd = null;
@@ -170,8 +170,6 @@ namespace VendTech.Controllers
                    .IncludeAdminWidgetDeposits()
                    .IncludeAdminUnreleasedDeposits()
                    .Send();
-
-             
             }
 
             

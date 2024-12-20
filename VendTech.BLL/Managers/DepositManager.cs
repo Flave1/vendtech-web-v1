@@ -2005,7 +2005,7 @@ namespace VendTech.BLL.Managers
             {
                 obj.DeviceToken = item.DeviceToken;
                 obj.DeviceType = item.AppType.Value;
-                PushNotification.IncludeAndroidPush(obj);
+                PushNotification.PushNotificationToMobile(obj);
             }
             return ReturnSuccess("Deposit status changed successfully.");
         }
@@ -2564,7 +2564,6 @@ namespace VendTech.BLL.Managers
             depositDto.Status = (int)DepositPaymentStatusEnum.Released;
             depositDto.UserId = fromPos?.VendorId ?? 0;
             depositDto.NameOnCheque = fromPos.User.Vendor;
-            depositDto.IsAudit = false;
 
             var deposit = await _balDepOperations.CreateDeposit(depositDto, false);
 
@@ -2583,7 +2582,7 @@ namespace VendTech.BLL.Managers
             {
                 obj.DeviceToken = item.DeviceToken;
                 obj.DeviceType = item.AppType.Value;
-                PushNotification.IncludeAndroidPush(obj);
+                PushNotification.PushNotificationToMobile(obj);
             }
 
             PushNotification.Instance.IncludeUserBalanceOnTheWeb(beneficiaryPos.VendorId.Value)
@@ -2621,7 +2620,7 @@ namespace VendTech.BLL.Managers
                 {
                     obj.DeviceToken = item.DeviceToken;
                     obj.DeviceType = item.AppType.Value;
-                    PushNotification.IncludeAndroidPush(obj);
+                    PushNotification.PushNotificationToMobile(obj);
                 }
                 PushNotification.Instance.IncludeUserBalanceOnTheWeb(toPos.VendorId.Value)
                .IncludeAdminWidgetDeposits()
@@ -2665,7 +2664,7 @@ namespace VendTech.BLL.Managers
                 {
                     obj.DeviceToken = item.DeviceToken;
                     obj.DeviceType = item.AppType.Value;
-                    PushNotification.IncludeAndroidPush(obj);
+                    PushNotification.PushNotificationToMobile(obj);
                 }
                 PushNotification.Instance.IncludeUserBalanceOnTheWeb(toPos.VendorId.Value)
               .IncludeAdminWidgetDeposits()

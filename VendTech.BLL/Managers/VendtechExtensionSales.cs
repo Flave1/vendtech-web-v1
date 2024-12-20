@@ -15,10 +15,11 @@ using System.Data.Entity.Migrations;
 using System.Linq;
 using System.Net.Http;
 using System.Diagnostics;
+using VendTech.BLL.PlatformApi;
 
 namespace VendTech.BLL.Managers
 {
-    public class VendtechExtensionSales : IVendtechExtensionSales
+    public class VendtechExtensionSales : BaseManager, IVendtechExtensionSales
     {
         private readonly VendtechEntities _context;
         private HttpClient _client;
@@ -84,7 +85,7 @@ namespace VendTech.BLL.Managers
             TransactionDetail transactionDetail, bool treatAsPending = false, bool billVendor = true)
         {
             VtechExtensionResponse vendResponse = null;
-            VendtechExtSalesResult vendResponseData;
+            VendtechExtSalesResult vendResponseResult = new VendtechExtSalesResult();
             if (!isDuplicate)
             {
                 if (!treatAsPending)
@@ -94,89 +95,68 @@ namespace VendTech.BLL.Managers
 
                 vendResponse = await MakeRechargeRequest(model, transactionDetail);
 
-                if (vendResponse == null) throw new ArgumentException("Unable to process transaction");
+                if (vendResponse == null)
+                {
+                    Utilities.LogExceptionToDatabase(new Exception($"{vendResponse}"));
+                    throw new ArgumentException("Unable to process transaction");
+                }
 
-                vendResponseData = vendResponse.Result;
-
+                vendResponseResult = vendResponse?.Result;
 
                 if (vendResponse.Status.ToLower() != "success")
                 {
-                    transactionDetail.VendStatus = vendResponseData.Status;
-                    transactionDetail.VendStatusDescription = vendResponseData.FailedResponse.ErrorDetail;
-                    transactionDetail.StatusResponse = JsonConvert.SerializeObject(vendResponseData.FailedResponse);
+                    transactionDetail.VendStatus = vendResponseResult.FailedResponse.ErrorMessage;
+                    transactionDetail.VendStatusDescription = vendResponseResult?.FailedResponse?.ErrorDetail;
                     _context.TransactionDetails.AddOrUpdate(transactionDetail);
-                    await _context.SaveChangesAsync();
-
                     ReadErrorMessage(vendResponse.Message, transactionDetail);
-
-                    transactionDetail.QueryStatusCount = 1;
-                    //var vendStatus = await QueryVendStatus(model, transactionDetail);
-
-                    //if (vendStatus != null && vendStatus.FirstOrDefault().Value == null)
-                    //{
-                    //    FlagTransaction(transactionDetail, RechargeMeterStatusEnum.Pending);
-                    //    throw new ArgumentException("Unable To Reach EDSA Services");
-                    //}
-
-                    //if (vendStatus.FirstOrDefault().Key != "success" && vendStatus.FirstOrDefault().Key != "newtranx")
-                    //{
-                    //    FlagTransaction(transactionDetail, RechargeMeterStatusEnum.Failed);
-                    //    throw new ArgumentException(vendResponse.Content.Data?.Error);
-                    //}
-
-                    //if (vendStatus.FirstOrDefault().Key != "newtranx")
-                    //{
-                    //    transactionDetail = await UpdateTransactionOnStatusSuccessIMPROVED(vendStatus.FirstOrDefault().Value, transactionDetail);
-                    //}
-                    //Common.PushNotification.Instance
-                    //    .IncludeAdminWidgetSales()
-                    //    .IncludeUserBalanceOnTheWeb(transactionDetail.UserId)
-                    //    .Send();
+                    await _context.SaveChangesAsync();
                 }
-                else
+
+                vendResponseResult = vendResponse?.Result;
+                if (vendResponse?.Result?.SuccessResponse == null)
                 {
-                    transactionDetail = await UpdateTransaction(vendResponseData, transactionDetail, transactionDetail.User.POS.FirstOrDefault(d => d.POSId == transactionDetail.POSId));
-                    Common.PushNotification.Instance
-                        .IncludeAdminWidgetSales()
-                        .IncludeUserBalanceOnTheWeb(transactionDetail.UserId)
-                        .Send();
+                    Utilities.LogExceptionToDatabase(new Exception($"{vendResponse}"));
+                    await UpdateTransactionOnFailed(vendResponse?.Result, transactionDetail);
+                    var msg = vendResponse?.Result?.FailedResponse?.ErrorMessage;
+                    throw new ArgumentException(msg);
                 }
+
+                POS pos = transactionDetail.User.POS.FirstOrDefault(d => d.POSId == transactionDetail.POSId);
+                transactionDetail = await UpdateTransactionOnSuccess(vendResponseResult, transactionDetail, pos);
+
+                Common.PushNotification.Instance
+                    .IncludeAdminWidgetSales()
+                    .IncludeUserBalanceOnTheWeb(transactionDetail.UserId)
+                    .Send();
 
                 return transactionDetail;
             }
             else
             {
                 model.UpdateRequestModel(transactionDetail);
+                vendResponse = await QueryStatusRequest(model, transactionDetail);
+                
+                if(vendResponse?.Result == null)
+                {
+                    Utilities.LogExceptionToDatabase(new Exception($"{vendResponse}"));
+                    throw new ArgumentException("Unable to process request");
+                }
 
-                //var vendStatus = await QueryVendStatus(model, transactionDetail);
+                vendResponseResult = vendResponse.Result;
+                if (vendResponse?.Result?.SuccessResponse == null)
+                {
+                    Utilities.LogExceptionToDatabase(new Exception($"{vendResponse}"));
+                    await UpdateTransactionOnFailed(vendResponse?.Result, transactionDetail);
+                    throw new ArgumentException(vendResponse?.Result.FailedResponse.ErrorMessage);
+                }
 
-                //if (vendStatus != null && vendStatus.FirstOrDefault().Value == null)
-                //{
-                //    FlagTransaction(transactionDetail, RechargeMeterStatusEnum.Pending);
-                //    throw new ArgumentException("Unable To Reach EDSA Services");
-                //}
+                POS pos = transactionDetail.User.POS.FirstOrDefault(d => d.POSId == transactionDetail.POSId);
+                transactionDetail = await UpdateTransactionOnSuccess(vendResponseResult, transactionDetail, pos);
 
-                //var response = vendStatus.FirstOrDefault().Value;
-
-                //if (vendStatus.FirstOrDefault().Key != "success" && vendStatus.FirstOrDefault().Key != "newtranx")
-                //{
-                //    FlagTransaction(transactionDetail, RechargeMeterStatusEnum.Failed);
-                //    if (response == null) throw new ArgumentException("Unable to fetch sale, Please try again");
-                //    if (string.IsNullOrEmpty(response.Content.VoucherPin))
-                //    {
-                //        throw new ArgumentException("Unable to fetch sale, Please try again");
-                //    }
-                //    throw new ArgumentException("Unable to fetch sale, Please try again");
-                //}
-                //if (vendStatus.FirstOrDefault().Key != "newtranx")
-                //{
-                //    transactionDetail = await UpdateTransactionOnStatusSuccessIMPROVED(response, transactionDetail, billVendor);
-                //}
-
-                //Common.PushNotification.Instance
-                //        .IncludeAdminWidgetSales()
-                //        .IncludeUserBalanceOnTheWeb(transactionDetail.UserId)
-                //        .Send();
+                Common.PushNotification.Instance
+                        .IncludeAdminWidgetSales()
+                        .IncludeUserBalanceOnTheWeb(transactionDetail.UserId)
+                        .Send();
                 return transactionDetail;
             }
         }
@@ -416,75 +396,48 @@ namespace VendTech.BLL.Managers
             {
                 obj.DeviceToken = item.DeviceToken;
                 obj.DeviceType = item.AppType.Value;
-                Common.PushNotification.IncludeAndroidPush(obj);
+                Common.PushNotification.PushNotificationToMobile(obj);
             }
         }
 
-        private async Task<TransactionDetail> UpdateTransactionOnStatusSuccessIMPROVED(VendtechExtSalesResult response_data, TransactionDetail trans, bool billVendor = true)
+        private async Task UpdateTransactionOnFailed(VendtechExtSalesResult response_data, TransactionDetail trans)
         {
-            try
-            {
-                var res = response_data.SuccessResponse;
-                trans.Status = res.Finalised ? (int)RechargeMeterStatusEnum.Success : 0;
-                trans.AccountNumber = res?.AccountNumber ?? string.Empty;
-                trans.Customer = res?.Customer ?? string.Empty;
-                trans.ReceiptNumber = res?.VoucherSerialNumber ?? string.Empty;
-                trans.RTSUniqueID = res?.RTSUniqueID ?? string.Empty;
-                trans.MeterToken1 = res?.MeterToken1 ?? string.Empty;
-                trans.MeterToken2 = res?.MeterToken2 ?? string.Empty;
-                trans.MeterToken3 = res?.MeterToken3?? string.Empty;
-                trans.SerialNumber = res?.SerialNumber ?? string.Empty;
-                trans.ServiceCharge = res?.ServiceCharge;
-                trans.Tariff = res?.Tariff;
-                trans.TaxCharge = res?.TaxCharge;
-                trans.Units = res?.Units;
-                trans.VProvider = res?.VProvider ?? string.Empty;
-                trans.Finalised = res?.Finalised;
-                trans.Sold = res?.Sold;
-                trans.DateAndTimeSold = res?.DateAndTimeSold;
-                trans.DateAndTimeFinalised = res?.DateAndTimeFinalised;
-                trans.DateAndTimeLinked = res?.DateAndTimeLinked;
-                trans.VoucherSerialNumber = res?.VoucherSerialNumber;
-                trans.VendStatus = response_data?.Status;
-                trans.VendStatusDescription = response_data?.Status;
-                trans.StatusResponse = response_data.Status;
-                trans.DebitRecovery = "0";
-                //BALANCE DEDUCTION
-                await Deductbalace(trans, trans.User.POS.FirstOrDefault(s => s.POSId == trans.POSId), billVendor);
-            }
-            catch (Exception ex)
-            {
-                Utilities.LogExceptionToDatabase(new Exception($"UpdateTransactionOnStatusSuccessIMPROVED at {DateTime.UtcNow} for traxId {trans.TransactionId} user: {trans.UserId}"), $"Exception: {JsonConvert.SerializeObject(ex)}");
-            }
-            return trans;
+            trans.Status = (int)RechargeMeterStatusEnum.Failed;
+            trans.Finalised = false;
+            trans.VendStatus = response_data?.Status;
+            trans.VendStatusDescription = response_data?.Status;
+            trans.StatusResponse = JsonConvert.SerializeObject(response_data);
+
+            await _context.SaveChangesAsync();
+            return;
 
         }
-        private async Task<TransactionDetail> UpdateTransaction(VendtechExtSalesResult response_data, TransactionDetail trans, POS pos)
+        private async Task<TransactionDetail> UpdateTransactionOnSuccess(VendtechExtSalesResult response_data, TransactionDetail trans, POS pos)
         {
             try
             {
-                var res = response_data.SuccessResponse;
-                trans.CurrentDealerBalance = res.CurrentDealerBalance.Value;
-                trans.CostOfUnits = res.CostOfUnits;
-                trans.MeterToken1 = res.MeterToken1?.ToString() ?? string.Empty;
-                trans.MeterToken2 = res.MeterToken2?.ToString() ?? string.Empty;
-                trans.MeterToken3 = res?.MeterToken3?.ToString() ?? string.Empty;
+                var voucher = response_data.SuccessResponse.Voucher;
+                trans.CostOfUnits = voucher.CostOfUnits;
+                trans.MeterToken1 = voucher.MeterToken1?.ToString() ?? string.Empty;
+                trans.MeterToken2 = voucher.MeterToken2?.ToString() ?? string.Empty;
+                trans.MeterToken3 = voucher?.MeterToken3?.ToString() ?? string.Empty;
                 trans.Status = (int)RechargeMeterStatusEnum.Success;
-                trans.AccountNumber = res?.AccountNumber ?? string.Empty;
-                trans.Customer = res?.Customer ?? string.Empty;
-                trans.ReceiptNumber = res?.ReceiptNumber ?? string.Empty;
-                trans.SerialNumber = res?.SerialNumber ?? string.Empty;
-                trans.RTSUniqueID = res?.RTSUniqueID;
-                trans.ServiceCharge = res?.ServiceCharge;
-                trans.Tariff = res?.Tariff;
-                trans.TaxCharge = res?.TaxCharge;
-                trans.Units = res?.Units;
-                trans.CustomerAddress = res?.CustomerAddress;
+                trans.AccountNumber = voucher?.AccountNumber ?? string.Empty;
+                trans.Customer = voucher?.Customer ?? string.Empty;
+                trans.ReceiptNumber = voucher?.ReceiptNumber ?? string.Empty;
+                trans.SerialNumber = response_data.SuccessResponse.VendtechTransactionId ?? string.Empty;
+                trans.RTSUniqueID = response_data.SuccessResponse.VendtechTransactionId;
+                trans.ServiceCharge = voucher?.ServiceCharge;
+                trans.CurrentDealerBalance = Convert.ToDecimal(response_data?.SuccessResponse?.WalleBalance?? "0");
+                trans.Tariff = voucher?.Tariff;
+                trans.TaxCharge = voucher?.TaxCharge;
+                trans.Units = voucher?.Units;
+                trans.CustomerAddress = voucher?.CustomerAddress;
                 trans.Finalised = true;
-                trans.VProvider = res.VProvider;
+                trans.VProvider = "";
                 trans.StatusRequestCount = 0;
                 trans.Sold = true;
-                trans.VoucherSerialNumber = res?.SerialNumber;
+                trans.VoucherSerialNumber = "";
                 trans.VendStatus = "";
                 //BALANCE DEDUCTION
                 await Deductbalace(trans, pos);
@@ -569,6 +522,15 @@ namespace VendTech.BLL.Managers
             };
         }
 
+        private static VtechElectricitySaleStatus Buid_new_status_object(RechargeMeterModel model)
+        {
+            return new VtechElectricitySaleStatus
+            {
+                TransactionId = model.TransactionId.ToString(),
+            };
+        }
+
+
         private async Task<VtechExtensionResponse> MakeRechargeRequest(RechargeMeterModel model, TransactionDetail transactionDetail)
         {
             Utilities.LogExceptionToDatabase(new Exception($"MakeRechargeRequest START {DateTime.UtcNow} for traxId {model.TransactionId}"), $"model: {JsonConvert.SerializeObject(model)}");
@@ -580,6 +542,46 @@ namespace VendTech.BLL.Managers
             try
             {
                 request_model = Buid_new_request_object(model);
+
+
+                var apiKey = WebConfigurationManager.AppSettings["ApiKey"].ToString();
+                _client.DefaultRequestHeaders.Add("X-Api-Key", apiKey);
+                HttpResponseMessage icekloud_response = await _client.PostAsJsonAsync(url, request_model);
+
+                strings_result = await icekloud_response.Content.ReadAsStringAsync();
+
+                transactionDetail.Request = JsonConvert.SerializeObject(request_model);
+                transactionDetail.Response = strings_result;
+
+
+                response = JsonConvert.DeserializeObject<VtechExtensionResponse>(strings_result);
+
+                Utilities.LogExceptionToDatabase(new Exception($"MakeRechargeRequest END {DateTime.UtcNow} for traxId {model.TransactionId}"), $"strings_result: {strings_result}");
+                return response;
+            }
+            catch (HttpException ex)
+            {
+                Utilities.LogExceptionToDatabase(new Exception($"HttpException ERROR {DateTime.UtcNow} for traxId {model.TransactionId}"), $"Exception: {ex.Message}");
+                throw new ArgumentException("Unable to Access service");
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+
+        }
+
+        private async Task<VtechExtensionResponse> QueryStatusRequest(RechargeMeterModel model, TransactionDetail transactionDetail)
+        {
+            Utilities.LogExceptionToDatabase(new Exception($"MakeRechargeRequest START {DateTime.UtcNow} for traxId {model.TransactionId}"), $"model: {JsonConvert.SerializeObject(model)}");
+            VtechExtensionResponse response = new VtechExtensionResponse();
+            string strings_result = "";
+            VtechElectricitySaleStatus request_model = null;
+            string url = WebConfigurationManager.AppSettings["VendtechExtentionServer"].ToString() + "sales/v1/status";
+
+            try
+            {
+                request_model = Buid_new_status_object(model);
 
 
                 var apiKey = WebConfigurationManager.AppSettings["ApiKey"].ToString();

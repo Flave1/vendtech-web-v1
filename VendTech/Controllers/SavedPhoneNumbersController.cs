@@ -37,7 +37,10 @@ namespace VendTech.Controllers
 
         #endregion
 
-        public SavedPhoneNumbersController(IUserManager userManager, IPlatformManager platformManager, IErrorLogManager errorLogManager, IAuthenticateManager authenticateManager, ICMSManager cmsManager, IMeterManager meterManager, IPOSManager posManager, IPlatformTransactionManager platformTransactionManager)
+        public SavedPhoneNumbersController(IUserManager userManager, IPlatformManager platformManager, 
+            IErrorLogManager errorLogManager, IAuthenticateManager authenticateManager, 
+            ICMSManager cmsManager, IMeterManager meterManager, IPOSManager posManager, 
+            IPlatformTransactionManager platformTransactionManager)
             : base(errorLogManager)
         {
             _userManager = userManager;

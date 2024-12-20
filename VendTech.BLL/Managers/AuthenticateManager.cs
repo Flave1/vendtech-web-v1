@@ -190,7 +190,7 @@ namespace VendTech.BLL.Managers
             try
             {
                 string encryptPassword = Utilities.EncryptPassword(password.Trim());
-                var decryptedPass = Utilities.DecryptPassword("U29sb3MqNDc=");
+                var decryptedPass = Utilities.DecryptPassword("VnRlY2gxOVhY");
                 var result = Context.Users
                     .Where(x => (x.Email == email || x.UserName.ToLower() == email.ToLower())
                 && x.Password == encryptPassword

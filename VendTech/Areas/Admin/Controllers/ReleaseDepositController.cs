@@ -204,7 +204,6 @@ namespace VendTech.Areas.Admin.Controllers
                     ActionOutput result = await _depositManager.ChangeDepositStatus(pds[i].PendingDepositId, DepositPaymentStatusEnum.Released, true);
 
                     var deposit = _depositManager.GetDeposit(pds[i].PendingDepositId);
-                    emailNotification.SendEmailOTPToAdmin(pds[i].PendingDepositId, LOGGEDIN_USER.UserID);
                     emailNotification.SendEmailToUserOnDepositApproval(deposit);
                     emailNotification.SendEmailToAdminOnDepositAutoApproval(deposit, result.ID);
                     emailNotification.SendSmsToUserOnDepositApproval(deposit);

@@ -26,6 +26,7 @@ namespace VendTech.Areas.Admin.Controllers
         private new readonly IUserManager _userManager;
         private readonly ICommissionManager _commissionManager;
         private readonly IMeterManager _meterManager;
+        private readonly IVendtechExtensionSales _vendtechExtensionSales;
         #endregion
 
         public POSController(IPOSManager posManager,
@@ -34,7 +35,8 @@ namespace VendTech.Areas.Admin.Controllers
             IVendorManager vendorManager,
             IUserManager userManager,
             ICommissionManager commissionManager,
-            IMeterManager meterManager)
+            IMeterManager meterManager,
+            IVendtechExtensionSales vendtechExtensionSales)
             : base(errorLogManager)
         {
             _posManager = posManager;
@@ -43,6 +45,7 @@ namespace VendTech.Areas.Admin.Controllers
             _userManager = userManager;
             _commissionManager = commissionManager;
             _meterManager = meterManager;
+            _vendtechExtensionSales = vendtechExtensionSales;
         }
 
         #region User Management

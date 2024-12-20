@@ -12,6 +12,7 @@ using System.Linq.Dynamic;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
+using System.Transactions;
 using System.Web;
 using System.Web.Configuration;
 using System.Web.Mvc;
@@ -707,7 +708,6 @@ namespace VendTech.BLL.Managers
             var isDuplicate = model.IsRequestADuplicate(pendingTrx);
 
             var transaction = isDuplicate ? pendingTrx : trax;
-
             try
             {
                 trax = await ProcessTransaction(isDuplicate, model, transaction);
@@ -736,6 +736,7 @@ namespace VendTech.BLL.Managers
         {
             IceKloudResponse vendResponse = null;
             Datum vendResponseData;
+
             if (!isDuplicate)
             {
                 if (!treatAsPending)
@@ -754,7 +755,6 @@ namespace VendTech.BLL.Managers
 
                 vendResponseData = vendResponse.Content.Data.Data.FirstOrDefault();
                
-
                 if (vendResponse.Status.ToLower() != "success")
                 {
                     transactionDetail.VendStatus = vendResponse?.Content?.Data?.Error;
@@ -821,7 +821,7 @@ namespace VendTech.BLL.Managers
 
             if (message == "Unexpected error in OUC VendVoucher")
             {
-                FlagTransaction(tx, RechargeMeterStatusEnum.Pending);
+                FlagTransaction(tx, RechargeMeterStatusEnum.Failed);
                 throw new ArgumentException(message);
             }
 
@@ -1025,7 +1025,7 @@ namespace VendTech.BLL.Managers
             {
                 obj.DeviceToken = item.DeviceToken;
                 obj.DeviceType = item.AppType.Value;
-                Common.PushNotification.IncludeAndroidPush(obj);
+                Common.PushNotification.PushNotificationToMobile(obj);
             }
         }
 
@@ -1063,7 +1063,7 @@ namespace VendTech.BLL.Managers
             }
             catch (Exception ex)
             {
-                Utilities.LogExceptionToDatabase(new Exception($"UpdateTransactionOnStatusSuccessIMPROVED at {DateTime.UtcNow} for traxId {trans.TransactionId} user: {trans.UserId}"), $"Exception: {JsonConvert.SerializeObject(ex)}");
+                Utilities.LogExceptionToDatabase(new Exception($"UpdateTransactionOnFailed at {DateTime.UtcNow} for traxId {trans.TransactionId} user: {trans.UserId}"), $"Exception: {JsonConvert.SerializeObject(ex)}");
             }
             return trans;
 
@@ -1162,7 +1162,7 @@ namespace VendTech.BLL.Managers
             trans.DebitRecovery = "0";
             trans.CostOfUnits = "0";
             trans.TransactionId = Utilities.NewTransactionId();
-
+            trans.UserButtonClickid = model.UserClickId;
             _context.TransactionDetails.Add(trans);
             await _context.SaveChangesAsync();
 

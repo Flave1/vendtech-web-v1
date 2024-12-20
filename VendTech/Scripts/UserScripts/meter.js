@@ -283,6 +283,8 @@ var UserMeters = {
     },
 
     AddPhone: function (sender) {
+        var formData = $(sender).parents("form:first").serialize();
+
         $.ajax({
             url: baseUrl + '/SavedPhoneNumbers/AddEditPhoneNumbers',
             type: 'POST',
@@ -295,7 +297,13 @@ var UserMeters = {
             showThrobber: true,
             button: $(sender),
             throbberPosition: { my: "left center", at: "right center", of: $(sender) },
+            data: formData,
             success: function (results, message) {
+                debugger
+                if (results.ID < 1) {
+                    $.ShowMessage($('div.messageAlert'), results.Message, MessageType.Failed);
+                    return;
+                }
                 $.ShowMessage($('div.messageAlert'), message, MessageType.Success);
                 setTimeout(function () {
                     window.location.href = baseUrl + '/SavedPhoneNumbers/Index';

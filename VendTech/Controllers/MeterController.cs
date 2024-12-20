@@ -37,7 +37,9 @@ namespace VendTech.Controllers
 
         #endregion
 
-        public MeterController(IUserManager userManager, IPlatformManager platformManager, IErrorLogManager errorLogManager, IAuthenticateManager authenticateManager, ICMSManager cmsManager, IMeterManager meterManager, IPOSManager posManager, IPlatformTransactionManager platformTransactionManager, IVendtechExtensionSales vendtechExtensionSales)
+        public MeterController(IUserManager userManager, IPlatformManager platformManager, 
+            IErrorLogManager errorLogManager, IAuthenticateManager authenticateManager, ICMSManager cmsManager,
+            IMeterManager meterManager, IPOSManager posManager, IPlatformTransactionManager platformTransactionManager, IVendtechExtensionSales vendtechExtensionSales)
             : base(errorLogManager)
         {
             _userManager = userManager;
@@ -300,7 +302,6 @@ namespace VendTech.Controllers
             return PartialView("Partials/_salesListing", recharges);
         }
 
-
         [AjaxOnly, HttpPost, Public]
         public ActionResult GetPOSBalanceAfterPurchase()
         {
@@ -318,7 +319,7 @@ namespace VendTech.Controllers
             model.UserId = LOGGEDIN_USER.UserID;
             try
             {
-                var result = await _meterManager.RechargeMeterReturnIMPROVED(model);
+                var result = await _vendtechExtensionSales.RechargeFromVendtechExtension(model); //await _meterManager.RechargeMeterReturnIMPROVED(model);
                 if (result.ReceiptStatus.Status == "unsuccessful")
                 {
                     return Json(new { Success = false, Code = 302, Msg = result.ReceiptStatus.Message });
@@ -350,7 +351,7 @@ namespace VendTech.Controllers
             //model.UserId = model.UserId;
             try
             {
-                var result = await _meterManager.RechargeMeterReturnIMPROVED(model);
+                var result = await _vendtechExtensionSales.RechargeFromVendtechExtension(model);
                 if (result.ReceiptStatus.Status == "unsuccessful")
                 {
                     return Json(new { Success = false, Code = 302, Msg = result.ReceiptStatus.Message });

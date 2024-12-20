@@ -48,7 +48,7 @@ namespace VendTech.BLL.Common
                     {
                         obj.DeviceToken = item.DeviceToken;
                         obj.DeviceType = item.AppType.Value;
-                        PushNotification.IncludeAndroidPush(obj);
+                        PushNotification.PushNotificationToMobile(obj);
                     }
                 }
               
@@ -75,7 +75,7 @@ namespace VendTech.BLL.Common
             {
                 obj.DeviceToken = item.DeviceToken;
                 obj.DeviceType = item.AppType.Value;
-                PushNotification.IncludeAndroidPush(obj);
+                PushNotification.PushNotificationToMobile(obj);
             }
         }
     }

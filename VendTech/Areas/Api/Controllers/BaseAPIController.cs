@@ -1,13 +1,4 @@
-﻿using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Text;
-using System.Threading.Tasks;
-using System.Web.Http;
+﻿using System.Web.Http;
 using VendTech.Attributes;
 using VendTech.BLL.Interfaces;
 using VendTech.BLL.Models;
@@ -29,7 +20,7 @@ namespace VendTech.Areas.Api.Controllers
         #endregion
 
 
-        public static readonly string CurrentAppVersion = "2.4.8";
+        public static readonly string CurrentAppVersion = "2.5.4";
 
         /// <summary>
         /// 

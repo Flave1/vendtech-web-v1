@@ -589,6 +589,7 @@ warning 6002: The table/view 'VENDTECH_MAIN.dbo.RTS DATA_VTWEB_TRANSACTIONDETALS
           <Property Name="DateAndTimeLinked" Type="varchar(max)" />
           <Property Name="QueryStatusCount" Type="int" />
           <Property Name="isClaimed" Type="int" Nullable="false" />
+          <Property Name="UserButtonClickid" Type="varchar" MaxLength="256" />
         </EntityType>
         <EntityType Name="UserAssignedModules">
           <Key>
@@ -1344,8 +1345,6 @@ warning 6002: The table/view 'VENDTECH_MAIN.dbo.RTS DATA_VTWEB_TRANSACTIONDETALS
         </Association>
         <Function Name="CalculateRunningBalance" Aggregate="false" BuiltIn="false" NiladicFunction="false" IsComposable="false" ParameterTypeSemantics="AllowImplicitConversion" Schema="dbo" />
         <Function Name="fn_diagramobjects" Aggregate="false" BuiltIn="false" NiladicFunction="false" IsComposable="true" ParameterTypeSemantics="AllowImplicitConversion" Schema="dbo" ReturnType="int" />
-        <Function Name="CalculateRunningBalance1" Aggregate="false" BuiltIn="false" NiladicFunction="false" IsComposable="false" ParameterTypeSemantics="AllowImplicitConversion" Schema="vendtech_main" StoreFunctionName="CalculateRunningBalance" />
-        <Function Name="CalculateRunningBalance11" Aggregate="false" BuiltIn="false" NiladicFunction="false" IsComposable="false" ParameterTypeSemantics="AllowImplicitConversion" Schema="vendtech_main" StoreFunctionName="CalculateRunningBalance1" />
         <EntityContainer Name="VENDTECH_MAINModelStoreContainer">
           <EntitySet Name="AccountVerificationOTP" EntityType="Self.AccountVerificationOTP" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="Agency" EntityType="Self.Agency" Schema="dbo" store:Type="Tables" />
@@ -2259,6 +2258,7 @@ warning 6002: The table/view 'VENDTECH_MAIN.dbo.RTS DATA_VTWEB_TRANSACTIONDETALS
           <NavigationProperty Name="POS" Relationship="Self.FK_TransactionDetails_POS" FromRole="TransactionDetails" ToRole="POS" />
           <NavigationProperty Name="User" Relationship="Self.FK_TransactionDetails_Users" FromRole="TransactionDetails" ToRole="Users" />
           <Property Name="isClaimed" Type="Int32" Nullable="false" />
+          <Property Name="UserButtonClickid" Type="String" MaxLength="256" FixedLength="false" Unicode="false" />
         </EntityType>
         <EntityType Name="UserAssignedModule">
           <Key>
@@ -3919,6 +3919,7 @@ warning 6002: The table/view 'VENDTECH_MAIN.dbo.RTS DATA_VTWEB_TRANSACTIONDETALS
           <EntitySetMapping Name="TransactionDetails">
             <EntityTypeMapping TypeName="VENDTECH_MAINModel.TransactionDetail">
               <MappingFragment StoreEntitySet="TransactionDetails">
+                <ScalarProperty Name="UserButtonClickid" ColumnName="UserButtonClickid" />
                 <ScalarProperty Name="isClaimed" ColumnName="isClaimed" />
                 <ScalarProperty Name="TransactionDetailsId" ColumnName="TransactionDetailsId" />
                 <ScalarProperty Name="UserId" ColumnName="UserId" />
@@ -4096,34 +4097,6 @@ warning 6002: The table/view 'VENDTECH_MAIN.dbo.RTS DATA_VTWEB_TRANSACTIONDETALS
           <FunctionImportMapping FunctionImportName="CalculateRunningBalance" FunctionName="VENDTECH_MAINModel.Store.CalculateRunningBalance">
             <ResultMapping>
               <ComplexTypeMapping TypeName="VENDTECH_MAINModel.CalculateRunningBalance_Result">
-                <ScalarProperty Name="userid" ColumnName="userid" />
-                <ScalarProperty Name="vendor" ColumnName="vendor" />
-                <ScalarProperty Name="PercentageAmount" ColumnName="PercentageAmount" />
-                <ScalarProperty Name="totalsales" ColumnName="totalsales" />
-                <ScalarProperty Name="runningbalance" ColumnName="runningbalance" />
-                <ScalarProperty Name="POSBalance" ColumnName="POSBalance" />
-                <ScalarProperty Name="overage" ColumnName="overage" />
-                <ScalarProperty Name="AgencyCommission" ColumnName="AgencyCommission" />
-              </ComplexTypeMapping>
-            </ResultMapping>
-          </FunctionImportMapping>
-          <FunctionImportMapping FunctionImportName="CalculateRunningBalance1" FunctionName="VENDTECH_MAINModel.Store.CalculateRunningBalance1">
-            <ResultMapping>
-              <ComplexTypeMapping TypeName="VENDTECH_MAINModel.CalculateRunningBalance1_Result">
-                <ScalarProperty Name="userid" ColumnName="userid" />
-                <ScalarProperty Name="vendor" ColumnName="vendor" />
-                <ScalarProperty Name="PercentageAmount" ColumnName="PercentageAmount" />
-                <ScalarProperty Name="totalsales" ColumnName="totalsales" />
-                <ScalarProperty Name="runningbalance" ColumnName="runningbalance" />
-                <ScalarProperty Name="POSBalance" ColumnName="POSBalance" />
-                <ScalarProperty Name="overage" ColumnName="overage" />
-                <ScalarProperty Name="AgencyCommission" ColumnName="AgencyCommission" />
-              </ComplexTypeMapping>
-            </ResultMapping>
-          </FunctionImportMapping>
-          <FunctionImportMapping FunctionImportName="CalculateRunningBalance11" FunctionName="VENDTECH_MAINModel.Store.CalculateRunningBalance11">
-            <ResultMapping>
-              <ComplexTypeMapping TypeName="VENDTECH_MAINModel.CalculateRunningBalance11_Result">
                 <ScalarProperty Name="userid" ColumnName="userid" />
                 <ScalarProperty Name="vendor" ColumnName="vendor" />
                 <ScalarProperty Name="PercentageAmount" ColumnName="PercentageAmount" />
