@@ -216,7 +216,7 @@ namespace VendTech.Areas.Admin.Controllers
         public async Task<JsonResult> PurchaseUnits(RechargeMeterModel model)
         {
             model.UserId = model.UserId;
-            var result = await _meterManager.RechargeMeterReturnIMPROVED(model); //.ReturnVoucherReceipt("6101 5598 1428 0213 2044");
+            var result = await _vendtechExtensionSales.RechargeFromVendtechExtension(model); //.ReturnVoucherReceipt("6101 5598 1428 0213 2044");
             if (result.ReceiptStatus.Status == "unsuccessful")
             {
                 return Json(JsonConvert.SerializeObject(new { Success = false, Code = 302, Msg = "Vending Disabled" }));

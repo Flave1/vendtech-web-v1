@@ -345,6 +345,48 @@ namespace VendTech.BLL.Managers
             }
         }
 
+        public async Task<ReceiptModel> GetStatusFromVendtechExtension(string trxId, bool billVendor)
+        {
+            var response = new ReceiptModel { ReceiptStatus = new ReceiptStatus { Status = "", Message = "" } };
+            try
+            {
+                var pendingTrax = _context.TransactionDetails.FirstOrDefault(e => e.TransactionId == trxId);
+
+                if (pendingTrax == null)
+                {
+                    response.ReceiptStatus.Status = "unsuccessful";
+                    response.ReceiptStatus.Message = "Unable to find transaction";
+                    return response;
+                }
+
+                var requestModel = new RechargeMeterModel
+                {
+                    UserId = pendingTrax.UserId,
+                    TransactionId = Convert.ToInt64(pendingTrax.TransactionId),
+                };
+
+                var verifiedTrax = await ProcessTransaction(true, requestModel, pendingTrax, true, billVendor);
+
+                if (verifiedTrax != null)
+                {
+                    var receipt = BuildRceipt(verifiedTrax);
+                    receipt.ShouldShowSmsButton = (bool)verifiedTrax.POS.WebSms;
+                    receipt.ShouldShowPrintButton = (bool)verifiedTrax.POS.WebPrint;
+                    receipt.mobileShowSmsButton = (bool)verifiedTrax.POS.PosSms;
+                    receipt.mobileShowPrintButton = (bool)verifiedTrax.POS.PosPrint;
+                    return receipt;
+                }
+
+                return response;
+            }
+            catch (ArgumentException ex)
+            {
+                response.ReceiptStatus.Status = "unsuccessful";
+                response.ReceiptStatus.Message = ex.Message;
+                return response;
+            }
+        }
+
         public ReceiptModel BuildRceipt(TransactionDetail model)
         {
             if (model.POS == null) model.POS = new POS();
