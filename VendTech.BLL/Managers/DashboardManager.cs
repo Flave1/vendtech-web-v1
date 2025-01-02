@@ -197,6 +197,7 @@ namespace VendTech.BLL.Managers
                     total_deposits = Context.Deposits
                         .Where(d => DbFunctions.TruncateTime(d.CreatedAt) == DbFunctions.TruncateTime(DateTime.UtcNow) 
                     && d.Status == (int)DepositPaymentStatusEnum.Released && d.User.Status == (int)UserStatusEnum.Active
+                    && d.PaymentType != (int)DepositPaymentTypeEnum.VendorCommision
                     && d.IsDeleted == false).AsEnumerable().Sum(s => s.Amount);
 
                     total_sales = Context.TransactionDetails

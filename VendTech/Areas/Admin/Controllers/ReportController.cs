@@ -179,7 +179,6 @@ namespace VendTech.Areas.Admin.Controllers
                     {
                         ViewBag.IssuingBank = new SelectList(_bankAccountManager.GetBankNames_API().ToList(), "BankName", "BankName");
                         ViewBag.Vendor = new SelectList(_userManager.GetVendorNames_API().ToList(), "VendorId", "VendorName");
-
                         ViewBag.banked = new SelectList(_bankAccountManager.GetBankAccounts().ToList(), "BankName", "BankName");
 
                         depositAudit = _depositManager.GetDepositAuditReports(model, true);

@@ -1070,7 +1070,7 @@ namespace VendTech.BLL.Managers
         PagingResult<DepositAuditModel> IDepositManager.GetDepositAuditReports(ReportSearchModel model, bool callFromAdmin)
         {
             var result = new PagingResult<DepositAuditModel>();
-            var query = _context.DepositLogs.OrderByDescending(p => p.Deposit.CreatedAt).Where(p => p.NewStatus == (int)DepositPaymentStatusEnum.Released);
+            var query = _context.DepositLogs.OrderByDescending(p => p.Deposit.CreatedAt).OrderByDescending(p => p.Deposit.TransactionId).Where(p => p.NewStatus == (int)DepositPaymentStatusEnum.Released);
 
             if (model.From != null)
             {
@@ -2371,6 +2371,7 @@ namespace VendTech.BLL.Managers
                 && DbFunctions.TruncateTime(currentDate) >= DbFunctions.TruncateTime(d.NextReminderDate)
                 && d.isAudit == false 
                 && d.User.Status == (int)UserStatusEnum.Active
+                && d.User.POS.FirstOrDefault().Commission.Percentage <= 0
                 ).ToList();
             return result;
         }
