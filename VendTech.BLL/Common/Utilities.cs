@@ -953,9 +953,15 @@ namespace VendTech.BLL.Common
         {
             using(var Context = new VendtechEntities())
             {
-               return FormatAmount(Context.Deposits
+                //return FormatAmount(Context.Deposits
+                //         .Where(d => DbFunctions.TruncateTime(d.CreatedAt) == DbFunctions.TruncateTime(DateTime.UtcNow)
+                //     && d.Status == (int)DepositPaymentStatusEnum.Released && d.User.Status == (int)UserStatusEnum.Active
+                //     && d.IsDeleted == false).AsEnumerable().Sum(s => s.Amount));
+
+                return FormatAmount(Context.Deposits
                         .Where(d => DbFunctions.TruncateTime(d.CreatedAt) == DbFunctions.TruncateTime(DateTime.UtcNow)
                     && d.Status == (int)DepositPaymentStatusEnum.Released && d.User.Status == (int)UserStatusEnum.Active
+                    && d.PaymentType != (int)DepositPaymentTypeEnum.VendorCommision
                     && d.IsDeleted == false).AsEnumerable().Sum(s => s.Amount));
             }
         }
