@@ -78,6 +78,7 @@ namespace VendTech.BLL.Common
             }
         }
 
+        
         public static string NewDepositTransactionId()
         {
             using (VendtechEntities context = new VendtechEntities())

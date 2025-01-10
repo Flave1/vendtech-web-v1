@@ -23,13 +23,15 @@ namespace VendTech.BLL.Managers
     {
         private readonly VendtechEntities _context;
         private HttpClient _client;
-        public VendtechExtensionSales(VendtechEntities context)
+        private readonly TransactionIdGenerator idGenerator;
+        public VendtechExtensionSales(VendtechEntities context, TransactionIdGenerator idGenerator)
         {
             _client = new HttpClient()
             {
                 Timeout = TimeSpan.FromMinutes(2)
             };
             _context = context;
+            this.idGenerator = idGenerator;
         }
 
         async Task<ReceiptModel> IVendtechExtensionSales.RechargeFromVendtechExtension(RechargeMeterModel model)
@@ -546,7 +548,9 @@ namespace VendTech.BLL.Managers
             trans.StatusResponse = "";
             trans.DebitRecovery = "0";
             trans.CostOfUnits = "0";
-            trans.TransactionId = Utilities.NewTransactionId();
+
+            string transactionId = await idGenerator.GenerateNewTransactionId();
+            trans.TransactionId = transactionId;
 
             _context.TransactionDetails.Add(trans);
             await _context.SaveChangesAsync();
@@ -576,27 +580,22 @@ namespace VendTech.BLL.Managers
         private async Task<VtechExtensionResponse> MakeRechargeRequest(RechargeMeterModel model, TransactionDetail transactionDetail)
         {
             Utilities.LogExceptionToDatabase(new Exception($"MakeRechargeRequest START {DateTime.UtcNow} for traxId {model.TransactionId}"), $"model: {JsonConvert.SerializeObject(model)}");
-            VtechExtensionResponse response = new VtechExtensionResponse();
-            string strings_result = "";
-            VtechElectricitySaleRequest request_model = null;
             string url = WebConfigurationManager.AppSettings["VendtechExtentionServer"].ToString() + "sales/v1/buy";
 
             try
             {
-                request_model = Buid_new_request_object(model);
-
+                VtechElectricitySaleRequest request_model = Buid_new_request_object(model);
 
                 var apiKey = WebConfigurationManager.AppSettings["ApiKey"].ToString();
                 _client.DefaultRequestHeaders.Add("X-Api-Key", apiKey);
                 HttpResponseMessage icekloud_response = await _client.PostAsJsonAsync(url, request_model);
 
-                strings_result = await icekloud_response.Content.ReadAsStringAsync();
+                string strings_result = await icekloud_response.Content.ReadAsStringAsync();
 
                 transactionDetail.Request = JsonConvert.SerializeObject(request_model);
                 transactionDetail.Response = strings_result;
 
-
-                response = JsonConvert.DeserializeObject<VtechExtensionResponse>(strings_result);
+                VtechExtensionResponse response = JsonConvert.DeserializeObject<VtechExtensionResponse>(strings_result);
 
                 Utilities.LogExceptionToDatabase(new Exception($"MakeRechargeRequest END {DateTime.UtcNow} for traxId {model.TransactionId}"), $"strings_result: {strings_result}");
                 return response;
@@ -615,30 +614,26 @@ namespace VendTech.BLL.Managers
 
         private async Task<VtechExtensionResponse> QueryStatusRequest(RechargeMeterModel model, TransactionDetail transactionDetail)
         {
-            Utilities.LogExceptionToDatabase(new Exception($"MakeRechargeRequest START {DateTime.UtcNow} for traxId {model.TransactionId}"), $"model: {JsonConvert.SerializeObject(model)}");
-            VtechExtensionResponse response = new VtechExtensionResponse();
-            string strings_result = "";
-            VtechElectricitySaleStatus request_model = null;
+            Utilities.LogExceptionToDatabase(new Exception($"QueryStatusRequest START {DateTime.UtcNow} for traxId {model.TransactionId}"), $"model: {JsonConvert.SerializeObject(model)}");
             string url = WebConfigurationManager.AppSettings["VendtechExtentionServer"].ToString() + "sales/v1/status";
 
             try
             {
-                request_model = Buid_new_status_object(model);
-
+                VtechElectricitySaleStatus request_model = Buid_new_status_object(model);
 
                 var apiKey = WebConfigurationManager.AppSettings["ApiKey"].ToString();
                 _client.DefaultRequestHeaders.Add("X-Api-Key", apiKey);
                 HttpResponseMessage icekloud_response = await _client.PostAsJsonAsync(url, request_model);
 
-                strings_result = await icekloud_response.Content.ReadAsStringAsync();
+                string strings_result = await icekloud_response.Content.ReadAsStringAsync();
 
                 transactionDetail.Request = JsonConvert.SerializeObject(request_model);
                 transactionDetail.Response = strings_result;
 
 
-                response = JsonConvert.DeserializeObject<VtechExtensionResponse>(strings_result);
+                VtechExtensionResponse response = JsonConvert.DeserializeObject<VtechExtensionResponse>(strings_result);
 
-                Utilities.LogExceptionToDatabase(new Exception($"MakeRechargeRequest END {DateTime.UtcNow} for traxId {model.TransactionId}"), $"strings_result: {strings_result}");
+                Utilities.LogExceptionToDatabase(new Exception($"QueryStatusRequest END {DateTime.UtcNow} for traxId {model.TransactionId}"), $"strings_result: {strings_result}");
                 return response;
             }
             catch (HttpException ex)
