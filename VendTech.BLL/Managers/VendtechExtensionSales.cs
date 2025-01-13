@@ -481,7 +481,7 @@ namespace VendTech.BLL.Managers
                 trans.VProvider = "";
                 trans.StatusRequestCount = 0;
                 trans.Sold = true;
-                trans.VoucherSerialNumber = "";
+                trans.VoucherSerialNumber = "success";
                 trans.VendStatus = "";
                 //BALANCE DEDUCTION
                 await Deductbalace(trans, pos);

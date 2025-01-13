@@ -552,7 +552,7 @@ https://go.microsoft.com/fwlink/?LinkID=208121.
       <publishTime>10/02/2024 09:49:24</publishTime>
     </File>
     <File Include="Scripts/signalr/admin_connection.js">
-      <publishTime>07/16/2024 10:30:22</publishTime>
+      <publishTime>01/11/2025 18:16:44</publishTime>
     </File>
     <File Include="Scripts/signalr/admin_dashboard_control.js">
       <publishTime>12/20/2024 06:07:36</publishTime>
@@ -570,7 +570,7 @@ https://go.microsoft.com/fwlink/?LinkID=208121.
       <publishTime>07/15/2024 19:45:34</publishTime>
     </File>
     <File Include="Scripts/signalr/customer_connection.js">
-      <publishTime>07/16/2024 10:30:43</publishTime>
+      <publishTime>01/11/2025 18:20:25</publishTime>
     </File>
     <File Include="Scripts/signalr/customer_control.js">
       <publishTime>07/16/2024 10:18:28</publishTime>

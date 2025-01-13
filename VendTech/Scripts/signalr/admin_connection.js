@@ -1,8 +1,8 @@
 ﻿"use strict";
 
-const live = "https://www.vendtechsl.com:459/adminHub";
+const live = "https://www.vendtechsl.com:461/adminHub";
 const local = "https://localhost:7246/adminHub";
-const dev = "http://subs.vendtechsl.net/adminHub";
+const dev = "https://www.vendtechsl.com:459/adminHub";
 
 var connection = new signalR.HubConnectionBuilder()
     .withUrl(live, {
