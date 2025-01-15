@@ -24,24 +24,21 @@ namespace VendTech.BLL.PlatformApi
 
         public abstract IDictionary<string, PlatformApiConfig> GetPlatformApiConfigFields();
 
-        public abstract ExecutionResponse Execute(ExecutionContext executionContext);
+        public abstract Task<ExecutionResponse> Execute(ExecutionContext executionContext);
 
-       public abstract ExecutionResponse CheckStatus(ExecutionContext executionContext);
+       public abstract Task<ExecutionResponse> CheckStatus(ExecutionContext executionContext);
 
-        protected void ExecutePOSTRequest(ApiRequestInfo apiRequestInfo, string url, HttpContent payload)
+        protected async Task ExecutePOSTRequest(ApiRequestInfo apiRequestInfo, string url, HttpContent payload)
         {
             try
             {
                 apiRequestInfo.RequestSent = DateTime.UtcNow;
 
-                using (var responseTask = _client.PostAsync(url, payload))
+                using (var result = await _client.PostAsync(url, payload))
                 {
-                    responseTask.Wait();
-                    var result = responseTask.Result;
-                    var resultReadTask = result.Content.ReadAsStringAsync();
-                    resultReadTask.Wait();
+                    var resultReadTask = await result.Content.ReadAsStringAsync();
                     apiRequestInfo.ResponseReceived = DateTime.UtcNow;
-                    apiRequestInfo.Response = resultReadTask.Result;
+                    apiRequestInfo.Response = resultReadTask;
                 }
             }
             catch(TaskCanceledException e) when (e.InnerException is TimeoutException)

@@ -20,38 +20,42 @@ namespace VendTech
             IScheduler scheduler = StdSchedulerFactory.GetDefaultScheduler();
             scheduler.Start();
 
-            /////
-            ITrigger firstTrigger = TriggerBuilder.Create().StartNow()
+            /// APLICATION USE TIME
+            ITrigger appUseTimeTrigger = TriggerBuilder.Create().StartNow()
             .WithSimpleSchedule (s => s.WithIntervalInMinutes(1).RepeatForever()).Build();
-            IJobDetail jobFirst = JobBuilder.Create<ApplicationNotUsedSchedulerJob>().Build();
-            /////
+            IJobDetail appUseTimeJob = JobBuilder.Create<ApplicationNotUsedSchedulerJob>().Build();
+            scheduler.ScheduleJob(appUseTimeJob, appUseTimeTrigger);
+            ///
 
 
-            /////
-            //ITrigger secondTrigger = TriggerBuilder.Create().StartNow()
+            /// PENDING TRANSACTIONS
+            //ITrigger pendingTransactionTrigger = TriggerBuilder.Create().StartNow()
             //.WithSimpleSchedule(s => s.WithIntervalInSeconds(30).RepeatForever()).Build();
-            //IJobDetail jobSecond = JobBuilder.Create<PendingTransactionCheckJob>().Build();
-            /////
-
-
+            //IJobDetail pendingTransactionKob = JobBuilder.Create<PendingTransactionCheckJob>().Build();
+            //scheduler.ScheduleJob(pendingTransactionKob, pendingTransactionTrigger);
             ///
-            ITrigger thirdTrigger = TriggerBuilder.Create().StartNow()
+
+
+            /// LOW BALANCE CHECK
+            ITrigger balanceLowTrigger = TriggerBuilder.Create().StartNow()
             .WithSimpleSchedule(s => s.WithIntervalInHours(12).RepeatForever()).Build();
-            IJobDetail jobThird = JobBuilder.Create<BalanceLowSheduleJob>().Build();
+            IJobDetail balanceLowJob = JobBuilder.Create<BalanceLowSheduleJob>().Build();
+            scheduler.ScheduleJob(balanceLowJob, balanceLowTrigger);
             ///
 
-            ///
-            ITrigger fourthTrigger = TriggerBuilder.Create().StartNow()
+            /// UNCLEARED BALANCE
+            ITrigger unclearedDepositsTrigger = TriggerBuilder.Create().StartNow()
             .WithSimpleSchedule(s => s.WithIntervalInHours(12).RepeatForever()).Build();
-            IJobDetail jobFourth = JobBuilder.Create<UnclearedDepositsSheduleJob>().Build();
+            IJobDetail unclearedDepositsJob = JobBuilder.Create<UnclearedDepositsSheduleJob>().Build();
+            scheduler.ScheduleJob(unclearedDepositsJob, unclearedDepositsTrigger);
             ///
 
-            scheduler.ScheduleJob(jobFirst, firstTrigger);
-            //scheduler.ScheduleJob(jobSecond, secondTrigger);
-            scheduler.ScheduleJob(jobThird, thirdTrigger);
-            scheduler.ScheduleJob(jobFourth, fourthTrigger);
-
-
+            /// UNCLEARED BALANCE
+            ITrigger commonJobsTrigger = TriggerBuilder.Create().StartNow()
+            .WithSimpleSchedule(s => s.WithIntervalInHours(24).RepeatForever()).Build();
+            IJobDetail commonJobs = JobBuilder.Create<CommonShedulesJob>().Build();
+            scheduler.ScheduleJob(commonJobs, commonJobsTrigger);
+            ///
 
             AreaRegistration.RegisterAllAreas();
             GlobalConfiguration.Configure(WebApiConfig.Register);

@@ -10,6 +10,8 @@ using System.Web;
 using System.IO;
 using System.Reflection;
 using System.Web.Mvc;
+using System.Data.Entity;
+using System.Threading.Tasks;
 
 namespace VendTech.BLL.Managers
 {
@@ -197,11 +199,11 @@ namespace VendTech.BLL.Managers
             }
         }
 
-        PlatformModel IPlatformManager.GetPlatformById(long platformId)
+        async Task<PlatformModel> IPlatformManager.GetPlatformById(long platformId)
         {
             try
             {
-                return Context.Platforms.Where(d => d.PlatformId == platformId)
+                return await Context.Platforms.Where(d => d.PlatformId == platformId)
                     .Select(d => new PlatformModel
                     {
                         Enabled = d.Enabled,
@@ -214,7 +216,7 @@ namespace VendTech.BLL.Managers
                         PlatformApiConnId = d.PlatformApiConnId,
                         Logo = d.Logo,
                     })
-                    .FirstOrDefault();
+                    .FirstOrDefaultAsync();
 
             }
             catch (Exception)

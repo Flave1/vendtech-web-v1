@@ -16,7 +16,7 @@ namespace VendTech.BLL.PlatformApi
 {
     public class PlatformApi_Sochitel : AbstractPlatformApiConnection
     {
-        public override ExecutionResponse CheckStatus(ExecutionContext executionContext)
+        public override async Task<ExecutionResponse> CheckStatus(ExecutionContext executionContext)
         {
             ExecutionResponse response = new ExecutionResponse();
 
@@ -45,7 +45,7 @@ namespace VendTech.BLL.PlatformApi
                 Request = json,
             };
 
-            base.ExecutePOSTRequest(apiRequestInfo, url, payload);
+            await base.ExecutePOSTRequest(apiRequestInfo, url, payload);
 
             response.AddApiCall(apiRequestInfo);
 
@@ -82,7 +82,7 @@ namespace VendTech.BLL.PlatformApi
             return response;
         }
 
-        public override ExecutionResponse Execute(ExecutionContext executionContext)
+        public override async Task<ExecutionResponse> Execute(ExecutionContext executionContext)
         {
             ExecutionResponse response = new ExecutionResponse();
 
@@ -120,7 +120,7 @@ namespace VendTech.BLL.PlatformApi
                 Request = json,
             };
 
-            base.ExecutePOSTRequest(apiRequestInfo, url, payload);
+            await base.ExecutePOSTRequest(apiRequestInfo, url, payload);
             
             response.AddApiCall(apiRequestInfo);
 

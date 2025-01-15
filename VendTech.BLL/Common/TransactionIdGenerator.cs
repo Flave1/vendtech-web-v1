@@ -1,20 +1,18 @@
 ﻿using Newtonsoft.Json;
-using Org.BouncyCastle.Crypto;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Threading.Tasks;
 using System.Web;
 using System.Web.Configuration;
-using VendTech.BLL.Managers;
 
 namespace VendTech.BLL.Common
 {
     public class TransactionIdGenerator
     {
+        private const string cacheKey = "TransactionIds";
         public bool TransactionIdExist(long transactionId)
         {
-            string cacheKey = "TransactionIds";
 
             if (HttpRuntime.Cache[cacheKey] != null)
             {
@@ -32,11 +30,15 @@ namespace VendTech.BLL.Common
 
         public static void SetTransactionId(long transactionId)
         {
-            string cacheKey = "TransactionIds";
             var Ids = HttpRuntime.Cache[cacheKey] as List<long>;
             if(Ids == null)
                 Ids = new List<long>();
             Ids.Add(transactionId);
+            HttpRuntime.Cache.Insert(cacheKey, Ids, null, DateTime.Now.AddMinutes(10), System.Web.Caching.Cache.NoSlidingExpiration);
+        }
+        public void EmptyTransactionId()
+        {
+            var Ids = new List<long>();
             HttpRuntime.Cache.Insert(cacheKey, Ids, null, DateTime.Now.AddMinutes(10), System.Web.Caching.Cache.NoSlidingExpiration);
         }
 

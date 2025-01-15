@@ -8,12 +8,12 @@ namespace VendTech.BLL.PlatformApi
 {
     public class PlatformApi_Edsa : AbstractPlatformApiConnection
     {
-        public override ExecutionResponse CheckStatus(ExecutionContext executionContext)
+        public override async Task<ExecutionResponse> CheckStatus(ExecutionContext executionContext)
         {
             throw new NotImplementedException();
         }
 
-        public override ExecutionResponse Execute(ExecutionContext executionContext)
+        public override async Task<ExecutionResponse> Execute(ExecutionContext executionContext)
         {
             throw new NotImplementedException();
         }

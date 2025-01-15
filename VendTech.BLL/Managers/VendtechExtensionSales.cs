@@ -245,7 +245,7 @@ namespace VendTech.BLL.Managers
                 $"2) RTS SERVICES IS DISABLED</br></br>" +
                 $"Please keep in mind to ENABLE Services again.</br></br>" +
                 $"{Utilities.DomainUrl}/Admin/Platform/ManagePlatforms (ENABLE EDSA ON VENDTECH PLATFORM)";
-            Utilities.SendEmail("vblell@gmail.com", "[URGENT] VENDTECH OUT ON FUNDS", body);
+            Utilities.SendEmail("vblell@gmail.com", "[URGENT] VENDTECH OUT OF FUNDS", body);
 
         }
 

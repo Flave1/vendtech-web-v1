@@ -11,7 +11,7 @@ using VendTech.DAL;
 using Newtonsoft.Json;
 using VendTech.BLL.PlatformApi;
 using VendTech.BLL.Common;
-using System.Data.Entity.Core;
+using System.Threading.Tasks;
 
 namespace VendTech.BLL.Managers
 {
@@ -20,13 +20,19 @@ namespace VendTech.BLL.Managers
         private IPlatformApiManager _platformApiManager;
         private IPlatformManager _platformManager;
         private IErrorLogManager _errorLog;
+        private readonly TransactionIdGenerator _transactionIdGenerator;
+        private readonly VendtechEntities _context;
         public PlatformTransactionManager(IPlatformApiManager platformApiManager,
             IPlatformManager platformManager,
-            IErrorLogManager errorLog)
+            IErrorLogManager errorLog,
+            TransactionIdGenerator transactionIdGenerator,
+            VendtechEntities context)
         {
             _platformApiManager = platformApiManager;
             _platformManager = platformManager;
             _errorLog = errorLog;
+            _transactionIdGenerator = transactionIdGenerator;
+            _context = context;
         }
 
         public PlatformTransactionModel New(long userId, int platformId, long posId, decimal amount, string beneficiary, string currency, int? apiConnId)
@@ -49,30 +55,30 @@ namespace VendTech.BLL.Managers
                 LastPendingCheck = 0,
             };
 
-            Context.PlatformTransactions.Add(platformTransaction);
-            Context.SaveChanges();
+            _context.PlatformTransactions.Add(platformTransaction);
+            _context.SaveChanges();
 
-            return Context.PlatformTransactions.Where(x => x.Id == platformTransaction.Id).Select(PlatformTransactionModel.Projection).FirstOrDefault();
+            return _context.PlatformTransactions.Where(x => x.Id == platformTransaction.Id).Select(PlatformTransactionModel.Projection).FirstOrDefault();
         }
 
-        public bool ProcessTransactionViaApi(long transactionId)
+        public async Task<bool> ProcessTransactionViaApi(long transactionId)
         {
             if (transactionId > 0)
             {
-                PlatformTransaction tranx = GetPendingTransactionById(transactionId);
+                PlatformTransaction tranx = await GetPendingTransactionById(transactionId);
                 PlatformModel platform;
                 if (tranx != null)
                 {
                     if (tranx.ApiConnectionId < 1)
                     {
-                        platform = _platformManager.GetPlatformById(tranx.PlatformId);
+                        platform = await _platformManager.GetPlatformById(tranx.PlatformId);
                         if (platform != null && platform.PlatformId > 0 && platform.PlatformApiConnId > 0)
                         {
                             //update the connection of the transaction
                             tranx.ApiConnectionId = platform.PlatformApiConnId;
                             tranx.UpdatedAt = DateTime.UtcNow;
 
-                            Context.SaveChanges();
+                            _context.SaveChanges();
                         }
                     }
                     
@@ -81,9 +87,9 @@ namespace VendTech.BLL.Managers
                         FlagTransactionWithStatus(tranx, TransactionStatus.Error);
                         return false;
                     }
-                    
-                    VendTech.DAL.PlatformApiConnection platformApiConnection = 
-                            Context.PlatformApiConnections.Where(p => p.Id == tranx.ApiConnectionId).FirstOrDefault();
+
+                    PlatformApiConnection platformApiConnection = 
+                            _context.PlatformApiConnections.Where(p => p.Id == tranx.ApiConnectionId).FirstOrDefault();
 
                     if (platformApiConnection == null)
                     {
@@ -98,7 +104,7 @@ namespace VendTech.BLL.Managers
                     executionContext.PlatformApiConfig = JsonConvert.DeserializeObject<Dictionary<string, string>>(config);
 
                     //Get the Per Platform API Conn Params
-                    PlatformPacParams platformPacParams = _platformApiManager.GetPlatformPacParams(tranx.PlatformId, (int) tranx.ApiConnectionId);
+                    PlatformPacParams platformPacParams = await _platformApiManager.GetPlatformPacParams(tranx.PlatformId, (int) tranx.ApiConnectionId);
                     if (platformPacParams != null && platformPacParams.ConfigDictionary != null)
                     {
                          executionContext.PerPlatformParams = platformPacParams.ConfigDictionary;
@@ -112,11 +118,11 @@ namespace VendTech.BLL.Managers
                     executionContext.AccountId = tranx.Beneficiary;
 
                     IPlatformApi api = _platformApiManager.GetPlatformApiInstanceByTypeId(platformApiConnection.PlatformApi.ApiType);
-                    ExecutionResponse execResponse = api.Execute(executionContext);
+                    ExecutionResponse execResponse = await api.Execute(executionContext);
 
                     //Save the logs
                     string logJSON = JsonConvert.SerializeObject(execResponse);
-                    VendTech.DAL.PlatformApiLog log = new VendTech.DAL.PlatformApiLog
+                    PlatformApiLog log = new PlatformApiLog
                     {
                         TransactionId = tranx.Id,
                         LogType = (int)ApiLogType.InitialRequest,
@@ -124,11 +130,11 @@ namespace VendTech.BLL.Managers
                         LogDate = DateTime.UtcNow
                     };
 
-                    Context.PlatformApiLogs.Add(log);
-                    Context.SaveChanges();
+                    _context.PlatformApiLogs.Add(log);
+                    await _context.SaveChangesAsync();
 
                     //Fetch from DB
-                    tranx = GetPendingTransactionById(transactionId);
+                    tranx = await GetPendingTransactionById(transactionId);
                     tranx.Status = execResponse.Status;
                     tranx.UserReference = execResponse.UserReference;
                     tranx.OperatorReference = execResponse.OperatorReference;
@@ -138,7 +144,7 @@ namespace VendTech.BLL.Managers
                     tranx.ApiTransactionId = execResponse.ApiTransactionId;
                     tranx.UpdatedAt = DateTime.UtcNow;
 
-                    Context.SaveChanges();
+                    await _context.SaveChangesAsync();
 
                     return true;
                 }
@@ -147,7 +153,7 @@ namespace VendTech.BLL.Managers
             return false;
         }
 
-        public void CheckPendingTransaction()
+        public async Task CheckPendingTransaction()
         { 
             using (var DbCtx = new VendtechEntities())
             {
@@ -175,7 +181,7 @@ namespace VendTech.BLL.Managers
                         if (pendingTranx != null && pendingTranx.ApiConnectionId > 0)
                         {
                             pendingTranx.LastPendingCheck = Utilities.ToUnixTimestamp(DateTime.UtcNow);
-                            DbCtx.SaveChanges();
+                            await DbCtx.SaveChangesAsync();
 
                             ExecutionContext executionContext = new ExecutionContext
                             {
@@ -183,7 +189,7 @@ namespace VendTech.BLL.Managers
                                 ApiTransactionId = pendingTranx.ApiTransactionId
                             };
 
-                            VendTech.DAL.PlatformApiConnection platformApiConnection =
+                            PlatformApiConnection platformApiConnection =
                                     DbCtx.PlatformApiConnections.Where(p => p.Id == pendingTranx.ApiConnectionId).FirstOrDefault();
 
                             //PlatformApi config
@@ -191,7 +197,7 @@ namespace VendTech.BLL.Managers
                             executionContext.PlatformApiConfig = JsonConvert.DeserializeObject<Dictionary<string, string>>(config);
 
                             //Get the Per Platform API Conn Params
-                            VendTech.DAL.PlatformPacParam platformPacParam = DbCtx.PlatformPacParams.FirstOrDefault(
+                            PlatformPacParam platformPacParam = DbCtx.PlatformPacParams.FirstOrDefault(
                             p => p.PlatformId == pendingTranx.PlatformId && p.PlatformApiConnectionId == pendingTranx.ApiConnectionId);
 
                             PlatformPacParams platformPacParams = PlatformPacParams.From(platformPacParam);
@@ -201,7 +207,7 @@ namespace VendTech.BLL.Managers
                             }
 
                             IPlatformApi api = _platformApiManager.GetPlatformApiInstanceByTypeId(platformApiConnection.PlatformApi.ApiType);
-                            ExecutionResponse execResponse = api.CheckStatus(executionContext);
+                            ExecutionResponse execResponse = await api.CheckStatus(executionContext);
 
                             //Save the logs
                             string logJSON = JsonConvert.SerializeObject(execResponse);
@@ -214,7 +220,7 @@ namespace VendTech.BLL.Managers
                             };
 
                             DbCtx.PlatformApiLogs.Add(log);
-                            DbCtx.SaveChanges();
+                            await DbCtx.SaveChangesAsync();
 
                             //Fetch from DB
                             pendingTranx = DbCtx.PlatformTransactions.Where(t => t.Id == pendingTranx.Id).FirstOrDefault();
@@ -240,7 +246,7 @@ namespace VendTech.BLL.Managers
                                 pendingTranx.ApiTransactionId = execResponse.ApiTransactionId;
                                 pendingTranx.UpdatedAt = DateTime.UtcNow;
 
-                                DbCtx.SaveChanges();
+                                await DbCtx.SaveChangesAsync();
 
                                 if (pendingTranx.Status == (int)TransactionStatus.Successful)
                                 {
@@ -256,16 +262,16 @@ namespace VendTech.BLL.Managers
                                                                             .OrderBy(l => l.LogDate)
                                                                             .ToList();
 
-                                    Logs tranxLogs = CreateLogs(logs);
+                                    Logs tranxLogs = await CreateLogs(logs);
 
                                     transactionDetail.Request = tranxLogs.Request.ToString();
                                     transactionDetail.Response = tranxLogs.Response.ToString();
-                                    transactionDetail.TransactionId = Utilities.NewTransactionId();
+                                    transactionDetail.TransactionId = await _transactionIdGenerator.GenerateNewTransactionId();
 
                                     DbCtx.TransactionDetails.Add(transactionDetail);
                                     PlatformTransaction tranx = DbCtx.PlatformTransactions.Where(t => t.Id == tranxModel.Id).FirstOrDefault();
                                     tranx.TransactionDetailId = transactionDetail.TransactionDetailsId;
-                                    DbCtx.SaveChanges();
+                                    await DbCtx.SaveChangesAsync();
                                 }
                                 //Transaction failed so reverse balance
                                 else
@@ -289,13 +295,13 @@ namespace VendTech.BLL.Managers
             //SELECT DATEDIFF(SECOND,'1970-01-01', GETUTCDATE())
         }
 
-        public List<PlatformApiLogModel> GetTransactionLogs(long transactionId)
+        public async Task<List<PlatformApiLogModel>> GetTransactionLogs(long transactionId)
         {
-            return Context.PlatformApiLogs
+            return await _context.PlatformApiLogs
                 .Where(o => o.TransactionId == transactionId)
                 .Select(PlatformApiLogModel.Projection)
                 .OrderBy(o => o.LogDate)
-                .ToList();
+                .ToListAsync();
         }
 
         public PagingResult<MeterRechargeApiListingModel> GetUserAirtimeRechargeTransactionDetailsHistory(ReportSearchModel model, bool callFromAdmin)
@@ -305,17 +311,17 @@ namespace VendTech.BLL.Managers
             //    model.RecordsPerPage = 10;
             //}
             var result = new PagingResult<MeterRechargeApiListingModel>();
-            var query = Context.TransactionDetails.OrderByDescending(d => d.CreatedAt)
+            var query = _context.TransactionDetails.OrderByDescending(d => d.CreatedAt)
                 .Where(p => !p.IsDeleted && p.Finalised == true && p.POSId != null && p.Platform.PlatformType == (int) PlatformTypeEnum.AIRTIME && p.PlatFormId == model.PlatformId);
 
             if (model.VendorId > 0)
             {
-                var user = Context.Users.FirstOrDefault(p => p.UserId == model.VendorId);
+                var user = _context.Users.FirstOrDefault(p => p.UserId == model.VendorId);
                 var posIds = new List<long>();
                 if (callFromAdmin)
-                    posIds = Context.POS.Where(p => p.VendorId == model.VendorId).Select(p => p.POSId).ToList();
+                    posIds = _context.POS.Where(p => p.VendorId == model.VendorId).Select(p => p.POSId).ToList();
                 else
-                    posIds = Context.POS.Where(p => p.VendorId != null && (p.VendorId == user.FKVendorId)).Select(p => p.POSId).ToList();
+                    posIds = _context.POS.Where(p => p.VendorId != null && (p.VendorId == user.FKVendorId)).Select(p => p.POSId).ToList();
                 query = query.Where(p => posIds.Contains(p.POSId.Value));
             }
 
@@ -351,7 +357,7 @@ namespace VendTech.BLL.Managers
 
             if (query != null)
             {
-                result.PagedList = Context.PlatformTransactions
+                result.PagedList = _context.PlatformTransactions
                     .Include(p => p.Platform)
                     .Where(p => query.IsAdmin || (p.UserId == query.UserId))
                     .Where(p => (query.PlatformId < 1) ?  true : p.PlatformId == query.PlatformId)
@@ -367,36 +373,36 @@ namespace VendTech.BLL.Managers
 
             return result;
         }
-        private static void FlagTransactionWithStatus(VendTech.DAL.PlatformTransaction tranx, TransactionStatus status)
+        private void FlagTransactionWithStatus(VendTech.DAL.PlatformTransaction tranx, TransactionStatus status)
         {
             if (tranx != null)
             {
                 tranx.Status = (int)status;
                 tranx.UpdatedAt = DateTime.UtcNow;
-                Context.SaveChanges();
+                _context.SaveChanges();
             }
         }
 
-        private static VendTech.DAL.PlatformTransaction GetPendingTransactionById(long id)
+        private async Task<PlatformTransaction> GetPendingTransactionById(long id)
         {
-            VendTech.DAL.PlatformTransaction tranx = Context.PlatformTransactions
+            PlatformTransaction tranx = await _context.PlatformTransactions
                 .Where(p => 
                     p.Id == id &&
                     (p.Status == (int)TransactionStatus.Pending || p.Status == (int)TransactionStatus.InProgress)
                  )
-                .FirstOrDefault();
+                .FirstOrDefaultAsync();
             return tranx;
         }
 
-        public PlatformTransactionModel GetPlatformTransactionById(DataQueryModel query, long id)
+        public async Task<PlatformTransactionModel> GetPlatformTransactionById(DataQueryModel query, long id)
         {
             if (id > 0 & query != null)
             {
-                var tranx = Context.PlatformTransactions
+                var tranx = await _context.PlatformTransactions
                                     .Where(p => p.Id == id)
                                     .Where(p => query.IsAdmin ? true : p.UserId == query.UserId)
                                     .Select(PlatformTransactionModel.Projection)
-                                    .FirstOrDefault();
+                                    .FirstOrDefaultAsync();
                 
                 if (tranx != null)
                 {
@@ -407,10 +413,10 @@ namespace VendTech.BLL.Managers
             return new PlatformTransactionModel();
         }
 
-        public AirtimeReceiptModel RechargeAirtime(PlatformTransactionModel model)
+        public async Task<AirtimeReceiptModel> RechargeAirtime(PlatformTransactionModel model)
         {
             var response = new AirtimeReceiptModel { ReceiptStatus = new ReceiptStatus() };
-            var user = Context.Users.FirstOrDefault(p => p.UserId == model.UserId);
+            var user = await _context.Users.FirstOrDefaultAsync(p => p.UserId == model.UserId);
             if (user == null)
             {
                 response.ReceiptStatus.Status = "unsuccessful";
@@ -418,7 +424,7 @@ namespace VendTech.BLL.Managers
                 return response;
             }
             var posid = user.POS.FirstOrDefault().POSId;
-            var pos = Context.POS.FirstOrDefault(p => p.POSId == posid);
+            var pos = await _context.POS.FirstOrDefaultAsync(p => p.POSId == posid);
 
             if (pos.Balance == null || pos.Balance.Value < model.Amount)
             {
@@ -433,43 +439,42 @@ namespace VendTech.BLL.Managers
             {
                 //Deduct the amount from the balance so the user does not go and initiate another transaction while this is still in progress
                 pos.Balance = pos.Balance.Value - model.Amount;
-                Context.SaveChanges();
+                await _context.SaveChangesAsync();
 
                 balanceDeducted = true;
 
                 //Is the product configured with a Connection ID
-                PlatformApiConnection apiConn = Context.PlatformApiConnections.Where(x => x.PlatformId == model.PlatformId).FirstOrDefault();
+                PlatformApiConnection apiConn = await _context.PlatformApiConnections.Where(x => x.PlatformId == model.PlatformId).FirstOrDefaultAsync();
 
-                PlatformTransactionModel tranxModel = this.New(model.UserId, model.PlatformId, pos.POSId, model.Amount,
+                PlatformTransactionModel tranxModel = New(model.UserId, model.PlatformId, pos.POSId, model.Amount,
                     model.Beneficiary, model.Currency, apiConn?.Id);
 
                 //Process the transaction via the API and 
-                this.ProcessTransactionViaApi(tranxModel.Id);
+                await ProcessTransactionViaApi(tranxModel.Id);
 
-                int Status = Context.PlatformTransactions.Where(t => t.Id == tranxModel.Id).Select(t => t.Status).FirstOrDefault();
+                int Status = await _context.PlatformTransactions.Where(t => t.Id == tranxModel.Id).Select(t => t.Status).FirstOrDefaultAsync();
 
                 //If it succeeds, then transfer to TransactionDetail 
                 if (Status == (int)TransactionStatus.Successful)
                 {
-
                     TransactionDetail transactionDetail = CreateTransactionDetail(tranxModel, (int)RechargeMeterStatusEnum.Success);
 
-                    List<PlatformApiLogModel> logs = GetTransactionLogs(tranxModel.Id);
-                    Logs tranxLogs = CreateLogs( logs );
+                    List<PlatformApiLogModel> logs = await GetTransactionLogs(tranxModel.Id);
+                    Logs tranxLogs = await CreateLogs( logs );
 
                     transactionDetail.Request = tranxLogs.Request.ToString();
                     transactionDetail.Response = tranxLogs.Response.ToString();
-                    transactionDetail.TransactionId = Utilities.NewTransactionId();
+                    transactionDetail.TransactionId = await _transactionIdGenerator.GenerateNewTransactionId();
 
-                    Context.TransactionDetails.Add(transactionDetail);
-                    PlatformTransaction tranx = Context.PlatformTransactions.FirstOrDefault(t => t.Id == tranxModel.Id);
+                    _context.TransactionDetails.Add(transactionDetail);
+                    PlatformTransaction tranx = await _context.PlatformTransactions.FirstOrDefaultAsync(t => t.Id == tranxModel.Id);
                     tranx.TransactionDetailId = transactionDetail.TransactionDetailsId;
 
                     transactionDetail.TenderedAmount = model.Amount;
                     transactionDetail.Amount = model.Amount;
                     transactionDetail.CurrentVendorBalance = pos.Balance;
                     transactionDetail.BalanceBefore = (pos.Balance + model.Amount);
-                    Context.SaveChanges();
+                    await _context.SaveChangesAsync();
                     response = GenerateReceipt(transactionDetail);
                     Push_notification_to_user(user, model, transactionDetail.TransactionDetailsId);
                     return response;
@@ -483,14 +488,14 @@ namespace VendTech.BLL.Managers
                 {
                     if (balanceDeducted)
                     {
-                        ReverseBalanceDeduction(Context, pos, model.Amount);
+                        ReverseBalanceDeduction(_context, pos, model.Amount);
                     }
                 }
                 else
                 {
                     if (balanceDeducted)
                     {
-                        ReverseBalanceDeduction(Context, pos, model.Amount);
+                        ReverseBalanceDeduction(_context, pos, model.Amount);
                     }
                 }
 
@@ -504,7 +509,7 @@ namespace VendTech.BLL.Managers
                 //If balance was deducted before exception then reverse
                 if (balanceDeducted)
                 {
-                    ReverseBalanceDeduction(Context, pos, model.Amount);
+                    ReverseBalanceDeduction(_context, pos, model.Amount);
                 }
                 response.ReceiptStatus.Status = "pending";
                 response.ReceiptStatus.Message = "Airtime recharge failed due to an error. Please contact Administrator";
@@ -520,7 +525,7 @@ namespace VendTech.BLL.Managers
             obj.UserId = model.UserId;
             obj.Id = MeterRechargeId;
             obj.Title = "Airtime recharged successfully";
-            obj.Message = $"Your phone has successfully recharged with NLe {Utilities.FormatAmount(model.Amount)}";
+            obj.Message = $"Your phone has successfully recharged with SLe {Utilities.FormatAmount(model.Amount)}";
             obj.NotificationType = NotificationTypeEnum.AirtimeRecharge;
             obj.Balance = user.POS.FirstOrDefault().Balance.Value;
             foreach (var item in deviceTokens)
@@ -573,7 +578,7 @@ namespace VendTech.BLL.Managers
         {
             if (tranxModel == null)
             {
-                throw new ArgumentNullException("PlatformTransaction to covert to TransactionDetail cannot be null");
+                throw new ArgumentNullException("PlatformTransaction to convert to TransactionDetail cannot be null");
             }
 
             var now = DateTime.UtcNow;
@@ -599,7 +604,7 @@ namespace VendTech.BLL.Managers
             return tranxDetail;
         }
 
-        private static Logs CreateLogs(List<PlatformApiLogModel> logs)
+        private static async Task<Logs> CreateLogs(List<PlatformApiLogModel> logs)
         {
             StringBuilder request = new StringBuilder();
             StringBuilder response = new StringBuilder();
@@ -633,12 +638,12 @@ namespace VendTech.BLL.Managers
                 }
             }
 
-            return new Logs { Request = request, Response = response };
+            return await Task.Run(() => new Logs { Request = request, Response = response });
         }
 
         public AirtimeReceiptModel GetAirtimeReceipt(string traxId)
         {
-            var trax = Context.TransactionDetails.Where(e => e.TransactionId == traxId).ToList().FirstOrDefault();
+            var trax = _context.TransactionDetails.Where(e => e.TransactionId == traxId).ToList().FirstOrDefault();
             if (trax != null)
             {
                 var receipt = GenerateReceipt(trax);
@@ -649,7 +654,7 @@ namespace VendTech.BLL.Managers
 
         ReceiptModel IPlatformTransactionManager.ReturnAirtimeReceipt(string rechargeId)
         {
-            var transaction_by_token = Context.TransactionDetails.Where(e => e.TransactionId == rechargeId).FirstOrDefault();
+            var transaction_by_token = _context.TransactionDetails.Where(e => e.TransactionId == rechargeId).FirstOrDefault();
             if (transaction_by_token != null)
             {
                 var receipt = Build_receipt_model_from_dbtransaction_detail(transaction_by_token);

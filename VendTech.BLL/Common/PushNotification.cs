@@ -124,7 +124,7 @@ namespace VendTech.BLL.Common
             }
         }
 
-
+        [Obsolete]
         public static string SendNotificationTOMobile_OLD(PushNotificationModel model)
         {
             try

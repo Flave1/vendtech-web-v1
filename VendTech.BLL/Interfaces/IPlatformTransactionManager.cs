@@ -1,10 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using VendTech.BLL.Models;
-using VendTech.DAL;
 
 namespace VendTech.BLL.Interfaces
 {
@@ -12,12 +9,12 @@ namespace VendTech.BLL.Interfaces
     {
         PlatformTransactionModel New(long UserId, int platformId, long posId, Decimal amount, string beneficiary, string currency, int? apiConnId);
         DataTableResultModel<PlatformTransactionModel> GetPlatformTransactionsForDataTable(DataQueryModel query);
-        PlatformTransactionModel GetPlatformTransactionById(DataQueryModel query, long id);
-        bool ProcessTransactionViaApi(long transactionId);
-        List<PlatformApiLogModel> GetTransactionLogs(long transactionId);
-        void CheckPendingTransaction();
+        Task<PlatformTransactionModel> GetPlatformTransactionById(DataQueryModel query, long id);
+        Task<bool> ProcessTransactionViaApi(long transactionId);
+        Task<List<PlatformApiLogModel>> GetTransactionLogs(long transactionId);
+        Task CheckPendingTransaction();
         PagingResult<MeterRechargeApiListingModel> GetUserAirtimeRechargeTransactionDetailsHistory(ReportSearchModel model, bool callFromAdmin = false);
-        AirtimeReceiptModel RechargeAirtime(PlatformTransactionModel model);
+        Task<AirtimeReceiptModel> RechargeAirtime(PlatformTransactionModel model);
         AirtimeReceiptModel GetAirtimeReceipt(string traxId);
         ReceiptModel ReturnAirtimeReceipt(string rechargeId);
     }

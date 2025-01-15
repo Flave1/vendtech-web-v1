@@ -787,7 +787,6 @@ namespace VendTech.BLL.Common
             var _errorManager = DependencyResolver.Current.GetService<IErrorLogManager>();
             // Get the current application directory
             string currentDirectory = AppDomain.CurrentDomain.BaseDirectory;
-            return null;
             // Combine the directory and file name to get the full path
             //string filePath = Path.Combine(currentDirectory, "Templates/"+fileName);
             string filePath = @"C:\Inetpub\vhosts\vendtechsl.com\httpdocs\Templates\DepositPDF.html";

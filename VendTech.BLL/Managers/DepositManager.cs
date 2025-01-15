@@ -926,7 +926,7 @@ namespace VendTech.BLL.Managers
         PagingResult<DepositAuditModel> IDepositManager.GetAuditReportsPagedList(ReportSearchModel model, bool callFromAdmin)
         {
             var result = new PagingResult<DepositAuditModel>();
-            var query = _context.DepositLogs.OrderByDescending(p => p.Deposit.CreatedAt).Where(p => p.NewStatus == (int)DepositPaymentStatusEnum.Released);
+            var query = _context.DepositLogs.OrderByDescending(p => p.Deposit.TransactionId).Where(p => p.NewStatus == (int)DepositPaymentStatusEnum.Released);
             if (model.From != null)
             {
                 query = query.Where(p => DbFunctions.TruncateTime(p.Deposit.CreatedAt) >= DbFunctions.TruncateTime(model.From));

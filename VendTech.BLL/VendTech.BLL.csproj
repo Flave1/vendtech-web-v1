@@ -228,6 +228,7 @@
     <Compile Include="Interfaces\IUserManager.cs" />
     <Compile Include="Interfaces\IRTSEDSAManager.cs" />
     <Compile Include="Interfaces\IVendtechExtensionSales.cs" />
+    <Compile Include="Jobs\CommonShedulesJob.cs" />
     <Compile Include="Jobs\UnclearedDepositsSheduleJob.cs" />
     <Compile Include="Jobs\JobSchedular.cs" />
     <Compile Include="Jobs\BalanceLowSheduleJob.cs" />

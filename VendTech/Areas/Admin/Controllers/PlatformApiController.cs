@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Dynamic;
 using System.Net.Configuration;
+using System.Threading.Tasks;
 using System.Web;
 using System.Web.Helpers;
 using System.Web.Mvc;
@@ -79,9 +80,9 @@ namespace VendTech.Areas.Admin.Controllers
         }
 
         [HttpGet]
-        public ActionResult PlatformApiConnections(int id)
+        public async Task<ActionResult> PlatformApiConnections(int id)
         {
-            PlatformModel model = _platformManager.GetPlatformById(id);
+            PlatformModel model = await _platformManager.GetPlatformById(id);
             if (model == null) return RedirectToAction("PlatformApis");
 
             ICollection<PlatformApiConnectionModel> apiConns = _platformApiManager.GetPlatformApiConnectionsForPlatform(id);
@@ -96,10 +97,10 @@ namespace VendTech.Areas.Admin.Controllers
         }
 
         [HttpGet]
-        public ActionResult CreateApiConnection()
+        public async Task<ActionResult> CreateApiConnection()
         {
             int id = int.Parse(Request.QueryString["pid"]);
-            PlatformModel model = _platformManager.GetPlatformById(id);
+            PlatformModel model = await _platformManager.GetPlatformById(id);
             if (model == null) return RedirectToAction("PlatformApis");
 
             ViewBag.MainPageHeader = "Create API Connection for " + model.Title + " (#" + id + ")";
@@ -117,9 +118,9 @@ namespace VendTech.Areas.Admin.Controllers
         }
 
         [HttpPost]
-        public ActionResult CreateApiConnection(PlatformApiConnectionModel connModelForm)
+        public async Task<ActionResult> CreateApiConnection(PlatformApiConnectionModel connModelForm)
         { 
-            PlatformModel model = _platformManager.GetPlatformById(connModelForm.PlatformId);
+            PlatformModel model = await _platformManager.GetPlatformById(connModelForm.PlatformId);
             if (model == null) return RedirectToAction("PlatformApis");
 
             //Validate
@@ -177,7 +178,7 @@ namespace VendTech.Areas.Admin.Controllers
         }
 
         [HttpGet]
-        public ActionResult ConfigureApiConnection(int id)
+        public async Task<ActionResult> ConfigureApiConnection(int id)
         {
             PlatformApiConnectionModel model = _platformApiManager.GetPlatformApiConnectionById(id);
             if (model.IsNew()) return RedirectToAction("PlatformApis");
@@ -189,7 +190,7 @@ namespace VendTech.Areas.Admin.Controllers
 
             if (htmlFields.Count == 0) return RedirectToAction("PlatformApis");
 
-            PlatformPacParams platformPacParams = _platformApiManager.GetPlatformPacParams(model.PlatformId, model.Id);
+            PlatformPacParams platformPacParams = await _platformApiManager.GetPlatformPacParams(model.PlatformId, model.Id);
             if (platformPacParams != null && platformPacParams.ConfigDictionary != null)
             {
                 foreach(var kvp in platformPacParams.ConfigDictionary)
