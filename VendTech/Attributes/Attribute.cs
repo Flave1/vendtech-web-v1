@@ -95,11 +95,15 @@ namespace VendTech.Attributes
             {
                 try
                 {
-                    sessionToken = actionContext.Request.Headers.GetValues("Token").FirstOrDefault();
+                    if (!actionContext.Request.Headers.Contains("Token"))
+                    {
+                        actionContext.Response = new JsonContent("Token is missing!", Status.Failed).ConvertToHttpResponseOK();
+                        return;
+                    }
+                    //sessionToken = actionContext.Request.Headers.GetValues("Token").FirstOrDefault();
                 }
                 catch (Exception)
                 {
-
                     actionContext.Response = new JsonContent("Token Or Passcode not present!", Status.Failed).ConvertToHttpResponseOK();
                     return;
                 }

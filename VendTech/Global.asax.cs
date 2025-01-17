@@ -1,4 +1,5 @@
-﻿using Quartz;
+﻿using Microsoft.Office.Interop.Excel;
+using Quartz;
 using Quartz.Impl;
 using System;
 using System.Security.Cryptography;
@@ -8,6 +9,7 @@ using System.Web.Mvc;
 using System.Web.Optimization;
 using System.Web.Routing;
 using VendTech.App_Start;
+using VendTech.BLL.Common;
 using VendTech.BLL.Jobs;
 using VendTech.BLL.Models;
 
@@ -20,38 +22,42 @@ namespace VendTech
             IScheduler scheduler = StdSchedulerFactory.GetDefaultScheduler();
             scheduler.Start();
 
-            /////
-            ITrigger firstTrigger = TriggerBuilder.Create().StartNow()
+            /// APLICATION USE TIME
+            ITrigger appUseTimeTrigger = TriggerBuilder.Create().StartNow()
             .WithSimpleSchedule (s => s.WithIntervalInMinutes(1).RepeatForever()).Build();
-            IJobDetail jobFirst = JobBuilder.Create<ApplicationNotUsedSchedulerJob>().Build();
-            /////
+            IJobDetail appUseTimeJob = JobBuilder.Create<ApplicationNotUsedSchedulerJob>().Build();
+            scheduler.ScheduleJob(appUseTimeJob, appUseTimeTrigger);
+            ///
 
 
-            /////
-            //ITrigger secondTrigger = TriggerBuilder.Create().StartNow()
+            /// PENDING TRANSACTIONS
+            //ITrigger pendingTransactionTrigger = TriggerBuilder.Create().StartNow()
             //.WithSimpleSchedule(s => s.WithIntervalInSeconds(30).RepeatForever()).Build();
-            //IJobDetail jobSecond = JobBuilder.Create<PendingTransactionCheckJob>().Build();
-            /////
-
-
+            //IJobDetail pendingTransactionKob = JobBuilder.Create<PendingTransactionCheckJob>().Build();
+            //scheduler.ScheduleJob(pendingTransactionKob, pendingTransactionTrigger);
             ///
-            ITrigger thirdTrigger = TriggerBuilder.Create().StartNow()
+
+
+            /// LOW BALANCE CHECK
+            ITrigger balanceLowTrigger = TriggerBuilder.Create().StartNow()
             .WithSimpleSchedule(s => s.WithIntervalInHours(12).RepeatForever()).Build();
-            IJobDetail jobThird = JobBuilder.Create<BalanceLowSheduleJob>().Build();
+            IJobDetail balanceLowJob = JobBuilder.Create<BalanceLowSheduleJob>().Build();
+            scheduler.ScheduleJob(balanceLowJob, balanceLowTrigger);
             ///
 
-            ///
-            ITrigger fourthTrigger = TriggerBuilder.Create().StartNow()
+            /// UNCLEARED BALANCE
+            ITrigger unclearedDepositsTrigger = TriggerBuilder.Create().StartNow()
             .WithSimpleSchedule(s => s.WithIntervalInHours(12).RepeatForever()).Build();
-            IJobDetail jobFourth = JobBuilder.Create<UnclearedDepositsSheduleJob>().Build();
+            IJobDetail unclearedDepositsJob = JobBuilder.Create<UnclearedDepositsSheduleJob>().Build();
+            scheduler.ScheduleJob(unclearedDepositsJob, unclearedDepositsTrigger);
             ///
 
-            scheduler.ScheduleJob(jobFirst, firstTrigger);
-            //scheduler.ScheduleJob(jobSecond, secondTrigger);
-            scheduler.ScheduleJob(jobThird, thirdTrigger);
-            scheduler.ScheduleJob(jobFourth, fourthTrigger);
-
-
+            /// COMMON
+            //ITrigger commonJobsTrigger = TriggerBuilder.Create().StartNow()
+            //.WithSimpleSchedule(s => s.WithIntervalInHours(24).RepeatForever()).Build();
+            //IJobDetail commonJobs = JobBuilder.Create<CommonShedulesJob>().Build();
+            //scheduler.ScheduleJob(commonJobs, commonJobsTrigger);
+            ///
 
             AreaRegistration.RegisterAllAreas();
             GlobalConfiguration.Configure(WebApiConfig.Register);
@@ -103,6 +109,13 @@ namespace VendTech
             httpContext.Response.Redirect("~/Home/Index");
         }
 
+        private void LogOperationCanceledException(OperationCanceledException ex)
+        {
+            string logMessage = $"handled Operation canceled: {ex.Message}\nOccurred at: {DateTime.UtcNow}\nStackTrace:";
+            Utilities.LogExceptionToDatabase(ex, logMessage);
+        }
+
+
         protected void Application_Error()
         {
 
@@ -111,9 +124,25 @@ namespace VendTech
             {
                 try
                 {
+
+
+                    Exception error = Server.GetLastError();
+                    // Check if the exception is an OperationCanceledException
+                    if (error is OperationCanceledException canceledException)
+                    {
+                        LogOperationCanceledException(canceledException);
+                        Server.ClearError(); // Clear the error to prevent further handling
+                        return;
+                    }
+
+
+
                     RequestContext requestContext = ((MvcHandler)httpContext.CurrentHandler).RequestContext;
                     /* When the request is ajax the system can automatically handle a mistake with a JSON response. 
                    Then overwrites the default response */
+
+                   
+
                     if (requestContext.HttpContext.Request.IsAjaxRequest())
                     {
                         httpContext.Response.Clear();

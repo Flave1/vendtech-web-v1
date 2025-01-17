@@ -183,7 +183,7 @@ namespace VendTech.Areas.Admin.Controllers
 
                         depositAudit = _depositManager.GetDepositAuditReports(model, true);
 
-                        return View("ManageDepositAuditReportV2", depositAudit);
+                        return View("ManageDepositAuditReport", depositAudit);
                     }
                     if (val == "2011")
                     {

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
 using VendTech.Attributes;
@@ -31,7 +32,7 @@ namespace VendTech.Areas.Admin.Controllers
             _platformTransactionManager = platformTransactionManager;
         }
         // GET: PlatformTransaction table
-        public ActionResult Index(
+        public async Task<ActionResult> Index(
             int? pid,
             string reference,
             string beneficiary,
@@ -76,7 +77,7 @@ namespace VendTech.Areas.Admin.Controllers
             {
                 ViewBag.IsFilteredByPlatform = true;
                 ViewBag.PlatformId = PlatformId;
-                PlatformModel platform = _platformManager.GetPlatformById(PlatformId);
+                PlatformModel platform = await _platformManager.GetPlatformById(PlatformId);
                 ViewBag.MainPageHeader = platform.Title + " " + ViewBag.MainPageHeader;
             }
 

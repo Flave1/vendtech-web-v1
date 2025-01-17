@@ -11,8 +11,8 @@ namespace VendTech.BLL.PlatformApi
 {
     public interface IPlatformApi
     {
-        ExecutionResponse Execute(ExecutionContext executionContext);
-        ExecutionResponse CheckStatus(ExecutionContext executionContext);
+        Task<ExecutionResponse> Execute(ExecutionContext executionContext);
+        Task<ExecutionResponse> CheckStatus(ExecutionContext executionContext);
         IDictionary<string, PlatformApiConfig> GetPlatformApiConfigFields();
     }
 

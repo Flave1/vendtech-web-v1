@@ -468,13 +468,13 @@ https://go.microsoft.com/fwlink/?LinkID=208121.
       <publishTime>01/27/2021 21:48:32</publishTime>
     </File>
     <File Include="bin/VendTech.BLL.dll">
-      <publishTime>01/02/2025 12:37:16</publishTime>
+      <publishTime>01/15/2025 07:26:40</publishTime>
     </File>
     <File Include="bin/VendTech.BLL.dll.config">
       <publishTime>11/13/2024 17:19:03</publishTime>
     </File>
     <File Include="bin/VendTech.BLL.pdb">
-      <publishTime>01/02/2025 11:01:01</publishTime>
+      <publishTime>01/10/2025 17:31:52</publishTime>
     </File>
     <File Include="bin/VendTech.DAL.dll">
       <publishTime>12/11/2024 05:47:35</publishTime>
@@ -486,22 +486,22 @@ https://go.microsoft.com/fwlink/?LinkID=208121.
       <publishTime>12/11/2024 05:47:35</publishTime>
     </File>
     <File Include="bin/VendTech.dll">
-      <publishTime>01/02/2025 12:37:19</publishTime>
+      <publishTime>01/15/2025 07:26:43</publishTime>
     </File>
     <File Include="bin/VendTech.dll.config">
-      <publishTime>12/24/2024 08:11:04</publishTime>
+      <publishTime>01/10/2025 18:07:18</publishTime>
     </File>
     <File Include="bin/VendTech.Framework.dll">
-      <publishTime>01/02/2025 12:37:17</publishTime>
+      <publishTime>01/15/2025 07:26:41</publishTime>
     </File>
     <File Include="bin/VendTech.Framework.dll.config">
       <publishTime>11/13/2024 17:17:36</publishTime>
     </File>
     <File Include="bin/VendTech.Framework.pdb">
-      <publishTime>12/14/2024 17:37:46</publishTime>
+      <publishTime>01/10/2025 17:31:53</publishTime>
     </File>
     <File Include="bin/VendTech.pdb">
-      <publishTime>12/11/2024 09:06:49</publishTime>
+      <publishTime>01/10/2025 17:31:55</publishTime>
     </File>
     <File Include="bin/WebActivatorEx.dll">
       <publishTime>04/11/2022 07:09:00</publishTime>
@@ -552,7 +552,7 @@ https://go.microsoft.com/fwlink/?LinkID=208121.
       <publishTime>10/02/2024 09:49:24</publishTime>
     </File>
     <File Include="Scripts/signalr/admin_connection.js">
-      <publishTime>07/16/2024 10:30:22</publishTime>
+      <publishTime>01/11/2025 18:16:44</publishTime>
     </File>
     <File Include="Scripts/signalr/admin_dashboard_control.js">
       <publishTime>12/20/2024 06:07:36</publishTime>
@@ -570,7 +570,7 @@ https://go.microsoft.com/fwlink/?LinkID=208121.
       <publishTime>07/15/2024 19:45:34</publishTime>
     </File>
     <File Include="Scripts/signalr/customer_connection.js">
-      <publishTime>07/16/2024 10:30:43</publishTime>
+      <publishTime>01/11/2025 18:20:25</publishTime>
     </File>
     <File Include="Scripts/signalr/customer_control.js">
       <publishTime>07/16/2024 10:18:28</publishTime>
