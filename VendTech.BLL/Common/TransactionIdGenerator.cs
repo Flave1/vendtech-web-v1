@@ -17,13 +17,13 @@ namespace VendTech.BLL.Common
             if (HttpRuntime.Cache[cacheKey] != null)
             {
                 var Ids = HttpRuntime.Cache[cacheKey] as List<long>;
-                Utilities.LogExceptionToDatabase(new Exception($"Checking TransactionIdExist for {transactionId}"), JsonConvert.SerializeObject(Ids));
                 if (Ids != null && !Ids.Contains(transactionId))
-                {
                     return false;
-                }
                 else
+                {
+                    Utilities.LogExceptionToDatabase(new Exception($"ID EXIST : {transactionId}"), JsonConvert.SerializeObject(Ids));
                     return true;
+                }
             }
             return false;
         }

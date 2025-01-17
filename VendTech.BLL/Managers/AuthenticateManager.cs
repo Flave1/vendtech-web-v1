@@ -216,46 +216,47 @@ namespace VendTech.BLL.Managers
             }
         }
 
-        UserModel IAuthenticateManager.SaveAndLoginPassCode(string passCode, long userId)
+        public UserModel SaveAndLoginPassCode(string passCode, long userId)
         {
             try
             {
-                var userModel = new UserModel(); 
-                var userPos = Context.POS.FirstOrDefault(p => p.VendorId == userId); 
-                if (userPos == null) 
-                    return userModel; 
+                var userModel = new UserModel();
 
-
-                userPos.PassCode = passCode; 
-                Context.SaveChanges();
-
-                userModel = Context.Users.Where(x => x.FKVendorId == userPos.VendorId && (UserRoles.AppUser == x.UserRole.Role
-                       || UserRoles.Vendor == x.UserRole.Role)
-                       && (x.Status == (int)UserStatusEnum.Active
-                       || x.Status == (int)UserStatusEnum.Pending
-                       || x.Status == (int)UserStatusEnum.PasswordNotReset))
-                           .ToList()
-                           .Select(x => new UserModel(x))
-                           .FirstOrDefault();
-                if (userModel != null)
+                // Retrieve the user position
+                var userPos = Context.POS.FirstOrDefault(p => p.VendorId == userId);
+                if (userPos == null)
                 {
                     return userModel;
                 }
-                userModel = Context.Users.Where(x => x.UserId == userPos.VendorId && (UserRoles.AppUser == x.UserRole.Role
-                       || UserRoles.Vendor == x.UserRole.Role)
-                       && (x.Status == (int)UserStatusEnum.Active
-                       || x.Status == (int)UserStatusEnum.Pending
-                       || x.Status == (int)UserStatusEnum.PasswordNotReset))
-                           .ToList()
-                           .Select(x => new UserModel(x))
-                           .FirstOrDefault();
-                            return userModel;  
-                        }
+
+                // Update passcode
+                userPos.PassCode = passCode;
+                Context.SaveChanges();
+
+                // Fetch user details
+                var userQuery = Context.Users
+                    .Where(x =>
+                        (x.FKVendorId == userPos.VendorId || x.UserId == userPos.VendorId) &&
+                        (UserRoles.AppUser == x.UserRole.Role || UserRoles.Vendor == x.UserRole.Role) &&
+                        (x.Status == (int)UserStatusEnum.Active ||
+                         x.Status == (int)UserStatusEnum.Pending ||
+                         x.Status == (int)UserStatusEnum.PasswordNotReset));
+
+                userModel = userQuery
+                    .Select(x => new UserModel(x))
+                    .FirstOrDefault();
+
+                return userModel;
+            }
             catch (Exception ex)
             {
-                throw ex;
+                // Log the exception here
+                Utilities.LogExceptionToDatabase(ex);
+                throw; // Rethrow without resetting the stack trace
             }
         }
+
+
 
 
         UserModel IAuthenticateManager.GetUserDetailByPassCode(string passCode)

@@ -2355,7 +2355,7 @@ namespace VendTech.BLL.Managers
             depositAuditModel.DepositId = dbDeposit.DepositId;
             depositAuditModel.Price = Utilities.FormatAmount(Convert.ToDecimal(dbDeposit.Amount));
             depositAuditModel.PosId = pos?.SerialNumber;
-            depositAuditModel.ValueDateModel = depositAuditModel.ValueDateModel;
+            depositAuditModel.ValueDateModel = dbDeposit.ValueDate;
             depositAuditModel.TransactionId = dbDeposit.TransactionId;
             return depositAuditModel;
         }

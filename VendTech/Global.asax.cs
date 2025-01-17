@@ -1,4 +1,5 @@
-﻿using Quartz;
+﻿using Microsoft.Office.Interop.Excel;
+using Quartz;
 using Quartz.Impl;
 using System;
 using System.Security.Cryptography;
@@ -8,6 +9,7 @@ using System.Web.Mvc;
 using System.Web.Optimization;
 using System.Web.Routing;
 using VendTech.App_Start;
+using VendTech.BLL.Common;
 using VendTech.BLL.Jobs;
 using VendTech.BLL.Models;
 
@@ -50,11 +52,11 @@ namespace VendTech
             scheduler.ScheduleJob(unclearedDepositsJob, unclearedDepositsTrigger);
             ///
 
-            /// UNCLEARED BALANCE
-            ITrigger commonJobsTrigger = TriggerBuilder.Create().StartNow()
-            .WithSimpleSchedule(s => s.WithIntervalInHours(24).RepeatForever()).Build();
-            IJobDetail commonJobs = JobBuilder.Create<CommonShedulesJob>().Build();
-            scheduler.ScheduleJob(commonJobs, commonJobsTrigger);
+            /// COMMON
+            //ITrigger commonJobsTrigger = TriggerBuilder.Create().StartNow()
+            //.WithSimpleSchedule(s => s.WithIntervalInHours(24).RepeatForever()).Build();
+            //IJobDetail commonJobs = JobBuilder.Create<CommonShedulesJob>().Build();
+            //scheduler.ScheduleJob(commonJobs, commonJobsTrigger);
             ///
 
             AreaRegistration.RegisterAllAreas();
@@ -107,6 +109,13 @@ namespace VendTech
             httpContext.Response.Redirect("~/Home/Index");
         }
 
+        private void LogOperationCanceledException(OperationCanceledException ex)
+        {
+            string logMessage = $"handled Operation canceled: {ex.Message}\nOccurred at: {DateTime.UtcNow}\nStackTrace:";
+            Utilities.LogExceptionToDatabase(ex, logMessage);
+        }
+
+
         protected void Application_Error()
         {
 
@@ -115,9 +124,25 @@ namespace VendTech
             {
                 try
                 {
+
+
+                    Exception error = Server.GetLastError();
+                    // Check if the exception is an OperationCanceledException
+                    if (error is OperationCanceledException canceledException)
+                    {
+                        LogOperationCanceledException(canceledException);
+                        Server.ClearError(); // Clear the error to prevent further handling
+                        return;
+                    }
+
+
+
                     RequestContext requestContext = ((MvcHandler)httpContext.CurrentHandler).RequestContext;
                     /* When the request is ajax the system can automatically handle a mistake with a JSON response. 
                    Then overwrites the default response */
+
+                   
+
                     if (requestContext.HttpContext.Request.IsAjaxRequest())
                     {
                         httpContext.Response.Clear();
