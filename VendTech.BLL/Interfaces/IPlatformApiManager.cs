@@ -28,7 +28,7 @@ namespace VendTech.BLL.Interfaces
         bool SavePlatformApiConnection(PlatformApiConnectionModel connection);
         bool SavePlatformPacParamsConfigValues(int platformId, int platformApiConnId, IDictionary<string, string> configValues);
 
-        PlatformPacParams GetPlatformPacParams(int platformId, int platformApiConnId);
+        Task<PlatformPacParams> GetPlatformPacParams(int platformId, int platformApiConnId);
         List<PlatformApiConnection> GetAllPlatformApiConnections();
         List<SelectListItem> GetAllPlatformApiConnectionsSelectList();
     }

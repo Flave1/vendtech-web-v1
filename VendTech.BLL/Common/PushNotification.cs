@@ -33,7 +33,7 @@ namespace VendTech.BLL.Common
 
         public PushNotification IncludeUserBalanceOnTheWeb(long user)
         {
-            var url = WebConfigurationManager.AppSettings["SignaRServer"] + "vendtech/balance";
+            var url = WebConfigurationManager.AppSettings["VendtechExtentionServer"] + "vendtech/balance";
             userId = user;
             notification_urls.Add(url);
             return this;
@@ -41,26 +41,26 @@ namespace VendTech.BLL.Common
 
         public PushNotification IncludeAdminWidgetSales()
         {
-            var url = WebConfigurationManager.AppSettings["SignaRServer"] + "vendtech/updatewigdetsales";
+            var url = WebConfigurationManager.AppSettings["VendtechExtentionServer"] + "vendtech/updatewigdetsales";
             notification_urls.Add(url);
             return this;
         }
 
         public PushNotification IncludeAdminWidgetDeposits()
         {
-            var url = WebConfigurationManager.AppSettings["SignaRServer"] + "vendtech/updatewigdetdeposit";
+            var url = WebConfigurationManager.AppSettings["VendtechExtentionServer"] + "vendtech/updatewigdetdeposit";
             notification_urls.Add(url);
             return this;
         }
         public PushNotification IncludeAdminNotificationCount()
         {
-            var url = WebConfigurationManager.AppSettings["SignaRServer"] + "vendtech/admin_notification_count";
+            var url = WebConfigurationManager.AppSettings["VendtechExtentionServer"] + "vendtech/admin_notification_count";
             notification_urls.Add(url);
             return this;
         }
         public PushNotification IncludeAdminUnreleasedDeposits()
         {
-            var url = WebConfigurationManager.AppSettings["SignaRServer"] + "vendtech/updateunreleaseddeposit";
+            var url = WebConfigurationManager.AppSettings["VendtechExtentionServer"] + "vendtech/updateunreleaseddeposit";
             notification_urls.Add(url);
             return this;
         }
@@ -102,7 +102,7 @@ namespace VendTech.BLL.Common
             {
                 try
                 {
-                    var url = WebConfigurationManager.AppSettings["SignaRServer"] + "vendtech/push_to_mobile";
+                    var url = WebConfigurationManager.AppSettings["VendtechExtentionServer"] + "vendtech/push_to_mobile";
 
                     var responses = new ConcurrentBag<string>();
                     var requestBody = new MessageRequest { 
@@ -124,7 +124,7 @@ namespace VendTech.BLL.Common
             }
         }
 
-
+        [Obsolete]
         public static string SendNotificationTOMobile_OLD(PushNotificationModel model)
         {
             try

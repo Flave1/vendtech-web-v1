@@ -1390,7 +1390,7 @@ namespace VendTech.BLL.Managers
             token = Utilities.ReplaceWhitespace(token, "");
             if (token.EndsWith("(+2)"))
                 token = token.Replace("(+2)", "");
-            var transaction_by_token = _context.TransactionDetails.FirstOrDefault(e => e.MeterToken1 == token);
+            var transaction_by_token = _context.TransactionDetails.FirstOrDefault(e => e.TransactionId.StartsWith("-") == false && e.MeterToken1 == token);
             if (transaction_by_token != null)
             {
                 var receipt = Build_receipt_model_from_dbtransaction_detail(transaction_by_token);

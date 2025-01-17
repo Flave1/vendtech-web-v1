@@ -1,4 +1,5 @@
 ﻿using System.Net.Http;
+using System.Threading.Tasks;
 using System.Web.Http;
 using System.Web.Http.Description;
 using VendTech.Attributes;
@@ -30,7 +31,7 @@ namespace VendTech.Areas.Api.Controllers
         [HttpPost]
         [ResponseType(typeof(ResponseBase))]
         //[HttpPost, CheckAuthorizationAttribute.SkipAuthentication, CheckAuthorizationAttribute.SkipAuthorization]
-        public HttpResponseMessage RechargePhone(AirtimePurchaseModel request)
+        public async Task<HttpResponseMessage> RechargePhone(AirtimePurchaseModel request)
         {
             var platf = _platformManager.GetSinglePlatform(request.PlatformId);
             if (platf.DisablePlatform)
@@ -52,7 +53,7 @@ namespace VendTech.Areas.Api.Controllers
             request.Currency = "SLE";
 
             var model = new PlatformTransactionModel { PlatformId = request.PlatformId, Amount = request.Amount, Currency = request.Currency, UserId = request.UserId, Beneficiary = request.Phone };
-            var result = _platformTransactionManager.RechargeAirtime(model);
+            var result = await _platformTransactionManager.RechargeAirtime(model);
             if (result.ReceiptStatus.Status == "unsuccessful")
             {
                 return new JsonContent(result.ReceiptStatus.Message, result.ReceiptStatus.Status == "unsuccessfull" ? Status.Failed : Status.Success, result).ConvertToHttpResponseOK();

@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using System.Web.Mvc;
 using System.Web.Script.Serialization;
 using VendTech.Attributes;
@@ -26,7 +27,7 @@ namespace VendTech.Controllers
             _platformTransactionManager = platformTransactionManager;
         }
 
-        public ActionResult Recharge(string provider = "", string number= "")
+        public async Task<ActionResult> Recharge(string provider = "", string number= "")
         {
             if(LOGGEDIN_USER == null)
             {
@@ -45,8 +46,6 @@ namespace VendTech.Controllers
             }
 
             ViewBag.PlatformList = productsSelectList;
-
-          
 
             ViewBag.SelectedTab = SelectedAdminTab.BillPayment;
             PlatformTransactionModel model = new PlatformTransactionModel();
@@ -79,7 +78,7 @@ namespace VendTech.Controllers
                 model.Beneficiary = number;
             model.PlatformId = Convert.ToInt32(provider);
 
-            var platForm = _platformManager.GetPlatformById(model.PlatformId);
+            var platForm = await _platformManager.GetPlatformById(model.PlatformId);
             ViewBag.MinimumPurchaseAmount = platForm.MinimumAmount;
 
             model.Logo = string.IsNullOrEmpty(platForm?.Logo) ? "" : Utilities.DomainUrl + platForm?.Logo;
@@ -87,7 +86,7 @@ namespace VendTech.Controllers
         }
 
         [HttpPost, AjaxOnly]
-        public JsonResult Recharge(PlatformTransactionModel model)
+        public async Task<JsonResult> Recharge(PlatformTransactionModel model)
         {
             var country = Utilities.GetCountry();
             var selectProd = _platformManager.GetSinglePlatform(model.PlatformId);
@@ -105,7 +104,7 @@ namespace VendTech.Controllers
             }
             model.Currency = country.CurrencyCode;
 
-            var result = _platformTransactionManager.RechargeAirtime(model);
+            var result = await _platformTransactionManager.RechargeAirtime(model);
             if (result.ReceiptStatus.Status == "unsuccessful")
             {
                 return Json(JsonConvert.SerializeObject(new { Success = false, Code = 302, Msg = result.ReceiptStatus.Message }));

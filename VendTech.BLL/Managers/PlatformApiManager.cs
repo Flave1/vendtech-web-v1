@@ -1,16 +1,13 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Data.Entity.Infrastructure;
+using System.Data.Entity;
 using System.Linq;
 using System.Linq.Dynamic;
 using System.Reflection;
-using System.Text;
 using System.Threading.Tasks;
 using System.Web.Mvc;
 using System.Web.UI.WebControls;
-using VendTech.BLL.Common;
 using VendTech.BLL.Interfaces;
 using VendTech.BLL.Models;
 using VendTech.BLL.PlatformApi;
@@ -24,6 +21,12 @@ namespace VendTech.BLL.Managers
         private static readonly IDictionary<int, IPlatformApi> _INSTANCES = new Dictionary<int, IPlatformApi>();
         private readonly static object _LOCK = new object();
         private static readonly List<SelectListItem> _TYPES_LIST_ITEMS = new List<SelectListItem>();
+        private readonly VendtechEntities _context;
+
+        public PlatformApiManager(VendtechEntities context)
+        {
+            _context = context;
+        }
 
         public ActionOutput SavePlatformApi(PlatformApiModel model)
         {
@@ -33,7 +36,7 @@ namespace VendTech.BLL.Managers
 
             if (model.IsNotNew())
             {
-                api = Context.PlatformApis.FirstOrDefault(p => p.Id == model.Id);
+                api = _context.PlatformApis.FirstOrDefault(p => p.Id == model.Id);
                 if (api == null)
                     return ReturnError("PlatformApi #" + model.Id + " does not exist");
 
@@ -46,12 +49,12 @@ namespace VendTech.BLL.Managers
                 api.CreatedAt = api.UpdatedAt;
 
                 api = model.To(api);
-                Context.PlatformApis.Add(api);
+                _context.PlatformApis.Add(api);
 
                 msg = "Platform API created successfully.";
             }
 
-            Context.SaveChanges();
+            _context.SaveChanges();
             return ReturnSuccess(msg);
         }
 
@@ -63,14 +66,14 @@ namespace VendTech.BLL.Managers
         {
             if (platformApiId > 0 && configValues != null)
             {
-                VendTech.DAL.PlatformApi api = Context.PlatformApis.FirstOrDefault(p => p.Id == platformApiId);
+                VendTech.DAL.PlatformApi api = _context.PlatformApis.FirstOrDefault(p => p.Id == platformApiId);
 
                 if (api == null) return false;
 
                 api.UpdatedAt = DateTime.UtcNow;
                 api.Config = JsonConvert.SerializeObject(configValues);
 
-                Context.SaveChanges();
+                _context.SaveChanges();
                 return true;
             }
 
@@ -81,7 +84,7 @@ namespace VendTech.BLL.Managers
         {
             if (platformId > 0 && platformApiConnId > 0 && configValues != null)
             {
-                VendTech.DAL.PlatformPacParam platformPacParam = Context.PlatformPacParams.FirstOrDefault(
+                VendTech.DAL.PlatformPacParam platformPacParam = _context.PlatformPacParams.FirstOrDefault(
                     p => p.PlatformId == platformId && p.PlatformApiConnectionId == platformApiConnId);
 
                 if (platformPacParam == null)
@@ -93,24 +96,24 @@ namespace VendTech.BLL.Managers
                         PlatformApiConnectionId = platformApiConnId
                     };
 
-                    Context.PlatformPacParams.Add(platformPacParam);
+                    _context.PlatformPacParams.Add(platformPacParam);
                 }
 
                 platformPacParam.UpdatedAt = DateTime.UtcNow;
                 platformPacParam.Config = JsonConvert.SerializeObject(configValues);
 
-                Context.SaveChanges();
+                _context.SaveChanges();
                 return true;
             }
 
             return false;
         }
 
-        public PlatformPacParams GetPlatformPacParams(int platformId, int platformApiConnId)
+        public async Task<PlatformPacParams> GetPlatformPacParams(int platformId, int platformApiConnId)
         {
             if (platformId > 0 && platformApiConnId > 0)
             {
-                VendTech.DAL.PlatformPacParam platformPacParam = Context.PlatformPacParams.FirstOrDefault(
+                PlatformPacParam platformPacParam = await _context.PlatformPacParams.FirstOrDefaultAsync(
                     p => p.PlatformId == platformId && p.PlatformApiConnectionId == platformApiConnId);
 
                 if (platformPacParam != null)
@@ -214,7 +217,7 @@ namespace VendTech.BLL.Managers
         {
             if (platformApiId > 0)
             {
-                DAL.PlatformApi api = Context.PlatformApis.FirstOrDefault(p => p.Id == platformApiId);
+                DAL.PlatformApi api = _context.PlatformApis.FirstOrDefault(p => p.Id == platformApiId);
                 if (api != null)
                 {
                     return PlatformApiModel.From(this, api, CloneSelectList());
@@ -229,7 +232,7 @@ namespace VendTech.BLL.Managers
 
         public ICollection<PlatformApiConnectionModel> GetPlatformApiConnectionsForPlatform(int platformId)
         {
-            var query = Context.PlatformApiConnections.Where(p => p.PlatformId == platformId);
+            var query = _context.PlatformApiConnections.Where(p => p.PlatformId == platformId);
             List<PlatformApiConnectionModel> apiConns = new List<PlatformApiConnectionModel>();
             foreach (DAL.PlatformApiConnection apiConnection in query)
             {
@@ -247,7 +250,7 @@ namespace VendTech.BLL.Managers
 
                 if (connection.IsNotNew())
                 {
-                    apiConn = Context.PlatformApiConnections.FirstOrDefault(p => p.Id == connection.Id);
+                    apiConn = _context.PlatformApiConnections.FirstOrDefault(p => p.Id == connection.Id);
                     if (apiConn != null)
                     {
                         apiConn = connection.To(apiConn);
@@ -257,13 +260,13 @@ namespace VendTech.BLL.Managers
                 {
                     apiConn = connection.To(new VendTech.DAL.PlatformApiConnection());
                     apiConn.CreatedAt = DateTime.UtcNow;
-                    Context.PlatformApiConnections.Add(apiConn);
+                    _context.PlatformApiConnections.Add(apiConn);
                 }
 
                 if (apiConn == null) return false;
 
                 apiConn.UpdatedAt = DateTime.UtcNow;
-                Context.SaveChanges();
+                _context.SaveChanges();
 
                 connection.Id = apiConn.Id;
 
@@ -274,7 +277,7 @@ namespace VendTech.BLL.Managers
         }
 
         public ICollection<PlatformApiModel> GetAllPlatformApis(bool includeDeleted = false) {
-            var query = Context.PlatformApis;
+            var query = _context.PlatformApis;
 
             if (!includeDeleted)
             {
@@ -293,7 +296,7 @@ namespace VendTech.BLL.Managers
 
         public ICollection<PlatformApiConnectionModel> GetAllPlatformApiConnectionsForPlatformApi(int platformApiId, bool includeDeleted = false)
         {
-            var query = Context.PlatformApiConnections.Where(p => p.PlatformApiId == platformApiId);
+            var query = _context.PlatformApiConnections.Where(p => p.PlatformApiId == platformApiId);
 
             if (!includeDeleted)
             {
@@ -312,7 +315,7 @@ namespace VendTech.BLL.Managers
 
         public List<PlatformApiConnection> GetAllPlatformApiConnections()
         {
-            return Context.PlatformApiConnections.OrderBy(p => p.Name).ToList();
+            return _context.PlatformApiConnections.OrderBy(p => p.Name).ToList();
         }
 
         public List<SelectListItem> GetAllPlatformApiConnectionsSelectList()
@@ -329,7 +332,7 @@ namespace VendTech.BLL.Managers
     
             public List<SelectListItem> LoadPlatformApisForDropdown()
         {
-            var query = Context.PlatformApis.Where(p => p.Status != (int)StatusEnum.Deleted);
+            var query = _context.PlatformApis.Where(p => p.Status != (int)StatusEnum.Deleted);
             List<SelectListItem> apis = new List<SelectListItem>();
             foreach (VendTech.DAL.PlatformApi item in query)
             {
@@ -358,10 +361,10 @@ namespace VendTech.BLL.Managers
         {
             if (apiConnId > 0)
             {
-                VendTech.DAL.PlatformApiConnection apiConnection = Context.PlatformApiConnections.Where(p => p.Id == apiConnId).FirstOrDefault();
+                VendTech.DAL.PlatformApiConnection apiConnection = _context.PlatformApiConnections.Where(p => p.Id == apiConnId).FirstOrDefault();
                 if (apiConnection != null)
                 {
-                    VendTech.DAL.PlatformApi platformApi = Context.PlatformApis.FirstOrDefault(p => p.Id == apiConnection.PlatformApiId);
+                    VendTech.DAL.PlatformApi platformApi = _context.PlatformApis.FirstOrDefault(p => p.Id == apiConnection.PlatformApiId);
                     apiConnection.PlatformApi = platformApi;
                     return PlatformApiConnectionModel.From(this, apiConnection);
                 }
