@@ -24,6 +24,7 @@ using Newtonsoft.Json;
 using System.Net.Http.Headers;
 using System.Net.Http;
 using System.Data.Entity;
+using System.Threading.Tasks;
 
 namespace VendTech.BLL.Common
 {
@@ -412,7 +413,7 @@ namespace VendTech.BLL.Common
 
         }
 
-        public static bool SendSms(SendSMSRequest request)
+        public static async Task<bool> SendSms(SendSMSRequest request)
         {
             if (!SendNotification)
                 return true;
@@ -428,8 +429,8 @@ namespace VendTech.BLL.Common
             HttpRequestMessage httpRequest = new HttpRequestMessage(HttpMethod.Post, "/api/v2/submit");
             httpRequest.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            var res = client.SendAsync(httpRequest).Result;
-            //var stringResult = res.Content.ReadAsStringAsync().Result;
+            var res = await client.SendAsync(httpRequest);
+            var stringResult = await res.Content.ReadAsStringAsync();
             return res.IsSuccessStatusCode;
         }
         public static void SendPDFEmail(string to, string sub, string body, string file = "", string name = "")

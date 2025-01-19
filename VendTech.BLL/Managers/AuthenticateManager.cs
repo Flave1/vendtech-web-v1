@@ -242,8 +242,37 @@ namespace VendTech.BLL.Managers
                          x.Status == (int)UserStatusEnum.Pending ||
                          x.Status == (int)UserStatusEnum.PasswordNotReset));
 
+                //userModel = userQuery
+                //    .Select(x => new UserModel(x))
+                //    .FirstOrDefault();
+
                 userModel = userQuery
-                    .Select(x => new UserModel(x))
+                    .Select(x => new UserModel
+                    {
+                        UserId = x.UserId,
+                        FirstName = x.Name,
+                        LastName = x.SurName,
+                        Email = x.Email,
+                        UserType = x.UserType,
+                        Phone = x.Phone,
+                        CompanyName = x.CompanyName,
+                        isemailverified = x.IsEmailVerified,
+                        Status = x.Status,
+                        Vendor = x.Vendor,
+                        DeviceToken = x.DeviceToken,
+                        CountryCode = x.Country != null ? x.Country.CountryCode : null,
+                        CurrencyCode = x.Country != null ? x.Country.CurrencySymbol : null,
+                        MobileAppVersion = x.MobileAppVersion,
+                        IsPasscodeNew = x.POS.FirstOrDefault() != null ? x.POS.FirstOrDefault().IsNewPasscode  : false,
+                        IsCompany = x.IsCompany ?? false,
+                        ProfilePicUrl = string.IsNullOrEmpty(x.ProfilePic) ? "" : Utilities.DomainUrl + x.ProfilePic,
+                        AccountStatus = ((UserStatusEnum)x.Status).ToString(),
+                        AgentId = x.AgentId,
+                        AgencyName = x.Agency != null ? x.Agency.AgencyName : null,
+                        POSNumber = x.POS.Where(p => p.Enabled != false && !p.IsDeleted)
+                                         .Select(p => p.SerialNumber)
+                                         .FirstOrDefault()
+                    })
                     .FirstOrDefault();
 
                 return userModel;
@@ -560,7 +589,6 @@ namespace VendTech.BLL.Managers
 
                 Context.AccountVerificationOTPs.Remove(record);
                 Context.SaveChanges();
-
 
                 return ReturnSuccess("Email verified successfully.");
             }

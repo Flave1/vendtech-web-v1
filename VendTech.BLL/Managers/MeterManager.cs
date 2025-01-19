@@ -1461,7 +1461,7 @@ namespace VendTech.BLL.Managers
             && e.Platform.PlatformType == (int)PlatformTypeEnum.ELECTRICITY).OrderByDescending(d => d.CreatedAt).FirstOrDefault() ?? null;
             if (lstTr != null)
             {
-                lstTr.CurrentDealerBalance = lstTr.CurrentDealerBalance - lstTr.TenderedAmount;
+                lstTr.CurrentDealerBalance = lstTr.CurrentDealerBalance;
                 return lstTr;
             }
             else
