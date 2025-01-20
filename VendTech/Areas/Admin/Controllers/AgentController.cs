@@ -156,7 +156,7 @@ namespace VendTech.Areas.Admin.Controllers
                               $"To Approve deposits, please use the following OTP (One Time Passcode). {result.Object}\n" +
                               "VENDTECH"
                         };
-                        await Task.Run(() => Utilities.SendSms(msg));
+                        await Utilities.SendSms(msg);
                     }
                 }
                 catch (ArgumentException ex)

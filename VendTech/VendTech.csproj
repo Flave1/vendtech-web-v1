@@ -278,6 +278,7 @@
     <Compile Include="Areas\Vendor\Controllers\HomeController.cs" />
     <Compile Include="Areas\Vendor\Controllers\POSController.cs" />
     <Compile Include="Attributes\Attribute.cs" />
+    <Compile Include="Controllers\NetflixController.cs" />
     <Compile Include="Controllers\AirtimeController.cs" />
     <Compile Include="Controllers\SavedPhoneNumbersController.cs" />
     <Compile Include="Controllers\PrivacyController.cs" />

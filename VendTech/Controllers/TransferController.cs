@@ -189,7 +189,7 @@ namespace VendTech.Controllers
                    "VENDTECH"
                 };
 
-                await Task.Run(() => Utilities.SendSms(requestmsg));
+                await Utilities.SendSms(requestmsg);
             }
 
             if (toPos != null & toPos.SMSNotificationDeposit ?? true)
@@ -202,7 +202,7 @@ namespace VendTech.Controllers
                    "VENDTECH"
                 };
 
-                Utilities.SendSms(requestmsg);
+                await Utilities.SendSms(requestmsg);
             }
         }
 
@@ -239,7 +239,7 @@ namespace VendTech.Controllers
                                   $"To Approve deposits, please use the following OTP (One Time Passcode). {result.Object}\n" +
                                   "VENDTECH"
                     };
-                    await Task.Run(() => Utilities.SendSms(requestmsg));
+                    await Utilities.SendSms(requestmsg);
                 }
                 
             }

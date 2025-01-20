@@ -405,7 +405,7 @@ namespace VendTech.Areas.Api.Controllers
                               $"Please enter the following OTP in the mobile APP.\n{otp}\n" +
                               "VENDTECH"
                         };
-                        await Task.Run(() =>  Utilities.SendSms(msg));
+                        await Utilities.SendSms(msg);
 
                         return new JsonContent(user.UserId.ToString(), Status.Success).ConvertToHttpResponseOK();
                     }

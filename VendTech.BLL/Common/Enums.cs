@@ -226,6 +226,7 @@ namespace VendTech.BLL.Models
         CABLE_TV = 2,
         DATA = 3,
         ELECTRICITY = 4,
+        NETFLIX = 5
     }
 
     public enum StatusEnum

@@ -113,7 +113,7 @@ namespace VendTech.BLL.Common
                    $"{Utilities.GetCountry().CurrencyCode}: {Utilities.FormatAmount(deposit.Amount)} \n" +
                    "VENDTECH"
                 };
-                return Utilities.SendSms(requestmsg);
+                return Utilities.SendSms(requestmsg).Result;
             }
             return false;
         }

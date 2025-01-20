@@ -100,7 +100,7 @@ namespace VendTech.Attributes
                         actionContext.Response = new JsonContent("Token is missing!", Status.Failed).ConvertToHttpResponseOK();
                         return;
                     }
-                    //sessionToken = actionContext.Request.Headers.GetValues("Token").FirstOrDefault();
+                    sessionToken = actionContext.Request.Headers.GetValues("Token").FirstOrDefault();
                 }
                 catch (Exception)
                 {
