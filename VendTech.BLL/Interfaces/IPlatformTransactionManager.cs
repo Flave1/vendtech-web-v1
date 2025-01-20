@@ -17,5 +17,6 @@ namespace VendTech.BLL.Interfaces
         Task<AirtimeReceiptModel> RechargeAirtime(PlatformTransactionModel model);
         AirtimeReceiptModel GetAirtimeReceipt(string traxId);
         ReceiptModel ReturnAirtimeReceipt(string rechargeId);
+        Task<NetflixReceiptModel> RechargeNetflix(NetflixPlatformTransactionModel model);
     }
 }

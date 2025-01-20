@@ -36,10 +36,10 @@ namespace VendTech.Controllers
             //list of airtime products
             List<SelectListItem> productsSelectList = new List<SelectListItem>();
 
-            var airtimeProducts = _platformManager.GetPlatformsByTypeForRecharge(PlatformTypeEnum.NETFLIX);
-            if (airtimeProducts != null && airtimeProducts.Count > 0)
+            var products = _platformManager.GetPlatformsByTypeForRecharge(PlatformTypeEnum.NETFLIX);
+            if (products != null && products.Count > 0)
             {
-                foreach(var product in airtimeProducts)
+                foreach(var product in products)
                 {
                     productsSelectList.Add(new SelectListItem { Value = product.PlatformId.ToString(), Text = product.Title });
                 }
@@ -48,34 +48,35 @@ namespace VendTech.Controllers
             ViewBag.PlatformList = productsSelectList;
 
             ViewBag.SelectedTab = SelectedAdminTab.BillPayment;
-            PlatformTransactionModel model = new PlatformTransactionModel();
+            NetflixPlatformTransactionModel model = new NetflixPlatformTransactionModel();
             var posList = _posManager.GetPOSSelectList(LOGGEDIN_USER.UserID, LOGGEDIN_USER.AgencyId);
             ViewBag.userPos = posList;
 
-            ViewBag.IsPlatformAssigned = airtimeProducts.Count > 0;
+            ViewBag.IsPlatformAssigned = products.Count > 0;
             JavaScriptSerializer js = new JavaScriptSerializer();
-            var hostory_model = new ReportSearchModel
-            {
-                SortBy = "CreatedAt",
-                SortOrder = "Desc",
-                PageNo = 1,
-                VendorId = LOGGEDIN_USER.UserID,
-                PlatformId = Convert.ToInt32(provider)
-            };
+            //var hostory_model = new ReportSearchModel
+            //{
+            //    SortBy = "CreatedAt",
+            //    SortOrder = "Desc",
+            //    PageNo = 1,
+            //    VendorId = LOGGEDIN_USER.UserID,
+            //    PlatformId = Convert.ToInt32(provider)
+            //};
 
-            var deposits = _platformTransactionManager.GetUserAirtimeRechargeTransactionDetailsHistory(hostory_model);
+            //var deposits = _platformTransactionManager.GetUserAirtimeRechargeTransactionDetailsHistory(hostory_model);
+
+            //if (deposits.List.Count > 0)
+            //    model.History = deposits.List;
+
 
             ViewBag.UserId = LOGGEDIN_USER.UserID;
-            if (deposits.List.Count > 0)
-                model.History = deposits.List;
-            
             if (posList.Count > 0)
                 ViewBag.walletBalance = _posManager.GetPosBalance(Convert.ToInt64(posList[0].Value));
             else
                 ViewBag.walletBalance = 0;
 
-            if (!string.IsNullOrEmpty(number))
-                model.Beneficiary = number;
+            //if (!string.IsNullOrEmpty(number))
+                //model.Beneficiary = number;
             model.PlatformId = Convert.ToInt32(provider);
 
             var platForm = await _platformManager.GetPlatformById(model.PlatformId);
@@ -86,7 +87,7 @@ namespace VendTech.Controllers
         }
 
         [HttpPost, AjaxOnly]
-        public async Task<JsonResult> Recharge(PlatformTransactionModel model)
+        public async Task<JsonResult> Recharge(NetflixPlatformTransactionModel model)
         {
             var country = Utilities.GetCountry();
             var selectProd = _platformManager.GetSinglePlatform(model.PlatformId);
@@ -98,13 +99,13 @@ namespace VendTech.Controllers
 
             //Fetch the currency
             //return null;
-            if (!model.Beneficiary.Contains(country.CountryCode))
-            {
-                model.Beneficiary = country.CountryCode + model.Beneficiary;
-            }
+            //if (!model.Beneficiary.Contains(country.CountryCode))
+            //{
+            //    model.Beneficiary = country.CountryCode + model.Beneficiary;
+            //}
             model.Currency = country.CurrencyCode;
 
-            var result = await _platformTransactionManager.RechargeAirtime(model);
+            var result = await _platformTransactionManager.RechargeNetflix(model);
             if (result.ReceiptStatus.Status == "unsuccessful")
             {
                 return Json(JsonConvert.SerializeObject(new { Success = false, Code = 302, Msg = result.ReceiptStatus.Message }));

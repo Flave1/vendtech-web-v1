@@ -517,8 +517,131 @@ namespace VendTech.BLL.Managers
             }
         }
 
+        public async Task<NetflixReceiptModel> RechargeNetflix(NetflixPlatformTransactionModel model)
+        {
+            var response = new NetflixReceiptModel { ReceiptStatus = new ReceiptStatus() };
+            var user = await _context.Users.FirstOrDefaultAsync(p => p.UserId == model.UserId);
+            if (user == null)
+            {
+                response.ReceiptStatus.Status = "unsuccessful";
+                response.ReceiptStatus.Message = "User do not exist.";
+                return response;
+            }
+            var posid = user.POS.FirstOrDefault().POSId;
+            var pos = await _context.POS.FirstOrDefaultAsync(p => p.POSId == posid);
+
+            if (pos.Balance == null || pos.Balance.Value < model.Amount)
+            {
+                response.ReceiptStatus.Status = "unsuccessful";
+                response.ReceiptStatus.Message = "INSUFFICIENT BALANCE FOR THIS TRANSACTION.";
+                return response;
+            }
+
+            bool balanceDeducted = false;
+
+            try
+            {
+                //Deduct the amount from the balance so the user does not go and initiate another transaction while this is still in progress
+                pos.Balance = pos.Balance.Value - model.Amount;
+                await _context.SaveChangesAsync();
+
+                balanceDeducted = true;
+
+                //Is the product configured with a Connection ID
+                PlatformApiConnection apiConn = await _context.PlatformApiConnections.Where(x => x.PlatformId == model.PlatformId).FirstOrDefaultAsync();
+
+                PlatformTransactionModel tranxModel = New(model.UserId, model.PlatformId, pos.POSId, model.Amount,
+                    "netflix", model.Currency, apiConn?.Id);
+
+                //Process the transaction via the API and 
+                await ProcessTransactionViaApi(tranxModel.Id);
+
+                int Status = await _context.PlatformTransactions.Where(t => t.Id == tranxModel.Id).Select(t => t.Status).FirstOrDefaultAsync();
+
+                //If it succeeds, then transfer to TransactionDetail 
+                if (Status == (int)TransactionStatus.Successful)
+                {
+                    TransactionDetail transactionDetail = CreateTransactionDetail(tranxModel, (int)RechargeMeterStatusEnum.Success);
+
+                    List<PlatformApiLogModel> logs = await GetTransactionLogs(tranxModel.Id);
+                    Logs tranxLogs = await CreateLogs(logs);
+
+                    transactionDetail.Request = tranxLogs.Request.ToString();
+                    transactionDetail.Response = tranxLogs.Response.ToString();
+                    transactionDetail.TransactionId = await _transactionIdGenerator.GenerateNewTransactionId();
+
+                    _context.TransactionDetails.Add(transactionDetail);
+                    PlatformTransaction tranx = await _context.PlatformTransactions.FirstOrDefaultAsync(t => t.Id == tranxModel.Id);
+                    tranx.TransactionDetailId = transactionDetail.TransactionDetailsId;
+
+                    transactionDetail.TenderedAmount = model.Amount;
+                    transactionDetail.Amount = model.Amount;
+                    transactionDetail.CurrentVendorBalance = pos.Balance;
+                    transactionDetail.BalanceBefore = (pos.Balance + model.Amount);
+                    await _context.SaveChangesAsync();
+                    response = GenerateNetflixReceipt(transactionDetail);
+                    Push_notification_to_user(user, model, transactionDetail.TransactionDetailsId);
+                    return response;
+                }
+                else if (Status == (int)TransactionStatus.Pending)
+                {
+                    response.ReceiptStatus.Status = "pending";
+                    response.ReceiptStatus.Message = "Airtime recharge is pending";
+                    return response;
+                }
+                else if (Status == (int)TransactionStatus.Failed)
+                {
+                    if (balanceDeducted)
+                    {
+                        ReverseBalanceDeduction(_context, pos, model.Amount);
+                    }
+                }
+                else
+                {
+                    if (balanceDeducted)
+                    {
+                        ReverseBalanceDeduction(_context, pos, model.Amount);
+                    }
+                }
+
+                response.ReceiptStatus.Status = "pending";
+                response.ReceiptStatus.Message = "Airtime recharge failed.";
+                return response;
+            }
+            catch (Exception ex)
+            {
+                _errorLog.LogExceptionToDatabase(ex);
+                //If balance was deducted before exception then reverse
+                if (balanceDeducted)
+                {
+                    ReverseBalanceDeduction(_context, pos, model.Amount);
+                }
+                response.ReceiptStatus.Status = "pending";
+                response.ReceiptStatus.Message = "Airtime recharge failed due to an error. Please contact Administrator";
+                return response;
+            }
+        }
+
 
         private void Push_notification_to_user(User user, PlatformTransactionModel model, long MeterRechargeId)
+        {
+            var deviceTokens = user.TokensManagers.Where(p => p.DeviceToken != null && p.DeviceToken != string.Empty).Select(p => new { p.AppType, p.DeviceToken }).ToList().Distinct(); ;
+            var obj = new PushNotificationModel();
+            obj.UserId = model.UserId;
+            obj.Id = MeterRechargeId;
+            obj.Title = "Airtime recharged successfully";
+            obj.Message = $"Your phone has successfully recharged with SLe {Utilities.FormatAmount(model.Amount)}";
+            obj.NotificationType = NotificationTypeEnum.AirtimeRecharge;
+            obj.Balance = user.POS.FirstOrDefault().Balance.Value;
+            foreach (var item in deviceTokens)
+            {
+                obj.DeviceToken = item.DeviceToken;
+                obj.DeviceType = item.AppType.Value;
+                PushNotification.PushNotificationToMobile(obj);
+            }
+        }
+
+        private void Push_notification_to_user(User user, NetflixPlatformTransactionModel model, long MeterRechargeId)
         {
             var deviceTokens = user.TokensManagers.Where(p => p.DeviceToken != null && p.DeviceToken != string.Empty).Select(p => new { p.AppType, p.DeviceToken }).ToList().Distinct(); ;
             var obj = new PushNotificationModel();
@@ -564,6 +687,31 @@ namespace VendTech.BLL.Managers
                 receipt.ReceiptTitle = "AFRICELL";
             if (trax.PlatFormId == 4)
                 receipt.ReceiptTitle = "QCELL";
+
+            receipt.IsNewRecharge = true;
+            return receipt;
+        }
+        private NetflixReceiptModel GenerateNetflixReceipt(TransactionDetail trax)
+        {
+            var receipt = new NetflixReceiptModel();
+            receipt.Phone = trax?.MeterNumber1 ?? "";
+            receipt.CustomerName = trax?.User.Vendor ?? "";
+            receipt.ReceiptNo = trax?.ReceiptNumber ?? "";
+            var amt = trax?.Amount.ToString("N");
+            receipt.mobileShowPrintButton = (bool)trax.POS.PosPrint;
+            receipt.mobileShowSmsButton = (bool)trax.POS.PosSms;
+            receipt.ShouldShowSmsButton = (bool)trax.POS.WebSms;
+            receipt.ShouldShowPrintButton = (bool)trax.POS.WebPrint;
+            receipt.CurrencyCode = Utilities.GetCountry().CurrencyCode;
+
+            if (trax.PlatFormId == 2)
+                receipt.ReceiptTitle = "ORANGE";
+            if (trax.PlatFormId == 3)
+                receipt.ReceiptTitle = "AFRICELL";
+            if (trax.PlatFormId == 4)
+                receipt.ReceiptTitle = "QCELL";
+            if (trax.PlatFormId == 7)
+                receipt.ReceiptTitle = "NETFLIX";
 
             receipt.IsNewRecharge = true;
             return receipt;

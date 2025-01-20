@@ -1067,3 +1067,27 @@ Object reference not set to an instance of an object.
 
 
 
+Object reference not set to an instance of an object.
+
+
+
+Object reference not set to an instance of an object.
+
+
+
+Object reference not set to an instance of an object.
+
+
+
+The model item passed into the dictionary is of type 'VendTech.BLL.Models.PlatformTransactionModel', but this dictionary requires a model item of type 'VendTech.BLL.Models.NetflixPlatformTransactionModel'.
+
+
+
+Object reference not set to an instance of an object.
+
+
+
+Object reference not set to an instance of an object.
+
+
+

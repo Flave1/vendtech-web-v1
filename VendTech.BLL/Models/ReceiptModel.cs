@@ -85,4 +85,20 @@ namespace VendTech.BLL.Models
         public string CurrencyCode { get; set; } = "";
         public ReceiptStatus ReceiptStatus { get; set; } = new ReceiptStatus();
     }
+
+    public class NetflixReceiptModel
+    {
+        public string ReceiptNo { get; set; }
+        public string CustomerName { get; set; }
+        public string Phone { get; set; }
+        public bool ShouldShowSmsButton { get; set; }
+        public bool ShouldShowPrintButton { get; set; }
+        public bool mobileShowSmsButton { get; set; }
+        public bool mobileShowPrintButton { get; set; }
+        public decimal CurrentBallance { get; set; }
+        public string ReceiptTitle { get; set; }
+        public bool IsNewRecharge { get; set; }
+        public string CurrencyCode { get; set; } = "";
+        public ReceiptStatus ReceiptStatus { get; set; } = new ReceiptStatus();
+    }
 }

@@ -60,6 +60,13 @@
                                                 urlPath = "/Airtime/Recharge?provider=" + item.PlatformId;
                                                 title = item.Title;
                                             }
+                                            else if (item.PlatformType == 5)
+                                            {
+                                                airtimeIconCreated = true;
+                                                createIcon = true;
+                                                urlPath = "/Netflix/Recharge?provider=" + item.PlatformId;
+                                                title = item.Title;
+                                            }
                                             if (item.DisablePlatform)
                                             {
                                                 title = title + " (disabled)";
