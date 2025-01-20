@@ -77,7 +77,7 @@ namespace VendTech.BLL.Common
                     var requestBody = new SignalRMessageBody { UserId = userId.ToString(), Message = "message" };
                     string jsonPayload = JsonConvert.SerializeObject(requestBody);
 
-
+                    ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;// | SecurityProtocolType.Tls13;
                     Parallel.ForEach(urls, (url) =>
                     {
                         var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
