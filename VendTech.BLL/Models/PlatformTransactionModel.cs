@@ -134,7 +134,7 @@ namespace VendTech.BLL.Models
         public string Currency { get; set; }
 
         [Required]
-        public decimal Amount { get; set; }
+        public decimal AmountOperator { get; set; }
         public decimal AmountPlatform { get; set; }
         public int Status { get; set; }
         public string StatusName { get; set; }

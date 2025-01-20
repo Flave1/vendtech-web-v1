@@ -136,8 +136,8 @@
                                                                    onkeyup="amountFormatter()"
                                                                    class="form-control " />
 
-                                                            @Html.HiddenFor(x => x.Amount, new { @class = "form-control" })
-                                                            @Html.ValidationMessageFor(x => x.Amount)
+                                                            @Html.HiddenFor(x => x.AmountOperator, new { @class = "form-control" })
+                                                            @Html.ValidationMessageFor(x => x.AmountOperator)
                                                         </div>
 
                                                         <div class="col-md-4">
@@ -303,7 +303,7 @@
 
             $(".savebttn").click(function () {
 
-                if (!$("#Amount").val() || $("#Amount").val() == "0") {
+                if (!$("#AmountOperator").val() || $("#AmountOperator").val() == "0") {
                     $.ShowMessage($('div.messageAlert'), "Please Enter Amount", MessageType.Error);
                     return;
                 }
@@ -319,7 +319,7 @@
 
 
                     const minVend = '@VendTech.BLL.Common.Utilities.FormatAmount(ViewBag.MinimumPurchaseAmount)';
-                    const amtPay = +$("#Amount").val().replace(",", "");
+                    const amtPay = +$("#AmountOperator").val().replace(",", "");
 
 
                     if (amtPay < '@ViewBag.MinimumPurchaseAmount') {
@@ -343,7 +343,7 @@
                     //}
 
                     ////$("#phoneno").html('@country.CountryCode' + phoneno);
-                    $("#pamount").html(thousands_separators($("#Amount").val()));
+                    $("#pamount").html(thousands_separators($("#AmountOperator").val()));
                     //$("#product").html($("#platformIdSelect option:selected").text().trim());
                     $("#form-bp1").modal("show")
                 }
@@ -418,8 +418,8 @@
             var val = "";
             if (displayVal) {
                 var cc = displayVal.replace(/\,/g, "");
-                $("#Amount").val(cc);
-                val = $("#Amount").val();
+                $("#AmountOperator").val(cc);
+                val = $("#AmountOperator").val();
 
                 var amt_to_display = thousands_separators(val);
                 var wallet_balance = salesHandler.amount;
@@ -463,7 +463,7 @@
         function sendAirtimePurchase(sender) {
 
             var errorDisplay = document.getElementById("error_reponse");
-            if (!$("#Amount").val() || $("#Amount").val() == "0") {
+            if (!$("#AmountOperator").val() || $("#AmountOperator").val() == "0") {
                 $.ShowMessage($('div.messageAlert'), "Please Enter Amount", MessageType.Error);
                 return;
             }
