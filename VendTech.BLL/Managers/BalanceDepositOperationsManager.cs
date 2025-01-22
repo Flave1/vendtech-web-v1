@@ -88,6 +88,7 @@ namespace VendTech.BLL.Managers
                 depositDto.PaymentType = (int)DepositPaymentTypeEnum.VendorCommision;
 
             var deposit = GenerateDeposit(depositDto);
+            deposit.CreatedAt = DateTime.Now.AddSeconds(2);
             await CalculateBalance(deposit, pos);
             _context.Deposits.Add(deposit);
             await _context.SaveChangesAsync();

@@ -100,7 +100,7 @@ namespace VendTech.BLL.Common
             }
 
         }
-        public bool SendSmsToUserOnDepositApproval(PendingDeposit deposit)
+        public async Task<bool> SendSmsToUserOnDepositApproval(PendingDeposit deposit)
         {
             if (deposit.POS.SMSNotificationDeposit ?? true)
             {
@@ -113,7 +113,7 @@ namespace VendTech.BLL.Common
                    $"{Utilities.GetCountry().CurrencyCode}: {Utilities.FormatAmount(deposit.Amount)} \n" +
                    "VENDTECH"
                 };
-                return Utilities.SendSms(requestmsg).Result;
+                return await Utilities.SendSms(requestmsg);
             }
             return false;
         }

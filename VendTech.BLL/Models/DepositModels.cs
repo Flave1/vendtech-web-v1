@@ -561,7 +561,7 @@ namespace VendTech.BLL.Models
             if (obj.ValueDate != " 12:00")
                 ValueDateModel = obj.ValueDate == null ? new DateTime().ToString("dd/MM/yyyy hh:mm") : obj.ValueDate;
             Comment = obj.Comments;
-            ValueDateModel = obj.ValueDateStamp == null ? ValueDateModel : obj.ValueDateStamp.Value.ToString("dd/MM/yyyy hh:mm");
+            ValueDateModel = obj.ValueDate == null ? ValueDateModel : obj.ValueDate;
             //ValueDate = obj.ValueDateStamp == null ? ValueDateModel : obj.ValueDateStamp.Value.ToString("dd/MM/yyyy hh:mm");
         }
     } 
