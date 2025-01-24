@@ -2274,7 +2274,7 @@ namespace VendTech.BLL.Managers
                 dbDeposit.NameOnCheque = depositAuditModel.Payer != null ? depositAuditModel.Payer : "";
                 dbDeposit.CheckNumberOrSlipId = depositAuditModel.DepositRef != null ? depositAuditModel.DepositRef : "";
                 dbDeposit.UpdatedAt = DateTime.UtcNow;
-                dbDeposit.ValueDate = vlDate.ToString();
+                dbDeposit.ValueDate = depositAuditModel.ValueDateModel;//vlDate.ToString();
                 dbDeposit.ValueDateStamp = Convert.ToDateTime(Convert.ToDateTime(depositAuditModel.ValueDateModel).ToString("dd/MM/yyyy hh:mm"));
                 dbDeposit.PaymentType = depositAuditModel.Type != null ? int.Parse(depositAuditModel.Type) : _context.PaymentTypes.FirstOrDefault().PaymentTypeId;
 
@@ -2298,7 +2298,7 @@ namespace VendTech.BLL.Managers
             depositAuditModel.DepositId = dbDeposit.DepositId;
             depositAuditModel.Price = Utilities.FormatAmount(Convert.ToDecimal(dbDeposit.Amount));
             depositAuditModel.PosId = pos?.SerialNumber;
-            depositAuditModel.ValueDateModel = DateTime.UtcNow.ToString("dd/MM/yyyy hh:mm");
+            depositAuditModel.ValueDateModel = dbDeposit.ValueDate;// DateTime.UtcNow.ToString("dd/MM/yyyy hh:mm");
             depositAuditModel.Comment = dbDeposit.Comments;
             depositAuditModel.TransactionId = dbDeposit.TransactionId;
             return depositAuditModel;
@@ -2319,7 +2319,7 @@ namespace VendTech.BLL.Managers
                 dbDeposit.NameOnCheque = depositAuditModel.Payer != null ? depositAuditModel.Payer : "";
                 dbDeposit.CheckNumberOrSlipId = depositAuditModel.DepositRef != null ? depositAuditModel.DepositRef : "";
                 dbDeposit.UpdatedAt = DateTime.UtcNow;
-                dbDeposit.ValueDate = DateTime.UtcNow.ToString("dd/MM/yyyy hh:mm");
+                dbDeposit.ValueDate = depositAuditModel.ValueDateModel;
 
                 if (dbDeposit.NextReminderDate == null)
                     dbDeposit.NextReminderDate = dbDeposit.CreatedAt.AddDays(15);
