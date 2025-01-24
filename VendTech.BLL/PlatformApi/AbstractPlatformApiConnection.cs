@@ -26,7 +26,7 @@ namespace VendTech.BLL.PlatformApi
 
         public abstract Task<ExecutionResponse> Execute(ExecutionContext executionContext);
 
-       public abstract Task<ExecutionResponse> CheckStatus(ExecutionContext executionContext);
+        public abstract Task<ExecutionResponse> CheckStatus(ExecutionContext executionContext);
 
         protected async Task ExecutePOSTRequest(ApiRequestInfo apiRequestInfo, string url, HttpContent payload)
         {

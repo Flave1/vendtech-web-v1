@@ -101,4 +101,6 @@ namespace VendTech.BLL.Models
         public string CurrencyCode { get; set; } = "";
         public ReceiptStatus ReceiptStatus { get; set; } = new ReceiptStatus();
     }
+
+ 
 }

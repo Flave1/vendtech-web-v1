@@ -10,7 +10,7 @@ namespace VendTech.BLL.Interfaces
         PlatformTransactionModel New(long UserId, int platformId, long posId, Decimal amount, string beneficiary, string currency, int? apiConnId);
         DataTableResultModel<PlatformTransactionModel> GetPlatformTransactionsForDataTable(DataQueryModel query);
         Task<PlatformTransactionModel> GetPlatformTransactionById(DataQueryModel query, long id);
-        Task<bool> ProcessTransactionViaApi(long transactionId);
+        Task<bool> ProcessAirtimeTransactionViaApi(long transactionId);
         Task<List<PlatformApiLogModel>> GetTransactionLogs(long transactionId);
         Task CheckPendingTransaction();
         PagingResult<MeterRechargeApiListingModel> GetUserAirtimeRechargeTransactionDetailsHistory(ReportSearchModel model, bool callFromAdmin = false);
@@ -18,5 +18,6 @@ namespace VendTech.BLL.Interfaces
         AirtimeReceiptModel GetAirtimeReceipt(string traxId);
         ReceiptModel ReturnAirtimeReceipt(string rechargeId);
         Task<NetflixReceiptModel> RechargeNetflix(NetflixPlatformTransactionModel model);
+        Task<NetflixReceiptModel> GetNetflixPlans();
     }
 }

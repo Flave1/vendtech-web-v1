@@ -1,9 +1,5 @@
 ﻿using Newtonsoft.Json;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Text;
 using System.Threading.Tasks;
 using VendTech.BLL.Models;
 
@@ -48,7 +44,9 @@ namespace VendTech.BLL.PlatformApi
         public int Status { get; set; }
         public string UserReference { get; set; }   
         public string ApiTransactionId { get; set; }
+        public PlatformTypeEnum PlatformType { get; set; }
     }
+
 
     public class ExecutionResponse
     {

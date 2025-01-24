@@ -1,14 +1,10 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
 using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
-using System.Web.Mvc;
 using VendTech.BLL.Models;
 using static VendTech.BLL.PlatformApi.PlatformApi_Sochitel;
 
@@ -20,7 +16,7 @@ namespace VendTech.BLL.PlatformApi
         {
             ExecutionResponse response = new ExecutionResponse();
 
-            ConfigValidationReport validationReport = ValidateConfig(executionContext);
+            ConfigValidationReport validationReport = ValidateConfig(executionContext.PlatformApiConfig, executionContext.PerPlatformParams);
             if (validationReport.IsInvalid)
             {
                 //We can set this to Failed because we have not performed the check yet
@@ -86,14 +82,14 @@ namespace VendTech.BLL.PlatformApi
         {
             ExecutionResponse response = new ExecutionResponse();
 
-            ConfigValidationReport validationReport = ValidateConfig(executionContext);
+            ConfigValidationReport validationReport = ValidateConfig(executionContext.PlatformApiConfig, executionContext.PerPlatformParams);
             if (validationReport.IsInvalid)
             {
                 response.Status = (int)TransactionStatus.Failed;
                 response.ErrorMsg = validationReport.ValidationMsg;
                 return response;
             }
-
+            bool isTransactionExecution = true;
             string username = executionContext.PlatformApiConfig["username"];
             string password = executionContext.PlatformApiConfig["password"];
             string url = executionContext.PlatformApiConfig["url"];
@@ -111,7 +107,19 @@ namespace VendTech.BLL.PlatformApi
             response.UserReference = userReference;
 
             ApiAuth auth = new ApiAuth(username, password, salt);
-            var execTransactionCmd = new ExecuteTransaction(auth, userReference, operatorId, productId, amount, msisdn, accountId);
+            ExecuteTransaction execTransactionCmd = null;
+            if(executionContext.PlatformType == PlatformTypeEnum.AIRTIME)
+            {
+                execTransactionCmd = new ExecuteTransaction(auth, userReference, operatorId, productId, amount, msisdn, accountId);
+            }else if (executionContext.PlatformType == PlatformTypeEnum.NETFLIX)
+            {
+                execTransactionCmd = new ExecuteTransaction(auth, userReference, operatorId, productId, amount);
+            }
+            else
+            {
+                isTransactionExecution = false;
+                execTransactionCmd = new ExecuteTransaction(auth, operatorId, productId, "getOperatorProducts");
+            }
             string json = JsonConvert.SerializeObject(execTransactionCmd);
             var payload = new StringContent(json, Encoding.UTF8, "application/json");
 
@@ -146,6 +154,10 @@ namespace VendTech.BLL.PlatformApi
                 ApiResponse apiResponse = JsonConvert.DeserializeObject<ApiResponse>(apiRequestInfo.Response);
                 ApiResponseStatus status = apiResponse.Status;
 
+                //if (!isTransactionExecution)
+                //{
+                //    return response;
+                //}
                 ProcessStatus(response, status.Id);
 
                 if (apiResponse.Result != null)
@@ -166,7 +178,7 @@ namespace VendTech.BLL.PlatformApi
 
             return response;
         }
-
+ 
         private static void ProcessStatus(ExecutionResponse response, int status)
         {
             switch (status)
@@ -246,36 +258,36 @@ namespace VendTech.BLL.PlatformApi
             return guid.ToString().Replace("-", "");
         }
 
-        private static ConfigValidationReport ValidateConfig(ExecutionContext executionContext)
+        private static ConfigValidationReport ValidateConfig(IDictionary<string, string> PlatformApiConfig, IDictionary<string, string> PerPlatformParams)
         {
             ConfigValidationReport validationReport = new ConfigValidationReport();
             validationReport.IsInvalid = true;
 
             //Get the Per Platform Parameters where the Operator and Product is set.
-            if (!executionContext.PlatformApiConfig.ContainsKey("url"))
+            if (!PlatformApiConfig.ContainsKey("url"))
             {
                 validationReport.ValidationMsg = "URL not configured";
                 return validationReport;
             }
-            if (!executionContext.PlatformApiConfig.ContainsKey("username"))
+            if (!PlatformApiConfig.ContainsKey("username"))
             {
                 validationReport.ValidationMsg = "Username not configured";
                 return validationReport;
             }
-            if (!executionContext.PlatformApiConfig.ContainsKey("password"))
+            if (!PlatformApiConfig.ContainsKey("password"))
             {
                 validationReport.ValidationMsg = "Password not configured";
                 return validationReport;
             }
 
             //Get the Per Platform Parameters where the Operator and Product is set.
-            if (!executionContext.PerPlatformParams.ContainsKey("operatorId"))
+            if (!PerPlatformParams.ContainsKey("operatorId"))
             {
                 validationReport.ValidationMsg = "Operator ID not configured";
                 return validationReport;
             }
 
-            if (!executionContext.PerPlatformParams.ContainsKey("productId"))
+            if (!PerPlatformParams.ContainsKey("productId"))
             {
                 validationReport.ValidationMsg = "Product ID not configured";
                 return validationReport;
@@ -367,12 +379,16 @@ namespace VendTech.BLL.PlatformApi
         public string Product { get; }
         [JsonProperty("amount")]
         public decimal Amount { get; }
+        [JsonProperty("amountOperator")]
+        public decimal AmountOperator { get; }
         [JsonProperty("msisdn")]
         public string Msisdn { get; }
         [JsonProperty("accountId")]
         public string AccountId { get; }
         [JsonProperty("userReference")]
         public string UserReference { get; }
+        [JsonProperty("simulation")]
+        public string Simulation { get; }
 
         public ExecuteTransaction(ApiAuth auth,
             string userReference,
@@ -389,6 +405,30 @@ namespace VendTech.BLL.PlatformApi
             this.Msisdn = msisdn;
             this.AccountId = accountId;
             this.UserReference = userReference;
+        }
+
+        public ExecuteTransaction(ApiAuth auth,
+            string userReference,
+            string operatorId,
+            string productId,
+            decimal amount) : base(auth, "execTransaction")
+        {
+            //@todo - validate parameters
+            this.Operator = operatorId;
+            this.Product = productId;
+            this.AmountOperator = amount;
+            this.Amount = amount;
+            this.UserReference = userReference;
+            this.Simulation = "1";
+        }
+
+        public ExecuteTransaction(ApiAuth auth,
+            string operatorId,
+            string productId, string command) : base(auth, command)
+        {
+            //@todo - validate parameters
+            this.Operator = operatorId;
+            this.Product = productId;
         }
     }
 
@@ -517,4 +557,37 @@ namespace VendTech.BLL.PlatformApi
         public object[] Result { get; set; }
     }
 
+
+    public class ProductType
+    {
+        public string Id { get; set; }
+        public string Name { get; set; }
+    }
+
+    public class ProductCategory
+    {
+        public string Id { get; set; }
+        public string Name { get; set; }
+    }
+
+    public class Price
+    {
+        public string Operator { get; set; }
+        public string User { get; set; }
+    }
+
+    public class Product
+    {
+        public string Id { get; set; }
+        public ProductType ProductType { get; set; }
+        public ProductCategory ProductCategory { get; set; }
+        public string PriceType { get; set; }
+        public string Name { get; set; }
+        public Price Price { get; set; }
+    }
+
+    public class ProductData
+    {
+        public Dictionary<string, Product> Products { get; set; }
+    }
 }

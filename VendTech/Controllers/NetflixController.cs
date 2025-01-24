@@ -68,6 +68,8 @@ namespace VendTech.Controllers
             //if (deposits.List.Count > 0)
             //    model.History = deposits.List;
 
+            var productUpdateResult = await _platformTransactionManager.GetNetflixPlans();
+
 
             ViewBag.UserId = LOGGEDIN_USER.UserID;
             if (posList.Count > 0)

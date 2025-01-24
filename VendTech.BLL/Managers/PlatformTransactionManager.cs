@@ -12,6 +12,8 @@ using Newtonsoft.Json;
 using VendTech.BLL.PlatformApi;
 using VendTech.BLL.Common;
 using System.Threading.Tasks;
+using static VendTech.BLL.PlatformApi.PlatformApi_Sochitel;
+using System.Web.Helpers;
 
 namespace VendTech.BLL.Managers
 {
@@ -61,7 +63,7 @@ namespace VendTech.BLL.Managers
             return _context.PlatformTransactions.Where(x => x.Id == platformTransaction.Id).Select(PlatformTransactionModel.Projection).FirstOrDefault();
         }
 
-        public async Task<bool> ProcessTransactionViaApi(long transactionId)
+        public async Task<bool> ProcessAirtimeTransactionViaApi(long transactionId)
         {
             if (transactionId > 0)
             {
@@ -111,6 +113,7 @@ namespace VendTech.BLL.Managers
                     }
 
                     executionContext.Amount= tranx.Amount;
+                    executionContext.PlatformType = PlatformTypeEnum.AIRTIME;
 
                     //For now we will configure both MSISDN and Account ID
                     //TODO: we should know by platform type what field we should populate
@@ -152,6 +155,96 @@ namespace VendTech.BLL.Managers
 
             return false;
         }
+
+        public async Task<bool> ProcessNetflixTransactionViaApi(long transactionId)
+        {
+            if (transactionId > 0)
+            {
+                PlatformTransaction tranx = await GetPendingTransactionById(transactionId);
+                PlatformModel platform;
+                if (tranx != null)
+                {
+                    if (tranx.ApiConnectionId < 1)
+                    {
+                        platform = await _platformManager.GetPlatformById(tranx.PlatformId);
+                        if (platform != null && platform.PlatformId > 0 && platform.PlatformApiConnId > 0)
+                        {
+                            //update the connection of the transaction
+                            tranx.ApiConnectionId = platform.PlatformApiConnId;
+                            tranx.UpdatedAt = DateTime.UtcNow;
+
+                            _context.SaveChanges();
+                        }
+                    }
+
+                    if (tranx.ApiConnectionId < 1)
+                    {
+                        FlagTransactionWithStatus(tranx, TransactionStatus.Error);
+                        return false;
+                    }
+
+                    PlatformApiConnection platformApiConnection =
+                            _context.PlatformApiConnections.Where(p => p.Id == tranx.ApiConnectionId).FirstOrDefault();
+
+                    if (platformApiConnection == null)
+                    {
+                        FlagTransactionWithStatus(tranx, TransactionStatus.Error);
+                        return false;
+                    }
+
+                    ExecutionContext executionContext = new ExecutionContext();
+
+                    //PlatformApi config
+                    string config = platformApiConnection.PlatformApi.Config;
+                    executionContext.PlatformApiConfig = JsonConvert.DeserializeObject<Dictionary<string, string>>(config);
+
+                    //Get the Per Platform API Conn Params
+                    PlatformPacParams platformPacParams = await _platformApiManager.GetPlatformPacParams(tranx.PlatformId, (int)tranx.ApiConnectionId);
+                    if (platformPacParams != null && platformPacParams.ConfigDictionary != null)
+                    {
+                        executionContext.PerPlatformParams = platformPacParams.ConfigDictionary;
+                    }
+
+                    executionContext.Amount = tranx.Amount;
+                    executionContext.PlatformType = PlatformTypeEnum.NETFLIX;
+
+
+                    IPlatformApi api = _platformApiManager.GetPlatformApiInstanceByTypeId(platformApiConnection.PlatformApi.ApiType);
+                    ExecutionResponse execResponse = await api.Execute(executionContext);
+
+                    //Save the logs
+                    string logJSON = JsonConvert.SerializeObject(execResponse);
+                    PlatformApiLog log = new PlatformApiLog
+                    {
+                        TransactionId = tranx.Id,
+                        LogType = (int)ApiLogType.InitialRequest,
+                        ApiLog = logJSON,
+                        LogDate = DateTime.UtcNow
+                    };
+
+                    _context.PlatformApiLogs.Add(log);
+                    await _context.SaveChangesAsync();
+
+                    //Fetch from DB
+                    tranx = await GetPendingTransactionById(transactionId);
+                    tranx.Status = execResponse.Status;
+                    tranx.UserReference = execResponse.UserReference;
+                    tranx.OperatorReference = execResponse.OperatorReference;
+                    tranx.PinNumber = execResponse.PinNumber;
+                    tranx.PinSerial = execResponse.PinSerial;
+                    tranx.PinInstructions = execResponse.PinInstructions;
+                    tranx.ApiTransactionId = execResponse.ApiTransactionId;
+                    tranx.UpdatedAt = DateTime.UtcNow;
+
+                    await _context.SaveChangesAsync();
+
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
 
         public async Task CheckPendingTransaction()
         { 
@@ -450,7 +543,7 @@ namespace VendTech.BLL.Managers
                     model.Beneficiary, model.Currency, apiConn?.Id);
 
                 //Process the transaction via the API and 
-                await ProcessTransactionViaApi(tranxModel.Id);
+                await ProcessAirtimeTransactionViaApi(tranxModel.Id);
 
                 int Status = await _context.PlatformTransactions.Where(t => t.Id == tranxModel.Id).Select(t => t.Status).FirstOrDefaultAsync();
 
@@ -530,7 +623,7 @@ namespace VendTech.BLL.Managers
             var posid = user.POS.FirstOrDefault().POSId;
             var pos = await _context.POS.FirstOrDefaultAsync(p => p.POSId == posid);
 
-            if (pos.Balance == null || pos.Balance.Value < model.Amount)
+            if (pos.Balance == null || pos.Balance.Value < model.AmountOperator)
             {
                 response.ReceiptStatus.Status = "unsuccessful";
                 response.ReceiptStatus.Message = "INSUFFICIENT BALANCE FOR THIS TRANSACTION.";
@@ -542,7 +635,7 @@ namespace VendTech.BLL.Managers
             try
             {
                 //Deduct the amount from the balance so the user does not go and initiate another transaction while this is still in progress
-                pos.Balance = pos.Balance.Value - model.Amount;
+                pos.Balance = pos.Balance.Value - model.AmountOperator;
                 await _context.SaveChangesAsync();
 
                 balanceDeducted = true;
@@ -550,11 +643,11 @@ namespace VendTech.BLL.Managers
                 //Is the product configured with a Connection ID
                 PlatformApiConnection apiConn = await _context.PlatformApiConnections.Where(x => x.PlatformId == model.PlatformId).FirstOrDefaultAsync();
 
-                PlatformTransactionModel tranxModel = New(model.UserId, model.PlatformId, pos.POSId, model.Amount,
+                PlatformTransactionModel tranxModel = New(model.UserId, model.PlatformId, pos.POSId, model.AmountOperator,
                     "netflix", model.Currency, apiConn?.Id);
 
                 //Process the transaction via the API and 
-                await ProcessTransactionViaApi(tranxModel.Id);
+                await ProcessNetflixTransactionViaApi(tranxModel.Id);
 
                 int Status = await _context.PlatformTransactions.Where(t => t.Id == tranxModel.Id).Select(t => t.Status).FirstOrDefaultAsync();
 
@@ -574,10 +667,10 @@ namespace VendTech.BLL.Managers
                     PlatformTransaction tranx = await _context.PlatformTransactions.FirstOrDefaultAsync(t => t.Id == tranxModel.Id);
                     tranx.TransactionDetailId = transactionDetail.TransactionDetailsId;
 
-                    transactionDetail.TenderedAmount = model.Amount;
-                    transactionDetail.Amount = model.Amount;
+                    transactionDetail.TenderedAmount = model.AmountOperator;
+                    transactionDetail.Amount = model.AmountOperator;
                     transactionDetail.CurrentVendorBalance = pos.Balance;
-                    transactionDetail.BalanceBefore = (pos.Balance + model.Amount);
+                    transactionDetail.BalanceBefore = (pos.Balance + model.AmountOperator);
                     await _context.SaveChangesAsync();
                     response = GenerateNetflixReceipt(transactionDetail);
                     Push_notification_to_user(user, model, transactionDetail.TransactionDetailsId);
@@ -593,14 +686,14 @@ namespace VendTech.BLL.Managers
                 {
                     if (balanceDeducted)
                     {
-                        ReverseBalanceDeduction(_context, pos, model.Amount);
+                        ReverseBalanceDeduction(_context, pos, model.AmountOperator);
                     }
                 }
                 else
                 {
                     if (balanceDeducted)
                     {
-                        ReverseBalanceDeduction(_context, pos, model.Amount);
+                        ReverseBalanceDeduction(_context, pos, model.AmountOperator);
                     }
                 }
 
@@ -614,12 +707,44 @@ namespace VendTech.BLL.Managers
                 //If balance was deducted before exception then reverse
                 if (balanceDeducted)
                 {
-                    ReverseBalanceDeduction(_context, pos, model.Amount);
+                    ReverseBalanceDeduction(_context, pos, model.AmountOperator);
                 }
                 response.ReceiptStatus.Status = "pending";
                 response.ReceiptStatus.Message = "Airtime recharge failed due to an error. Please contact Administrator";
                 return response;
             }
+        }
+
+
+        public async Task<NetflixReceiptModel> GetNetflixPlans()
+        {
+            int ApiConnectionId = 14;
+            int PlatformId = 7;
+            PlatformApiConnection platformApiConnection =
+                           _context.PlatformApiConnections.Where(p => p.Id == ApiConnectionId).FirstOrDefault();
+
+            var response = new NetflixReceiptModel { ReceiptStatus = new ReceiptStatus() };
+            ExecutionContext executionContext = new ExecutionContext();
+
+            //PlatformApi config
+            string config = platformApiConnection.PlatformApi.Config;
+            executionContext.PlatformApiConfig = JsonConvert.DeserializeObject<Dictionary<string, string>>(config);
+
+            //Get the Per Platform API Conn Params
+            PlatformPacParams platformPacParams = await _platformApiManager.GetPlatformPacParams(PlatformId, ApiConnectionId);
+            if (platformPacParams != null && platformPacParams.ConfigDictionary != null)
+            {
+                executionContext.PerPlatformParams = platformPacParams.ConfigDictionary;
+            }
+
+
+            IPlatformApi api = _platformApiManager.GetPlatformApiInstanceByTypeId(platformApiConnection.PlatformApi.ApiType);
+            ExecutionResponse execResponse = await api.Execute(executionContext);
+
+            ApiResponse apiResponse = JsonConvert.DeserializeObject<ApiResponse>(execResponse.ApiCalls[0].Response);
+            var res = apiResponse.Result.ToArray()[2];
+            //var productData = JsonConvert.DeserializeObject<ProductData>(res.Value);
+            return null;
         }
 
 
@@ -648,7 +773,7 @@ namespace VendTech.BLL.Managers
             obj.UserId = model.UserId;
             obj.Id = MeterRechargeId;
             obj.Title = "Airtime recharged successfully";
-            obj.Message = $"Your phone has successfully recharged with SLe {Utilities.FormatAmount(model.Amount)}";
+            obj.Message = $"Your phone has successfully recharged with SLe {Utilities.FormatAmount(model.AmountOperator)}";
             obj.NotificationType = NotificationTypeEnum.AirtimeRecharge;
             obj.Balance = user.POS.FirstOrDefault().Balance.Value;
             foreach (var item in deviceTokens)
@@ -831,6 +956,7 @@ namespace VendTech.BLL.Managers
             receipt.PlatformId = model.PlatFormId;
             return receipt;
         }
+
     }
 
 
