@@ -3019,3 +3019,151 @@ A potentially dangerous Request.QueryString value was detected from the client (
 
 
 
+Object reference not set to an instance of an object.
+
+
+
+Object reference not set to an instance of an object.
+
+
+
+c:\Users\thispc\Desktop\FLAVETECH\Vendtech\vendtech-web\VendTech\Views\Netflix\Recharge.cshtml(6): error CS0029: Cannot implicitly convert type 'System.Collections.Generic.List<VendTech.BLL.Models.NetflixPlatformTransactionModel>' to 'System.Collections.Generic.List<VendTech.BLL.Models.MeterRechargeApiListingModel>'
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...neric.List<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...neric.List<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...neric.List<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...neric.List<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...neric.List<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...neric.List<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...neric.List<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...neric.List<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...neric.List<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...neric.List<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...neric.List<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...neric.List<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...neric.List<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...neric.List<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...neric.List<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...neric.List<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...neric.List<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...neric.List<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...neric.List<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...neric.List<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...neric.List<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...neric.List<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...neric.List<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...neric.List<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...neric.List<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...neric.List<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...neric.List<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...neric.List<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...neric.List<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...neric.List<VendTech.BLL.Models...").
+
+
+
+A potentially dangerous Request.QueryString value was detected from the client (errorMessage="...neric.List<VendTech.BLL.Models...").
+
+
+
+An item with the same key has already been added.
+
+
+
+An item with the same key has already been added.
+
+
+
+An item with the same key has already been added.
+
+
+

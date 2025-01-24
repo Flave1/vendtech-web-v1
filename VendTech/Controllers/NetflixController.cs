@@ -54,19 +54,19 @@ namespace VendTech.Controllers
 
             ViewBag.IsPlatformAssigned = products.Count > 0;
             JavaScriptSerializer js = new JavaScriptSerializer();
-            //var hostory_model = new ReportSearchModel
-            //{
-            //    SortBy = "CreatedAt",
-            //    SortOrder = "Desc",
-            //    PageNo = 1,
-            //    VendorId = LOGGEDIN_USER.UserID,
-            //    PlatformId = Convert.ToInt32(provider)
-            //};
+            var hostory_model = new ReportSearchModel
+            {
+                SortBy = "CreatedAt",
+                SortOrder = "Desc",
+                PageNo = 1,
+                VendorId = LOGGEDIN_USER.UserID,
+                PlatformId = Convert.ToInt32(provider)
+            };
 
-            //var deposits = _platformTransactionManager.GetUserAirtimeRechargeTransactionDetailsHistory(hostory_model);
+            var deposits = _platformTransactionManager.GetUserNetflixRechargeTransactionDetailsHistory(hostory_model);
 
-            //if (deposits.List.Count > 0)
-            //    model.History = deposits.List;
+            if (deposits.List.Count > 0)
+                model.History = deposits.List;
 
             var productUpdateResult = await _platformTransactionManager.GetNetflixPlans();
 

@@ -89,7 +89,7 @@ namespace VendTech.BLL.PlatformApi
                 response.ErrorMsg = validationReport.ValidationMsg;
                 return response;
             }
-            bool isTransactionExecution = true;
+
             string username = executionContext.PlatformApiConfig["username"];
             string password = executionContext.PlatformApiConfig["password"];
             string url = executionContext.PlatformApiConfig["url"];
@@ -117,7 +117,6 @@ namespace VendTech.BLL.PlatformApi
             }
             else
             {
-                isTransactionExecution = false;
                 execTransactionCmd = new ExecuteTransaction(auth, operatorId, productId, "getOperatorProducts");
             }
             string json = JsonConvert.SerializeObject(execTransactionCmd);
@@ -387,8 +386,8 @@ namespace VendTech.BLL.PlatformApi
         public string AccountId { get; }
         [JsonProperty("userReference")]
         public string UserReference { get; }
-        [JsonProperty("simulation")]
-        public string Simulation { get; }
+        [JsonProperty("simulate")]
+        public string Simulate { get; }
 
         public ExecuteTransaction(ApiAuth auth,
             string userReference,
@@ -419,7 +418,7 @@ namespace VendTech.BLL.PlatformApi
             this.AmountOperator = amount;
             this.Amount = amount;
             this.UserReference = userReference;
-            this.Simulation = "1";
+            this.Simulate = "1";
         }
 
         public ExecuteTransaction(ApiAuth auth,

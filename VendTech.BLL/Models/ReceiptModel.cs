@@ -99,6 +99,7 @@ namespace VendTech.BLL.Models
         public string ReceiptTitle { get; set; }
         public bool IsNewRecharge { get; set; }
         public string CurrencyCode { get; set; } = "";
+        public string Pin { get; set; }
         public ReceiptStatus ReceiptStatus { get; set; } = new ReceiptStatus();
     }
 

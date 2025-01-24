@@ -481,13 +481,13 @@ https://go.microsoft.com/fwlink/?LinkID=208121.
       <publishTime>01/01/0001 00:00:00</publishTime>
     </File>
     <File Include="bin/VendTech.BLL.dll">
-      <publishTime>01/19/2025 22:09:43</publishTime>
+      <publishTime>01/24/2025 12:05:05</publishTime>
     </File>
     <File Include="bin/VendTech.BLL.dll.config">
       <publishTime>11/13/2024 17:19:03</publishTime>
     </File>
     <File Include="bin/VendTech.BLL.pdb">
-      <publishTime>01/19/2025 22:09:43</publishTime>
+      <publishTime>01/24/2025 12:05:05</publishTime>
     </File>
     <File Include="bin/VendTech.DAL.dll">
       <publishTime>12/11/2024 05:47:35</publishTime>
@@ -499,22 +499,22 @@ https://go.microsoft.com/fwlink/?LinkID=208121.
       <publishTime>12/11/2024 05:47:35</publishTime>
     </File>
     <File Include="bin/VendTech.dll">
-      <publishTime>01/19/2025 22:09:46</publishTime>
+      <publishTime>01/24/2025 12:05:08</publishTime>
     </File>
     <File Include="bin/VendTech.dll.config">
-      <publishTime>01/19/2025 21:23:38</publishTime>
+      <publishTime>01/24/2025 10:34:02</publishTime>
     </File>
     <File Include="bin/VendTech.Framework.dll">
-      <publishTime>01/19/2025 22:09:44</publishTime>
+      <publishTime>01/24/2025 12:05:06</publishTime>
     </File>
     <File Include="bin/VendTech.Framework.dll.config">
       <publishTime>11/13/2024 17:17:36</publishTime>
     </File>
     <File Include="bin/VendTech.Framework.pdb">
-      <publishTime>01/19/2025 22:09:44</publishTime>
+      <publishTime>01/24/2025 12:05:06</publishTime>
     </File>
     <File Include="bin/VendTech.pdb">
-      <publishTime>01/19/2025 22:09:46</publishTime>
+      <publishTime>01/24/2025 12:05:08</publishTime>
     </File>
     <File Include="bin/WebActivatorEx.dll">
       <publishTime>04/11/2022 07:09:00</publishTime>
@@ -880,10 +880,19 @@ https://go.microsoft.com/fwlink/?LinkID=208121.
       <publishTime>06/01/2024 05:52:46</publishTime>
     </File>
     <File Include="Views/Meter/Utility.cshtml">
-      <publishTime>08/02/2024 16:00:20</publishTime>
+      <publishTime>01/24/2025 12:19:37</publishTime>
     </File>
     <File Include="Views/Meter/Utility_e.cshtml">
       <publishTime>01/01/0001 00:00:00</publishTime>
+    </File>
+    <File Include="Views/Netflix/Partials/_downTimeNotification.cshtml">
+      <publishTime>01/24/2025 10:34:02</publishTime>
+    </File>
+    <File Include="Views/Netflix/Partials/_salesListing.cshtml">
+      <publishTime>01/24/2025 12:05:00</publishTime>
+    </File>
+    <File Include="Views/Netflix/Recharge.cshtml">
+      <publishTime>01/24/2025 12:02:15</publishTime>
     </File>
     <File Include="Views/PlatformTransaction/Execute.cshtml">
       <publishTime>02/11/2023 07:06:03</publishTime>
@@ -978,6 +987,9 @@ https://go.microsoft.com/fwlink/?LinkID=208121.
     <File Include="Views/Shared/_Layout.cshtml">
       <publishTime>01/01/0001 00:00:00</publishTime>
     </File>
+    <File Include="Views/Shared/_netflixReceipt.cshtml">
+      <publishTime>01/24/2025 11:41:54</publishTime>
+    </File>
     <File Include="Views/Shared/_SideBaar.cshtml">
       <publishTime>01/01/0001 00:00:00</publishTime>
     </File>
@@ -991,7 +1003,7 @@ https://go.microsoft.com/fwlink/?LinkID=208121.
       <publishTime>02/11/2023 07:06:04</publishTime>
     </File>
     <File Include="Web.config">
-      <publishTime>01/19/2025 21:24:29</publishTime>
+      <publishTime>01/24/2025 12:15:36</publishTime>
     </File>
   </ItemGroup>
 </Project>

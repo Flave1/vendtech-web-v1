@@ -6750,6 +6750,7 @@
     <Content Include="Views\Shared\_Title.cshtml" />
     <Content Include="Views\User\EditProfile_old.cshtml" />
     <Content Include="Views\Shared\_ordinaryLayout.cshtml" />
+    <Content Include="Views\Shared\_netflixReceipt.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />

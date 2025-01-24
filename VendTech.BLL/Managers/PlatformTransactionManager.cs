@@ -444,6 +444,43 @@ namespace VendTech.BLL.Managers
             return result;
         }
 
+        public PagingResult<MeterRechargeApiListingModel> GetUserNetflixRechargeTransactionDetailsHistory(ReportSearchModel model, bool callFromAdmin)
+        {
+           
+            var result = new PagingResult<MeterRechargeApiListingModel>();
+            var query = _context.TransactionDetails.OrderByDescending(d => d.CreatedAt)
+                .Where(p => !p.IsDeleted && p.Finalised == true && p.POSId != null && p.Platform.PlatformType == (int)PlatformTypeEnum.NETFLIX && p.PlatFormId == model.PlatformId);
+
+            if (model.VendorId > 0)
+            {
+                var user = _context.Users.FirstOrDefault(p => p.UserId == model.VendorId);
+                var posIds = new List<long>();
+                if (callFromAdmin)
+                    posIds = _context.POS.Where(p => p.VendorId == model.VendorId).Select(p => p.POSId).ToList();
+                else
+                    posIds = _context.POS.Where(p => p.VendorId != null && (p.VendorId == user.FKVendorId)).Select(p => p.POSId).ToList();
+                query = query.Where(p => posIds.Contains(p.POSId.Value));
+            }
+
+            var list = query.Take(10).OrderByDescending(x => x.CreatedAt).AsEnumerable().Select(x => new MeterRechargeApiListingModel
+            {
+                Amount = Utilities.FormatAmount(x.Amount),
+                ProductShortName = x.Platform.Title,
+                CreatedAt = x.CreatedAt.ToString("dd/MM/yyyy hh:mm"),
+                MeterNumber = x.Meter == null ? x.MeterNumber1 : x.Meter.Number,
+                POSId = x.POSId == null ? "" : x.POS.SerialNumber,
+                Status = ((RechargeMeterStatusEnum)x.Status).ToString(),
+                TransactionId = x.TransactionId,
+                RechargePin = x.Platform.PlatformType == 5 ? Utilities.FormatThisToken(x.MeterToken1) : x.MeterNumber1 + "/" + x.TransactionId,
+                NotType = "sale",
+            }).ToList();
+
+            result.List = list;
+            result.Status = ActionStatus.Successfull;
+            result.Message = "Airtime recharges fetched successfully.";
+            return result;
+        }
+
         public DataTableResultModel<PlatformTransactionModel> GetPlatformTransactionsForDataTable(DataQueryModel query)
         {
             var result = DataTableResultModel<PlatformTransactionModel>.NewResultModel();
@@ -671,6 +708,7 @@ namespace VendTech.BLL.Managers
                     transactionDetail.Amount = model.AmountOperator;
                     transactionDetail.CurrentVendorBalance = pos.Balance;
                     transactionDetail.BalanceBefore = (pos.Balance + model.AmountOperator);
+                    transactionDetail.MeterToken1 = tranx.PinNumber;
                     await _context.SaveChangesAsync();
                     response = GenerateNetflixReceipt(transactionDetail);
                     Push_notification_to_user(user, model, transactionDetail.TransactionDetailsId);
@@ -812,6 +850,8 @@ namespace VendTech.BLL.Managers
                 receipt.ReceiptTitle = "AFRICELL";
             if (trax.PlatFormId == 4)
                 receipt.ReceiptTitle = "QCELL";
+            if (trax.PlatFormId == 7)
+                receipt.ReceiptTitle = "NETFLIX";
 
             receipt.IsNewRecharge = true;
             return receipt;
@@ -828,7 +868,7 @@ namespace VendTech.BLL.Managers
             receipt.ShouldShowSmsButton = (bool)trax.POS.WebSms;
             receipt.ShouldShowPrintButton = (bool)trax.POS.WebPrint;
             receipt.CurrencyCode = Utilities.GetCountry().CurrencyCode;
-
+            receipt.Pin = trax.MeterToken1;
             if (trax.PlatFormId == 2)
                 receipt.ReceiptTitle = "ORANGE";
             if (trax.PlatFormId == 3)

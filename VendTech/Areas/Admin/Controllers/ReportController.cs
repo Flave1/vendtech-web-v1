@@ -17,8 +17,6 @@ using System.Data;
 using System.Drawing;
 using System.Web.Script.Serialization;
 using Newtonsoft.Json;
-using System.Text.RegularExpressions;
-using System.Net.Http;
 
 namespace VendTech.Areas.Admin.Controllers
 {

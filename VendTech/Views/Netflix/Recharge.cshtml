@@ -19,6 +19,24 @@
         appearance: none;
         margin: 0;
     }
+
+/*    section {
+        font-family: Arial, sans-serif;
+        background: #141414;
+        color: white;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+    }*/
+
+  /*  .container {
+        display: flex;
+        gap: 20px;
+    }*/
+
 </style>
 <link rel="preconnect" href="https://fonts.gstatic.com">
 @*<link href="https://fonts.googleapis.com/css2?family=Libre+Barcode+39+Text&display=swap" rel="stylesheet">*@
@@ -70,6 +88,26 @@
                     .deselectOperator {
                         border: none;
                     }
+
+
+                    .widget {
+                        /*background: #E50914;*/
+                        padding: 20px;
+                        border-radius: 10px;
+                        width: 250px;
+                        text-align: center;
+                        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+                    }
+
+                        .widget img {
+                            width: 100px;
+                        }
+
+                    .price {
+                        font-size: 20px;
+                        font-weight: bold;
+                        margin-top: 10px;
+                    }
                 </style>
                 <div class="col-md-12">
                     <div class="block-flat">
@@ -107,7 +145,20 @@
 
                                                     <div class="row padded">
 
-                                                        <div class="col-md-8">
+                                                        @*<h1>Choose Your Plan</h1>*@
+                                                        <div class="widget" onclick="openModal('Basic', '36.00', '915.33')">
+                                                            <img src="https://upload.wikimedia.org/wikipedia/commons/7/7a/Logonetflix.png" alt="Netflix Logo">
+                                                            <div class="price">$36.00 / SLL 915.33</div>
+                                                        </div>
+                                                        <div class="widget" onclick="openModal('Premium', '14.99', '1423.85')">
+                                                            <img src="https://upload.wikimedia.org/wikipedia/commons/7/7a/Logonetflix.png" alt="Netflix Logo">
+                                                            <div class="price">$56.00 / SLL 1423.85</div>
+                                                        </div>
+
+                                                        @Html.HiddenFor(x => x.AmountOperator, new { @class = "form-control" })
+                                                        @Html.ValidationMessageFor(x => x.AmountOperator)
+
+                                                        @*<div class="col-md-8">
                                                             <label>AMOUNT</label>
 
                                                             <input style="font-weight:bold; color: red; text-align:right;  height:50px; font-size:35px;"
@@ -116,8 +167,7 @@
                                                                    onkeyup="amountFormatter()"
                                                                    class="form-control " />
 
-                                                            @Html.HiddenFor(x => x.AmountOperator, new { @class = "form-control" })
-                                                            @Html.ValidationMessageFor(x => x.AmountOperator)
+
                                                         </div>
 
                                                         <div class="col-md-4">
@@ -132,7 +182,7 @@
                                                                        class="savebttn addDepositBtn"
                                                                        id="pay_Now_Btn" value="PAY NOW">
                                                             </div>
-                                                        </div>
+                                                        </div>*@
                                                     </div>
                                                 </div>
                                             </form>
@@ -153,7 +203,7 @@
                                                         </tr>
                                                     </thead>
                                                     <tbody>
-                                                        @*@Html.Partial("Partials/_salesListing", history)*@
+                                                        @Html.Partial("Partials/_salesListing", history)
                                                     </tbody>
                                                 </table>
                                             </div>
@@ -183,24 +233,16 @@
             <div class="modal-content">
                 <div class="modal-header modal-header-colored" style="background-color: #e4c200">
                     <h3 class="modal-title" style="color:black; font-weight:bold; text-transform:capitalize;">PLEASE CONFIRM YOUR PURCHASE</h3>
-                    <button class="close md-close" type="button" data-dismiss="modal" aria-hidden="true"><span class="mdi mdi-close">       </span></button>
+                    <button class="close md-close" type="button" data-dismiss="modal" aria-hidden="true">&times;</button>
                 </div>
                 <div class="modal-body">
                     <div class="col-md-12">
-                        <div class="row" style="margin-top:55px; margin-bottom: 25px ">
+                        <div class="row" style="margin-top:55px; margin-bottom: 25px">
                             <div class="col-md-4 col-item">
-                                <span class="adv-company-name">Phone No:</span>
+                                <span class="adv-company-name">Plan:</span>
                             </div>
                             <div class="col-md-8 col-item">
-                                <span id="phoneno" class="adv-company-name" style="font-weight: bold; font-size: 30px;">Peter Bamidele</span>
-                            </div>
-                        </div>
-                        <div class="row" style="margin-top:55px; margin-bottom: 25px ">
-                            <div class="col-md-4 col-item">
-                                <span class="adv-company-name">Product:</span>
-                            </div>
-                            <div class="col-md-8 col-item">
-                                <span id="product" class="adv-company-name" style="font-weight: bold; font-size: 30px;">AFRICELL</span>
+                                <span id="plan" class="adv-company-name" style="font-weight: bold; font-size: 30px;"></span>
                             </div>
                         </div>
                         <div class="row">
@@ -208,15 +250,18 @@
                                 <span class="adv-company-name">Amount:</span>
                             </div>
                             <div class="col-md-8 col-item">
-                                <span class="amount-currency">@country.CurrencyCode: </span>
-                                <span id="pamount" class="adv-amount-figure" style="font-weight:bold; font-size:30px;">100.00</span>
+                                <span class="amount-currency">USD: </span>
+                                <span id="usd-amount" class="adv-amount-figure" style="font-weight:bold; font-size:30px;"></span>
+                                <br>
+                                <span class="amount-currency">SLL: </span>
+                                <span id="sll-amount" class="adv-amount-figure" style="font-weight:bold; font-size:30px;"></span>
                             </div>
                         </div>
-
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary md-close" type="button" data-dismiss="modal">Cancel</button>
+                    @*<button class="btn btn-primary md-close" id="confirm-purchase" type="button" data-dismiss="modal">Proceed</button>*@
                     <button class="btn btn-primary md-close" id="rechargeAirtime" type="button" data-dismiss="modal">Proceed</button>
                 </div>
             </div>
@@ -225,8 +270,8 @@
 
 
     @Html.Partial("Partials/_downTimeNotification")
-    <div class="modal fade" id="airtimeReceiptModal">
-        @Html.Partial("_airtimeReceipt")
+    <div class="modal fade" id="netflixReceiptModal">
+        @Html.Partial("_netflixReceipt")
     </div>
 
 </div>
@@ -240,7 +285,15 @@
     <script src="~/Scripts/UserScripts/sms.js"></script>
 
     <script>
+        function openModal(plan, usd, sll) {
+            document.getElementById('plan').textContent = plan;
+            document.getElementById('usd-amount').textContent = "$" + usd;
+            document.getElementById('sll-amount').textContent = "SLL " + sll;
 
+            document.getElementById('AmountOperator').value = sll;
+            document.getElementById('platformIdSelect').value = '7';
+            $("#form-bp1").modal("show")
+        }
         var salesHandler = {
                         amount : '@VendTech.BLL.Common.Utilities.FormatAmount(ViewBag.walletBalance)'
                     }
@@ -356,7 +409,7 @@
         });
 
         function closeSmsReceiptModal() {
-            $("#airtimeReceiptModal").modal("hide");
+            $("#netflixReceiptModal").modal("hide");
         }
 
 
@@ -461,7 +514,7 @@
                 data: $("#rechargeForm").serialize(),
                 type: 'POST',
                 success: function (data) {
-
+                    debugger
                     const response = JSON.parse(data)
                     disableSubmit(false);
 
@@ -498,7 +551,7 @@
                         $("#receiptTitle").html(response.Data.ReceiptTitle);
 
 
-                        $("#airtimeReceiptModal").modal("show");
+                        $("#netflixReceiptModal").modal("show");
                     } else {
 
                         $.ShowMessage($('div.messageAlert'), response.Msg, MessageType.Failed);
