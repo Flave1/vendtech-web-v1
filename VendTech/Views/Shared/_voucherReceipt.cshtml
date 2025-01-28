@@ -31,7 +31,7 @@
                 <div class="col-md-6 col-sm-12 col-xs-12 " style="text-align:right;">
                     <div style="text-align: right;">
 
-                        <strong>Vendor Name :</strong>  <span  id="vendorId">Office Coporate</span>
+                        <strong>Vendor Name :</strong>  <span id="vendorId">Office Coporate</span>
                     </div>
                 </div>
             </div>
@@ -145,7 +145,8 @@
                     </div>
                     <div class="d-flex justify-content-right" id="print_section">
                         <button type="button" class="btn cancelBtn waves-effect waves-light " id="showsms_btn" onclick="smsHandler.openSmsModal(false)" style="display:none">SMS</button>
-                        <button class="btn submitBtn waves-effect waves-light " onclick="Print()" id="showprint_btn" style="display:none">PRINT</button>
+                        <button class="btn submitBtn waves-effect waves-light " onclick="Print()" id="showprint_btn" style="display:none">USB PRINT</button>
+                        <button class="btn submitBtn waves-effect waves-light" id="blthprint_btn" style="display: none; display: inline-block;" onclick="printText()">BULETHOOTH PRINT</button>
                     </div>
                 </div>
             </div>
@@ -156,4 +157,68 @@
     </div>
 
 </div>
-@*<iframe name="print_frame" width="0" height="0" frameborder="0" src="about:blank"></iframe>*@
+
+<script>
+    let printerDevice;
+    let printerServer;
+    let printerService;
+    let printerCharacteristic;
+
+    // Function to connect to Bluetooth Printer
+    async function connectPrinter() {
+        try {
+            printerDevice = await navigator.bluetooth.requestDevice({
+                acceptAllDevices: true,
+                optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb'] // Generic UUID for printers
+            });
+
+            printerServer = await printerDevice.gatt.connect();
+            printerService = await printerServer.getPrimaryService('000018f0-0000-1000-8000-00805f9b34fb');
+            printerCharacteristic = await printerService.getCharacteristic('00002af1-0000-1000-8000-00805f9b34fb');
+
+            alert("✅ Connected to printer!");
+        } catch (error) {
+            console.error(error);
+            alert("❌ Connection failed: " + error);
+        }
+    }
+
+    // Function to print HTML section
+    async function printText() {
+        if (!printerCharacteristic) {
+            connectPrinter();
+            //alert("❌ Printer not connected!");
+            return;
+        }
+
+        let textEncoder = new TextEncoder();
+        const element = document.getElementById("printSection");
+
+        // Extract text content from the section
+        let textToPrint = element.innerText || element.textContent;
+
+        // Format text for printing
+        let formattedText = `\n\n${textToPrint}\n\n`;
+
+        // Convert text to bytes
+        let data = textEncoder.encode(formattedText);
+
+        // Define the maximum BLE write size (512 bytes)
+        const MAX_CHUNK_SIZE = 512;
+
+        try {
+            // Send data in chunks of 512 bytes
+            for (let i = 0; i < data.length; i += MAX_CHUNK_SIZE) {
+                let chunk = data.slice(i, i + MAX_CHUNK_SIZE);
+                await printerCharacteristic.writeValue(chunk);
+                await new Promise(resolve => setTimeout(resolve, 50));
+            }
+
+            alert("✅ Print command sent!");
+        } catch (error) {
+            console.error(error);
+            alert("❌ Failed to print: " + error);
+        }
+    }
+</script>
+

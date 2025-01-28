@@ -1071,3 +1071,35 @@ One or more errors occurred.
 
 
 
+Input string was not in a correct format.
+
+
+
+Input string was not in a correct format.
+
+
+
+Object reference not set to an instance of an object.
+
+
+
+Object reference not set to an instance of an object.
+
+
+
+Object reference not set to an instance of an object.
+
+
+
+Object reference not set to an instance of an object.
+
+
+
+Object reference not set to an instance of an object.
+
+
+
+No connection string named 'VendtechEntities' could be found in the application config file.
+
+
+

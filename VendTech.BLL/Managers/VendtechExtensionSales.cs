@@ -16,6 +16,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Diagnostics;
 using VendTech.BLL.PlatformApi;
+using System.Data.Entity.Validation;
 
 namespace VendTech.BLL.Managers
 {
@@ -105,13 +106,31 @@ namespace VendTech.BLL.Managers
 
                 vendResponseResult = vendResponse?.Result;
 
-                if (vendResponse.Status.ToLower() != "success")
+                if (vendResponse.Status.ToLower() == "pending")
+                {
+                    int count = 0;
+                    do
+                    {
+                        vendResponse = await QueryStatusRequest(model, transactionDetail);
+                        vendResponseResult = vendResponse.Result;
+
+                        transactionDetail.VendStatus = vendResponseResult.FailedResponse.ErrorMessage;
+                        transactionDetail.VendStatusDescription = vendResponseResult?.FailedResponse?.ErrorDetail;
+                        transactionDetail.QueryStatusCount = count;
+                        count += 1;
+                        _context.TransactionDetails.AddOrUpdate(transactionDetail);
+                        await _context.SaveChangesAsync();
+                        ReadErrorMessage(vendResponse.Message, transactionDetail);
+                    } while (vendResponse.Status.ToLower() == "pending");
+                }
+                else if (vendResponse.Status.ToLower() != "success")
                 {
                     transactionDetail.VendStatus = vendResponseResult.FailedResponse.ErrorMessage;
                     transactionDetail.VendStatusDescription = vendResponseResult?.FailedResponse?.ErrorDetail;
+                    await UpdateTransactionOnFailed(vendResponse?.Result, transactionDetail);
                     _context.TransactionDetails.AddOrUpdate(transactionDetail);
-                    ReadErrorMessage(vendResponse.Message, transactionDetail);
                     await _context.SaveChangesAsync();
+                    ReadErrorMessage(vendResponse.Message, transactionDetail);
                 }
 
                 vendResponseResult = vendResponse?.Result;
@@ -174,7 +193,7 @@ namespace VendTech.BLL.Managers
             {
                 DisablePlatform(PlatformTypeEnum.ELECTRICITY);
                 FlagTransaction(tx, RechargeMeterStatusEnum.Failed);
-                NotifyAdmin1();
+                NotifyAdmin();
                 throw new ArgumentException(message);
             }
 
@@ -182,7 +201,7 @@ namespace VendTech.BLL.Managers
             {
                 DisablePlatform(PlatformTypeEnum.ELECTRICITY);
                 FlagTransaction(tx, RechargeMeterStatusEnum.Failed);
-                NotifyAdmin1();
+                NotifyAdmin();
                 throw new ArgumentException("Due to some technical resolutions involving EDSA, the system is unable to vend");
             }
 
@@ -218,6 +237,12 @@ namespace VendTech.BLL.Managers
                 FlagTransaction(tx, RechargeMeterStatusEnum.Failed);
                 throw new ArgumentException("Purchase units less than minimum.");
             }
+            if(message == "The specified TransactionID already exists for this terminal.")
+            {
+
+                FlagTransaction(tx, RechargeMeterStatusEnum.Failed);
+                throw new ArgumentException("Please try again!!");
+            }
         }
 
         private void FlagTransaction(TransactionDetail tx, RechargeMeterStatusEnum status)
@@ -237,7 +262,7 @@ namespace VendTech.BLL.Managers
             }
         }
 
-        void NotifyAdmin1()
+        void NotifyAdmin()
         {
             var body = $"Hello Victor</br></br>" +
                 $"This is to notify you that VENDTECH IServices is receiving errors from EDSA or RTS and has been disabled</br></br>" +
@@ -461,7 +486,7 @@ namespace VendTech.BLL.Managers
             try
             {
                 var voucher = response_data.SuccessResponse.Voucher;
-                trans.CostOfUnits = voucher.CostOfUnits;
+                trans.CostOfUnits = voucher.CostOfUnits ?? "0";
                 trans.MeterToken1 = voucher.MeterToken1?.ToString() ?? string.Empty;
                 trans.MeterToken2 = voucher.MeterToken2?.ToString() ?? string.Empty;
                 trans.MeterToken3 = voucher?.MeterToken3?.ToString() ?? string.Empty;
@@ -497,16 +522,33 @@ namespace VendTech.BLL.Managers
         private async Task Deductbalace(TransactionDetail trans, POS pos, bool billVendor = true)
         {
             //BALANCE DEDUCTION
-            if (billVendor)
+            using(var ctx = new VendtechEntities())
             {
-                trans.BalanceBefore = pos.Balance ?? 0;
-                pos.Balance = (pos.Balance - trans.Amount);
-                trans.CurrentVendorBalance = pos.Balance ?? 0;
-            }
+                if (billVendor)
+                {
+                    trans.BalanceBefore = pos.Balance ?? 0;
+                    pos.Balance = (pos.Balance - trans.Amount);
+                    trans.CurrentVendorBalance = pos.Balance ?? 0;
+                }
 
-            _context.TransactionDetails.AddOrUpdate(trans);
-            _context.POS.AddOrUpdate(pos);
-            await _context.SaveChangesAsync();
+                ctx.TransactionDetails.AddOrUpdate(trans);
+                ctx.POS.AddOrUpdate(pos);
+                try
+                {
+
+                    await ctx.SaveChangesAsync();
+                }
+                catch (DbEntityValidationException ex)
+                {
+                    foreach (var error in ex.EntityValidationErrors)
+                    {
+                        foreach (var validationError in error.ValidationErrors)
+                        {
+                            Console.WriteLine($"Property: {validationError.PropertyName}, Error: {validationError.ErrorMessage}");
+                        }
+                    }
+                }
+            }
         }
 
         private async Task<TransactionDetail> CreateRecordBeforeVend(RechargeMeterModel model)
@@ -622,7 +664,10 @@ namespace VendTech.BLL.Managers
                 VtechElectricitySaleStatus request_model = Buid_new_status_object(model);
 
                 var apiKey = WebConfigurationManager.AppSettings["ApiKey"].ToString();
-                _client.DefaultRequestHeaders.Add("X-Api-Key", apiKey);
+                if (!_client.DefaultRequestHeaders.Contains("X-Api-Key"))
+                {
+                    _client.DefaultRequestHeaders.Add("X-Api-Key", apiKey);
+                }
                 HttpResponseMessage icekloud_response = await _client.PostAsJsonAsync(url, request_model);
 
                 string strings_result = await icekloud_response.Content.ReadAsStringAsync();

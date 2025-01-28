@@ -36,6 +36,7 @@ namespace VendTech.BLL.Models
         public int RecordsPerPage { get; set; }
         public string SortBy { get; set; }
         public string SortOrder { get; set; }
+        public string ProductId { get; set; }
     }
 
 }

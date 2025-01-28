@@ -300,7 +300,10 @@ function fetchVoucherStatus_DoNot_BillVendor(trxId, isAdmin = false) {
                     $("#re-vendorId").html(data.Data.VendorId);
                     $(".re-currencyCode").html(data.Data.CurrencyCode);
                     if (data.Data.ShouldShowSmsButton) $("#re-showsms_btn").show();
-                    if (data.Data.ShouldShowPrintButton) $("#re-showprint_btn").show();
+                    if (data.Data.ShouldShowPrintButton) {
+                        $("#re-showprint_btn").show();
+                        $("#re-blthprint_btn").show();
+                    } 
                     if (data.Data.ShowEmailButtonOnWeb) $("#re-showemail_btn").css("display", "inline-block");
 
                     $("#modalCart2").modal("show");
@@ -382,7 +385,10 @@ function fetchVoucherDetailsByToken(token, isAdmin = false) {
                     $("#re-vendorId").html(data.Data.VendorId);
                     $(".re-currencyCode").html(data.Data.CurrencyCode);
                     if (data.Data.ShouldShowSmsButton) $("#re-showsms_btn").show();
-                    if (data.Data.ShouldShowPrintButton) $("#re-showprint_btn").show();
+                    if (data.Data.ShouldShowPrintButton) {
+                        $("#re-showprint_btn").show();
+                        $("#re-blthprint_btn").show();
+                    }
                     if (data.Data.ShowEmailButtonOnWeb) $("#re-showemail_btn").css("display", "inline-block");
 
                     $("#modalCart2").modal("show");

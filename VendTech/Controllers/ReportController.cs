@@ -1144,7 +1144,8 @@ namespace VendTech.Controllers
                 RefNumber = model.refNumber,
                 ReportType = model.ReportType,
                 PageNo = model.PageNo,
-                AgencyId = LOGGEDIN_USER.AgencyId
+                AgencyId = LOGGEDIN_USER.AgencyId,
+                ProductId = model.ProductId,
             };
 
 

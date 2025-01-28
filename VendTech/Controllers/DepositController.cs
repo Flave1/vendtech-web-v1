@@ -90,10 +90,16 @@ namespace VendTech.Controllers
                 ViewBag.ChkBankName = new SelectList(_bankAccountManager.GetBankNames_API().ToList(), "BankName", "BankName");
                 var posList = _posManager.GetPOSWithNameSelectList(LOGGEDIN_USER.UserID, LOGGEDIN_USER.AgencyId, true).OrderBy(f => f.Value).ToList();
                 ViewBag.userPos = posList;
-                if (string.IsNullOrEmpty(posId) && posList.Count > 0)
+                if (string.IsNullOrEmpty(posId) && posList.Count > 1)
                 {
                     //posId = Convert.ToInt64(posList[0].Value);
-                    ViewBag.posId = posList.FirstOrDefault(d => d.Text.Contains("AGT-")).Value;
+                    ViewBag.posId = posList.FirstOrDefault(d => d.Text.Contains("AGT-"))?.Value ?? "";
+                    ViewBag.Percentage = _posManager.GetPosCommissionPercentage(long.Parse(ViewBag.posId));
+                    ViewBag.balance = _posManager.GetPosBalance(long.Parse(ViewBag.posId));
+                }
+                else if(posList.Count == 1)
+                {
+                    ViewBag.posId = posList[0]?.Value ?? "";
                     ViewBag.Percentage = _posManager.GetPosCommissionPercentage(long.Parse(ViewBag.posId));
                     ViewBag.balance = _posManager.GetPosBalance(long.Parse(ViewBag.posId));
                 }
@@ -114,12 +120,11 @@ namespace VendTech.Controllers
             }
             catch (NullReferenceException)
             {
-                SignOut();
                 return View();
             }
         }
     
-        [AjaxOnly, HttpPost, Public]
+        [AjaxOnly, HttpPost]
         public async Task<JsonResult> AddDeposit(DepositModel model)
         {
             ActionOutput<PendingDeposit> pd = null;
@@ -182,7 +187,7 @@ namespace VendTech.Controllers
             return Json(new { bankAccount = _bankAccountManager.GetBankAccountDetail(bankAccountId) }, JsonRequestBehavior.AllowGet);
         }
 
-        [AjaxOnly, HttpPost, Public]
+        [AjaxOnly, HttpPost]
         public ActionResult GetDepositDetails(RequestObject tokenobject)
         {
             var result = _depositManager.GetDepositDetail(Convert.ToInt64(tokenobject.token_string));
@@ -190,7 +195,7 @@ namespace VendTech.Controllers
                 return Json(new { Success = false, Code = 302, Msg = result.Message });
             return PartialView("_depositReceipt", result.Object);
         }
-        [AjaxOnly, HttpPost, Public]
+        [AjaxOnly, HttpPost]
         public ActionResult GetPendingDepositDetails(RequestObject tokenobject)
         {
             var result = _depositManager.GetPendingDepositDetail(Convert.ToInt64(tokenobject.token_string));
