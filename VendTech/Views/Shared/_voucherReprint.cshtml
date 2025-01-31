@@ -156,7 +156,7 @@
                 <button type="button" class="btn cancelBtn waves-effect waves-light" id="re-showsms_btn" onclick="smsHandler.openSmsModal2(true)" style="display: none;">SMS</button>
                 <button type="button" class="btn cancelBtn waves-effect waves-light" id="re-showemail_btn" onclick="smsHandler.openEmailModal2(true)" style="display: none;">EMAIL</button>
                 <button class="btn submitBtn waves-effect waves-light" id="re-showprint_btn" style="display: none; display: inline-block;" onclick="Reprint()">USB PRINT</button>
-                <button class="btn submitBtn waves-effect waves-light" id="re-blthprint_btn" style="display: none; display: inline-block;" onclick="printText()">BULETHOOTH PRINT</button>
+                <button class="btn submitBtn waves-effect waves-light" id="re-blthprint_btn" style="display: none; display: inline-block;" onclick="printText()">BLUETOOTH PRINT</button>
             </div>
         </div>
         <!-- modal-footer -->
@@ -193,28 +193,50 @@
     // Function to print HTML section
     async function printText() {
         if (!printerCharacteristic) {
-            connectPrinter();
-            //alert("❌ Printer not connected!");
+            await connectPrinter();
             return;
         }
 
         let textEncoder = new TextEncoder();
-        const element = document.getElementById("re-printSection");
 
-        // Extract text content from the section
-        let textToPrint = element.innerText || element.textContent;
+        // Extract data dynamically from HTML elements by their IDs
+        let salesDate = document.getElementById("re-sales_date").innerText;
+        let vendorName = document.getElementById("re-vendorId").innerText;
+        let posId = document.getElementById("re-pos_id").innerText;
+        let customerName = document.getElementById("re-customer_name").innerText;
+        let customerAccount = document.getElementById("re-customer_account_number").innerText;
+        let costOfUnits = document.getElementById("re-cost_of_units").innerText;
+        let units = document.getElementById("re-units").innerText;
+        let edsaSerial = document.getElementById("re-edsa_serial").innerText;
+        let vendtechSerial = document.getElementById("re-vendtech_serial_code").innerText;
+        let pin1 = document.getElementById("re-pin1").innerText;
+        let pin2 = document.getElementById("re-pin2").innerText;
+        let pin3 = document.getElementById("re-pin3").innerText;
 
-        // Format text for printing
-        let formattedText = `\n\n${textToPrint}\n\n`;
+        // Generate invoice text using extracted values
+        const invoiceText = generateInvoiceText(
+            salesDate,
+            vendorName,
+            posId,
+            customerName,
+            customerAccount,
+            costOfUnits,
+            units,
+            edsaSerial,
+            vendtechSerial,
+            pin1,
+            pin2,
+            pin3
+        );
 
         // Convert text to bytes
-        let data = textEncoder.encode(formattedText);
+        let data = textEncoder.encode(invoiceText);
 
         // Define the maximum BLE write size (512 bytes)
         const MAX_CHUNK_SIZE = 512;
 
         try {
-            // Send data in chunks of 512 bytes
+            // Send data in chunks
             for (let i = 0; i < data.length; i += MAX_CHUNK_SIZE) {
                 let chunk = data.slice(i, i + MAX_CHUNK_SIZE);
                 await printerCharacteristic.writeValue(chunk);
@@ -227,5 +249,50 @@
             alert("❌ Failed to print: " + error);
         }
     }
+</script>
+
+
+<script>
+
+    function generateInvoiceText(salesDate, vendorName, posId, customerName, customerAccount, costOfUnits, units, edsaSerial, vendtechSerial, pin1, pin2, pin3) {
+        const pinsection = pin2 ?
+            `${pin1}
+    ${pin2}
+    ${pin3}` : `${pin1}`;
+
+        return `
+----------------------------------------
+           VENDTECH
+      ELECTRICITY PURCHASE
+----------------------------------------
+
+Date: ${salesDate}
+Vendor Name: ${vendorName}
+POS ID: ${posId}
+
+----------------------------------------
+     CUSTOMER INFORMATION
+----------------------------------------
+Customer:     ${customerName}
+Account #:    ${customerAccount}
+
+----------------------------------------
+              TOTAL
+----------------------------------------
+Cost of Units:  NLe ${costOfUnits}
+Units (kWh):    ${units}
+----------------------------------------
+${pinsection}
+----------------------------------------
+EDSA Serial #:  ${edsaSerial}
+VTECH Serial #: ${vendtechSerial}
+
+----------------------------------------
+Website: www.vendtechsl.com
+Call: +232 76 990 990
+----------------------------------------
+    `;
+    }
+
 </script>
 

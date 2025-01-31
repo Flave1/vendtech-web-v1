@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
 using VendTech.BLL.Models;
@@ -98,6 +99,7 @@ namespace VendTech.BLL.Interfaces
         PendingDeposit GetUserPendingDeposit(long userId);
         PagingResult<B2bUserListingModel> GetB2BUserPagedList(PagingModel model, string status);
         AddUserModel GetB2bUserDetailsByUserId(long userId);
+        Task<List<string>> GetActiveUsersDeviceTokens(int pageNo, int pageSize);
     }
 
 }

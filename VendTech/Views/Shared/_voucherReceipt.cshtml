@@ -146,7 +146,7 @@
                     <div class="d-flex justify-content-right" id="print_section">
                         <button type="button" class="btn cancelBtn waves-effect waves-light " id="showsms_btn" onclick="smsHandler.openSmsModal(false)" style="display:none">SMS</button>
                         <button class="btn submitBtn waves-effect waves-light " onclick="Print()" id="showprint_btn" style="display:none">USB PRINT</button>
-                        <button class="btn submitBtn waves-effect waves-light" id="blthprint_btn" style="display: none; display: inline-block;" onclick="printText()">BULETHOOTH PRINT</button>
+                        <button class="btn submitBtn waves-effect waves-light" id="blthprint_btn" style="display: none; display: inline-block;" onclick="printText()">BLUETOOTH PRINT</button>
                     </div>
                 </div>
             </div>
@@ -199,6 +199,7 @@
 
         // Format text for printing
         let formattedText = `\n\n${textToPrint}\n\n`;
+
 
         // Convert text to bytes
         let data = textEncoder.encode(formattedText);

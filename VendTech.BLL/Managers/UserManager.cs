@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.Entity;
 using System.IO;
 using System.Linq;
 using System.Linq.Dynamic;
+using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
 using VendTech.BLL.Common;
@@ -1569,6 +1571,10 @@ namespace VendTech.BLL.Managers
             return new UserLogo { Image = _context.Users.FirstOrDefault(d => d.UserId == userId)?.ProfilePic };
         }
 
+        async Task<List<string>> IUserManager.GetActiveUsersDeviceTokens(int pageNo, int pageSize)
+        {
+            return await _context.Users.Where(d => !string.IsNullOrEmpty(d.DeviceToken) && d.POS.Count > 0).Select(d => d.DeviceToken).ToListAsync();
+        }
 
     }
 
