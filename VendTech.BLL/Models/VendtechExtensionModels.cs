@@ -28,6 +28,7 @@ namespace VendTech.BLL.Models
     public class VendtechExtSalesResult
     {
         public string Status { get; set; }
+        public int Code { get; set; }
         public SuccessResponse SuccessResponse { get; set; }
         public FailedResponse FailedResponse { get; set; }
 

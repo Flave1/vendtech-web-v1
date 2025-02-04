@@ -120,7 +120,7 @@ namespace VendTech.BLL.Managers
                         count += 1;
                         _context.TransactionDetails.AddOrUpdate(transactionDetail);
                         await _context.SaveChangesAsync();
-                        ReadErrorMessage(vendResponse.Message, transactionDetail);
+                        ReadErrorMessage(vendResponse.Message, vendResponse.Result.Code, transactionDetail);
                     } while (vendResponse.Status.ToLower() == "pending");
                 }
                 else if (vendResponse.Status.ToLower() != "success")
@@ -130,7 +130,7 @@ namespace VendTech.BLL.Managers
                     await UpdateTransactionOnFailed(vendResponse?.Result, transactionDetail);
                     _context.TransactionDetails.AddOrUpdate(transactionDetail);
                     await _context.SaveChangesAsync();
-                    ReadErrorMessage(vendResponse.Message, transactionDetail);
+                    ReadErrorMessage(vendResponse.Message, vendResponse.Result.Code, transactionDetail);
                 }
 
                 vendResponseResult = vendResponse?.Result;
@@ -182,65 +182,47 @@ namespace VendTech.BLL.Managers
             }
         }
 
-        private void ReadErrorMessage(string message, TransactionDetail tx)
+        private void ReadErrorMessage(string message, int code, TransactionDetail tx)
         {
+            FlagTransaction(tx, RechargeMeterStatusEnum.Failed);
             if (message == "The request timed out with the Ouc server.")
             {
-                FlagTransaction(tx, RechargeMeterStatusEnum.Failed);
                 throw new ArgumentException(message);
             }
-            if (message == "Error: Vending is disabled")
+            if (code == 4514)
             {
                 DisablePlatform(PlatformTypeEnum.ELECTRICITY);
-                FlagTransaction(tx, RechargeMeterStatusEnum.Failed);
                 NotifyAdmin();
-                throw new ArgumentException(message);
+                throw new ArgumentException("Error: Vending is disabled");
             }
 
-            if (message == "-9137 : InCMS-BL-CB001607. Purchase not allowed, not enought vendor balance")
+            if (code == 4094)
             {
                 DisablePlatform(PlatformTypeEnum.ELECTRICITY);
-                FlagTransaction(tx, RechargeMeterStatusEnum.Failed);
                 NotifyAdmin();
-                throw new ArgumentException("Due to some technical resolutions involving EDSA, the system is unable to vend");
+                throw new ArgumentException("Error: Vending is disabled");
             }
 
             if (message == "InCMS-BL-CO000846. The amount is too low for recharge")
             {
-                FlagTransaction(tx, RechargeMeterStatusEnum.Failed);
                 throw new ArgumentException("The amount is too low for recharge");
             }
 
             if (message == "Unexpected error in OUC VendVoucher")
             {
-                FlagTransaction(tx, RechargeMeterStatusEnum.Pending);
                 throw new ArgumentException(message);
             }
 
             if (message == "CB001600 : InCMS-BL-CB001600. Error serial number, contracted service not found or not active.")
             {
-                FlagTransaction(tx, RechargeMeterStatusEnum.Failed);
                 throw new ArgumentException("Error serial number, contracted service not found or not active");
-            }
-            if (message == "There was an error when determining if the request for the given meter number can be processed.")
-            {
-                FlagTransaction(tx, RechargeMeterStatusEnum.Failed);
-                throw new ArgumentException(message);
-            }
-            if (message == "Input string was not in a correct format.")
-            {
-                FlagTransaction(tx, RechargeMeterStatusEnum.Failed);
-                throw new ArgumentException("Amount tendered is too low");
             }
             if (message == "-47 : InCMS-BL-CB001273. Error, purchase units less than minimum.")
             {
-                FlagTransaction(tx, RechargeMeterStatusEnum.Failed);
                 throw new ArgumentException("Purchase units less than minimum.");
             }
-            if(message == "The specified TransactionID already exists for this terminal.")
+            if (message == "The specified TransactionID already exists for this terminal.")
             {
-
-                FlagTransaction(tx, RechargeMeterStatusEnum.Failed);
                 throw new ArgumentException("Please try again!!");
             }
         }
