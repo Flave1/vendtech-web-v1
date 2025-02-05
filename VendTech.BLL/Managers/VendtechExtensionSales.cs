@@ -120,8 +120,8 @@ namespace VendTech.BLL.Managers
                         count += 1;
                         _context.TransactionDetails.AddOrUpdate(transactionDetail);
                         await _context.SaveChangesAsync();
-                        ReadErrorMessage(vendResponse.Message, vendResponse.Result.Code, transactionDetail);
                     } while (vendResponse.Status.ToLower() == "pending");
+                    ReadErrorMessage(vendResponse.Message, vendResponse.Result.Code, transactionDetail);
                 }
                 else if (vendResponse.Status.ToLower() != "success")
                 {

@@ -88,7 +88,7 @@ namespace VendTech.BLL.Managers
                 depositDto.PaymentType = (int)DepositPaymentTypeEnum.VendorCommision;
 
             var deposit = GenerateDeposit(depositDto);
-            deposit.CreatedAt = DateTime.Now.AddMinutes(1);
+            deposit.CreatedAt = DateTime.Now.AddSeconds(30);
             await CalculateBalance(deposit, pos);
             _context.Deposits.Add(deposit);
             await _context.SaveChangesAsync();
@@ -144,7 +144,7 @@ namespace VendTech.BLL.Managers
             dbDepositLog.NewStatus = (int)DepositPaymentStatusEnum.Released;
             dbDepositLog.CreatedAt = DateTime.UtcNow;
             if(isCommission)
-                dbDepositLog.CreatedAt = DateTime.UtcNow.AddMinutes(1);
+                dbDepositLog.CreatedAt = DateTime.UtcNow.AddSeconds(30);
             _context.DepositLogs.Add(dbDepositLog);
             await _context.SaveChangesAsync();
         }
