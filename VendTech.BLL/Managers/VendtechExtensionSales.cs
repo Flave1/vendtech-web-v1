@@ -16,6 +16,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Diagnostics;
 using VendTech.BLL.PlatformApi;
+using System.Data.Entity.Validation;
 
 namespace VendTech.BLL.Managers
 {
@@ -105,13 +106,31 @@ namespace VendTech.BLL.Managers
 
                 vendResponseResult = vendResponse?.Result;
 
-                if (vendResponse.Status.ToLower() != "success")
+                if (vendResponse.Status.ToLower() == "pending")
+                {
+                    int count = 0;
+                    do
+                    {
+                        vendResponse = await QueryStatusRequest(model, transactionDetail);
+                        vendResponseResult = vendResponse.Result;
+
+                        transactionDetail.VendStatus = vendResponseResult.FailedResponse.ErrorMessage;
+                        transactionDetail.VendStatusDescription = vendResponseResult?.FailedResponse?.ErrorDetail;
+                        transactionDetail.QueryStatusCount = count;
+                        count += 1;
+                        _context.TransactionDetails.AddOrUpdate(transactionDetail);
+                        await _context.SaveChangesAsync();
+                    } while (vendResponse.Status.ToLower() == "pending");
+                    ReadErrorMessage(vendResponse.Message, vendResponse.Result.Code, transactionDetail);
+                }
+                else if (vendResponse.Status.ToLower() != "success")
                 {
                     transactionDetail.VendStatus = vendResponseResult.FailedResponse.ErrorMessage;
                     transactionDetail.VendStatusDescription = vendResponseResult?.FailedResponse?.ErrorDetail;
+                    await UpdateTransactionOnFailed(vendResponse?.Result, transactionDetail);
                     _context.TransactionDetails.AddOrUpdate(transactionDetail);
-                    ReadErrorMessage(vendResponse.Message, transactionDetail);
                     await _context.SaveChangesAsync();
+                    ReadErrorMessage(vendResponse.Message, vendResponse.Result.Code, transactionDetail);
                 }
 
                 vendResponseResult = vendResponse?.Result;
@@ -163,60 +182,48 @@ namespace VendTech.BLL.Managers
             }
         }
 
-        private void ReadErrorMessage(string message, TransactionDetail tx)
+        private void ReadErrorMessage(string message, int code, TransactionDetail tx)
         {
+            FlagTransaction(tx, RechargeMeterStatusEnum.Failed);
             if (message == "The request timed out with the Ouc server.")
             {
-                FlagTransaction(tx, RechargeMeterStatusEnum.Failed);
                 throw new ArgumentException(message);
             }
-            if (message == "Error: Vending is disabled")
+            if (code == 4514)
             {
                 DisablePlatform(PlatformTypeEnum.ELECTRICITY);
-                FlagTransaction(tx, RechargeMeterStatusEnum.Failed);
-                NotifyAdmin1();
-                throw new ArgumentException(message);
+                NotifyAdmin();
+                throw new ArgumentException("Error: Vending is disabled");
             }
 
-            if (message == "-9137 : InCMS-BL-CB001607. Purchase not allowed, not enought vendor balance")
+            if (code == 4094)
             {
                 DisablePlatform(PlatformTypeEnum.ELECTRICITY);
-                FlagTransaction(tx, RechargeMeterStatusEnum.Failed);
-                NotifyAdmin1();
-                throw new ArgumentException("Due to some technical resolutions involving EDSA, the system is unable to vend");
+                NotifyAdmin();
+                throw new ArgumentException("Error: Vending is disabled");
             }
 
             if (message == "InCMS-BL-CO000846. The amount is too low for recharge")
             {
-                FlagTransaction(tx, RechargeMeterStatusEnum.Failed);
                 throw new ArgumentException("The amount is too low for recharge");
             }
 
             if (message == "Unexpected error in OUC VendVoucher")
             {
-                FlagTransaction(tx, RechargeMeterStatusEnum.Pending);
                 throw new ArgumentException(message);
             }
 
             if (message == "CB001600 : InCMS-BL-CB001600. Error serial number, contracted service not found or not active.")
             {
-                FlagTransaction(tx, RechargeMeterStatusEnum.Failed);
                 throw new ArgumentException("Error serial number, contracted service not found or not active");
-            }
-            if (message == "There was an error when determining if the request for the given meter number can be processed.")
-            {
-                FlagTransaction(tx, RechargeMeterStatusEnum.Failed);
-                throw new ArgumentException(message);
-            }
-            if (message == "Input string was not in a correct format.")
-            {
-                FlagTransaction(tx, RechargeMeterStatusEnum.Failed);
-                throw new ArgumentException("Amount tendered is too low");
             }
             if (message == "-47 : InCMS-BL-CB001273. Error, purchase units less than minimum.")
             {
-                FlagTransaction(tx, RechargeMeterStatusEnum.Failed);
                 throw new ArgumentException("Purchase units less than minimum.");
+            }
+            if (message == "The specified TransactionID already exists for this terminal.")
+            {
+                throw new ArgumentException("Please try again!!");
             }
         }
 
@@ -237,7 +244,7 @@ namespace VendTech.BLL.Managers
             }
         }
 
-        void NotifyAdmin1()
+        void NotifyAdmin()
         {
             var body = $"Hello Victor</br></br>" +
                 $"This is to notify you that VENDTECH IServices is receiving errors from EDSA or RTS and has been disabled</br></br>" +
@@ -461,7 +468,7 @@ namespace VendTech.BLL.Managers
             try
             {
                 var voucher = response_data.SuccessResponse.Voucher;
-                trans.CostOfUnits = voucher.CostOfUnits;
+                trans.CostOfUnits = voucher.CostOfUnits ?? "0";
                 trans.MeterToken1 = voucher.MeterToken1?.ToString() ?? string.Empty;
                 trans.MeterToken2 = voucher.MeterToken2?.ToString() ?? string.Empty;
                 trans.MeterToken3 = voucher?.MeterToken3?.ToString() ?? string.Empty;
@@ -497,16 +504,33 @@ namespace VendTech.BLL.Managers
         private async Task Deductbalace(TransactionDetail trans, POS pos, bool billVendor = true)
         {
             //BALANCE DEDUCTION
-            if (billVendor)
+            using(var ctx = new VendtechEntities())
             {
-                trans.BalanceBefore = pos.Balance ?? 0;
-                pos.Balance = (pos.Balance - trans.Amount);
-                trans.CurrentVendorBalance = pos.Balance ?? 0;
-            }
+                if (billVendor)
+                {
+                    trans.BalanceBefore = pos.Balance ?? 0;
+                    pos.Balance = (pos.Balance - trans.Amount);
+                    trans.CurrentVendorBalance = pos.Balance ?? 0;
+                }
 
-            _context.TransactionDetails.AddOrUpdate(trans);
-            _context.POS.AddOrUpdate(pos);
-            await _context.SaveChangesAsync();
+                ctx.TransactionDetails.AddOrUpdate(trans);
+                ctx.POS.AddOrUpdate(pos);
+                try
+                {
+
+                    await ctx.SaveChangesAsync();
+                }
+                catch (DbEntityValidationException ex)
+                {
+                    foreach (var error in ex.EntityValidationErrors)
+                    {
+                        foreach (var validationError in error.ValidationErrors)
+                        {
+                            Console.WriteLine($"Property: {validationError.PropertyName}, Error: {validationError.ErrorMessage}");
+                        }
+                    }
+                }
+            }
         }
 
         private async Task<TransactionDetail> CreateRecordBeforeVend(RechargeMeterModel model)
@@ -622,7 +646,10 @@ namespace VendTech.BLL.Managers
                 VtechElectricitySaleStatus request_model = Buid_new_status_object(model);
 
                 var apiKey = WebConfigurationManager.AppSettings["ApiKey"].ToString();
-                _client.DefaultRequestHeaders.Add("X-Api-Key", apiKey);
+                if (!_client.DefaultRequestHeaders.Contains("X-Api-Key"))
+                {
+                    _client.DefaultRequestHeaders.Add("X-Api-Key", apiKey);
+                }
                 HttpResponseMessage icekloud_response = await _client.PostAsJsonAsync(url, request_model);
 
                 string strings_result = await icekloud_response.Content.ReadAsStringAsync();

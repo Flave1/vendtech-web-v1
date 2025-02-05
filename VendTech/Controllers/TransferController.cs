@@ -35,11 +35,7 @@ namespace VendTech.Controllers
         public ActionResult Index()
         {
             ViewBag.SelectedTab = SelectedAdminTab.Transfer;
-            if(LOGGEDIN_USER == null)
-            {
-                SignOut();
-                return View("Index", "Home");
-            }
+         
             var agencyPos = _posManager.ReturnAgencyAdminPOS(LOGGEDIN_USER.UserID);
             if(ModulesModel.Any())
             {

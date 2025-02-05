@@ -468,7 +468,7 @@ https://go.microsoft.com/fwlink/?LinkID=208121.
       <publishTime>01/27/2021 21:48:32</publishTime>
     </File>
     <File Include="bin/VendTech.BLL.dll">
-      <publishTime>01/24/2025 17:26:29</publishTime>
+      <publishTime>02/04/2025 01:33:20</publishTime>
     </File>
     <File Include="bin/VendTech.BLL.dll.config">
       <publishTime>11/13/2024 17:19:03</publishTime>
@@ -486,13 +486,13 @@ https://go.microsoft.com/fwlink/?LinkID=208121.
       <publishTime>12/11/2024 05:47:35</publishTime>
     </File>
     <File Include="bin/VendTech.dll">
-      <publishTime>01/25/2025 02:36:58</publishTime>
+      <publishTime>02/04/2025 01:36:04</publishTime>
     </File>
     <File Include="bin/VendTech.dll.config">
-      <publishTime>01/24/2025 17:25:56</publishTime>
+      <publishTime>02/04/2025 01:28:19</publishTime>
     </File>
     <File Include="bin/VendTech.Framework.dll">
-      <publishTime>01/24/2025 17:26:30</publishTime>
+      <publishTime>02/04/2025 01:33:21</publishTime>
     </File>
     <File Include="bin/VendTech.Framework.dll.config">
       <publishTime>11/13/2024 17:17:36</publishTime>
@@ -549,7 +549,7 @@ https://go.microsoft.com/fwlink/?LinkID=208121.
       <publishTime>06/11/2024 10:19:51</publishTime>
     </File>
     <File Include="Scripts/Receipt.js">
-      <publishTime>10/02/2024 09:49:24</publishTime>
+      <publishTime>01/27/2025 23:49:02</publishTime>
     </File>
     <File Include="Scripts/signalr/admin_connection.js">
       <publishTime>01/11/2025 18:16:44</publishTime>
@@ -699,10 +699,10 @@ https://go.microsoft.com/fwlink/?LinkID=208121.
       <publishTime>03/05/2024 15:42:39</publishTime>
     </File>
     <File Include="Views/Shared/_voucherReceipt.cshtml">
-      <publishTime>07/12/2024 17:25:01</publishTime>
+      <publishTime>01/28/2025 12:47:23</publishTime>
     </File>
     <File Include="Views/Shared/_voucherReprint.cshtml">
-      <publishTime>07/12/2024 17:23:52</publishTime>
+      <publishTime>01/30/2025 10:07:24</publishTime>
     </File>
     <File Include="Web.config">
       <publishTime>12/24/2024 08:11:34</publishTime>

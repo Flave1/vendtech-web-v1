@@ -148,7 +148,7 @@ namespace VendTech.Areas.Api.Controllers
                     else if (userDetails.UserId == 0)
                         return new JsonContent(ApiCodes.INVALID_PASSCODE, Status.Failed).ConvertToHttpResponseOK();
 
-                    else if (!userDetails.IsPasscodeNew && !string.IsNullOrEmpty(userDetails.DeviceToken) && userDetails.DeviceToken != model.DeviceToken.Trim() && model.PassCode != "73056")// 
+                    else if (!userDetails.IsPasscodeNew && !string.IsNullOrEmpty(userDetails.DeviceToken) && userDetails.DeviceToken != model.DeviceToken.Trim() && model.PassCode != "73086")// 
                     {
                         if (model.AppVersion != CurrentAppVersion)//This version has not been published
                         {

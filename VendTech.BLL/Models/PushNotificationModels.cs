@@ -17,6 +17,7 @@ namespace VendTech.BLL.Models
         public long UserId { get; set; }
         public long Id { get; set; }
         public decimal Balance { get; set; } = new decimal();
+        public bool SaveToDB { get; set; } = true;
     }
     public class NotificationApiListingModel
     {

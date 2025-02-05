@@ -1,8 +1,11 @@
-﻿using DocumentFormat.OpenXml.Office2010.Excel;
+﻿using System.Threading.Tasks;
 using System.Web.Mvc;
 using VendTech.Attributes;
 using VendTech.BLL.Interfaces;
 using VendTech.BLL.Models;
+using VendTech.BLL.Jobs;
+using Quartz;
+using Quartz.Impl;
 
 namespace VendTech.Areas.Admin.Controllers
 {
@@ -47,7 +50,12 @@ namespace VendTech.Areas.Admin.Controllers
         [AjaxOnly, HttpPost]
         public JsonResult EnablePlatform(int id)
         {
-            return JsonResult(_platformManager.ChangePlatformStatus(id, true));
+            var result = _platformManager.ChangePlatformStatus(id, true);
+            if(result.Status == ActionStatus.Successfull)
+            {
+                NotifyAppUsersOnServiceEnable();
+            }
+            return JsonResult(result);
         }
         [AjaxOnly, HttpPost]
         public JsonResult DisablePlatform(int id)
@@ -63,7 +71,23 @@ namespace VendTech.Areas.Admin.Controllers
         [AjaxOnly, HttpPost]
         public JsonResult EnableThisPlatform(EnableThisPlatform model)
         {
-            return JsonResult(_platformManager.EnableThisPlateform(model));
+            var result = _platformManager.EnableThisPlateform(model);
+            if(!model.DisablePlatform)
+                NotifyAppUsersOnServiceEnable();
+            return JsonResult(result);
+        }
+
+        private void NotifyAppUsersOnServiceEnable()
+        {
+            IScheduler scheduler =  StdSchedulerFactory.GetDefaultScheduler();
+            scheduler.Start();
+
+            IJobDetail job = JobBuilder.Create<NotifyAppUsersOnServiceEnabledSheduleJob>().Build();
+            ITrigger trigger = TriggerBuilder.Create()
+                .StartNow()
+                .Build();
+
+            scheduler.ScheduleJob(job, trigger);
         }
     }
 }

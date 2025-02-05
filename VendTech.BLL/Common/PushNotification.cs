@@ -117,8 +117,9 @@ namespace VendTech.BLL.Common
                     var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
                     HttpResponseMessage response = client.PostAsync(url, content).Result;
                     string responseBody = response.Content.ReadAsStringAsync().Result;
+                    if(model.SaveToDB)
+                        SaveNotificationToDB(model, (int)NotificationStatusEnum.Success);
 
-                    SaveNotificationToDB(model, (int)NotificationStatusEnum.Success);
                 }
                 catch (Exception) { }
             }
