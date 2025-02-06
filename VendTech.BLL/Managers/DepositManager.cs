@@ -1060,7 +1060,6 @@ namespace VendTech.BLL.Managers
             }
             result.List = list;
 
-
             result.Status = ActionStatus.Successfull;
             result.Message = "Deposit Logs List";
             result.TotalCount = totalrecoed;
@@ -1070,12 +1069,12 @@ namespace VendTech.BLL.Managers
         PagingResult<DepositAuditModel> IDepositManager.GetDepositAuditReports(ReportSearchModel model, bool callFromAdmin)
         {
             var result = new PagingResult<DepositAuditModel>();
-            var query = _context.DepositLogs.OrderByDescending(p => p.Deposit.CreatedAt).Where(p => p.NewStatus == (int)DepositPaymentStatusEnum.Released);
+            var query = _context.DepositLogs.OrderByDescending(p => p.Deposit.CreatedAt)
+                .ThenByDescending(d => d.Deposit.TransactionId).Where(p => p.NewStatus == (int)DepositPaymentStatusEnum.Released);
 
             if (model.From != null)
             {
                 query = query.Where(p => DbFunctions.TruncateTime(p.Deposit.CreatedAt) >= DbFunctions.TruncateTime(model.From));
-
             }
 
             if (model.To != null)

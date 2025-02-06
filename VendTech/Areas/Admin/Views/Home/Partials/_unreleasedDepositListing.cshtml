@@ -19,7 +19,8 @@
                 <th class="hidden-xs hidden-sm"></th>
                 <th class="hidden-xs hidden-sm">DATE/TIME</th>
                 <th class="hidden-xs hidden-sm">POS ID</th>
-                <th>VENDOR</th> 
+                <th>VENDOR</th>
+                <th class="hidden-xs hidden-sm">Type</th>
                 <th class="hidden-xs hidden-sm">REF #</th>
                 <th>AMOUNT</th>
             </tr>
@@ -36,16 +37,17 @@
                         <td class="hidden-xs hidden-sm" style="text-align:right;"> @item.CreatedAt</td>
                         <td class="hidden-xs hidden-sm" style="text-align:right;">@item.PosNumber</td>
                         <td style="font-weight:bold; color:green;">@item.VendorName</td>
+                        <td class="hidden-xs hidden-sm" style="text-align:right;">@item.Type</td>
                         <td class="hidden-xs hidden-sm" style="text-align:right;">@item.ChkNoOrSlipId</td>
-                        <td  style="text-align: right; font-weight: bold; color: blue;">
+                        <td style="text-align: right; font-weight: bold; color: blue;">
                             <a onclick="autoReleaseDeposit(this)" data-depositid="@item.DepositId" id="@("releaseChk"+item.DepositId)" href="#"> @item.Amount</a>
                         </td>
                         @*<td style="text-align:center">
-                            @if (item.Status == DepositPaymentStatusEnum.Pending.ToString())
-                            {
-                                <input type="checkbox"  class="releaseChkBox" value="@item.DepositId" />
-                            }
-                        </td>*@
+            @if (item.Status == DepositPaymentStatusEnum.Pending.ToString())
+            {
+                <input type="checkbox"  class="releaseChkBox" value="@item.DepositId" />
+            }
+        </td>*@
                     </tr>
                 }
             }
