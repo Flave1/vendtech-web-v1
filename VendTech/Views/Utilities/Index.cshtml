@@ -1,0 +1,262 @@
+﻿@model  IEnumerable<PlatformModel>
+@{
+    Layout = "~/Views/Shared/_Layoutv3.cshtml";
+}
+
+<style>
+  
+    .v3_ui_utilities_container {
+        padding: 2rem;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .v3_ui_utilities_title {
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 2rem;
+        text-align: center;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+    }
+
+    .v3_ui_utilities_widgets {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 2rem;
+    }
+
+    .v3_ui_utilities_widget {
+        background-color: #ffffff;
+        border-radius: 15px;
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+        .v3_ui_utilities_widget:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+        }
+
+    .v3_ui_utilities_widget_image {
+        height: 200px;
+        background-color: #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        color: #666;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .v3_ui_utilities_widget_title {
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+        text-align: center;
+        color: #e74c3c;
+    }
+
+    .v3_ui_utilities_widget_description {
+        font-size: 1rem;
+        color: #666;
+        text-align: center;
+        font-weight:bold;
+        color: #e74c3c
+    }
+
+    /* Modal Styles */
+    .v3_ui_utilities_modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+    }
+
+    .v3_ui_utilities_modal_content {
+        background-color: #fff;
+        margin: 15% auto;
+        padding: 2rem;
+        border-radius: 15px;
+        width: 80%;
+        max-width: 500px;
+        text-align: center;
+        position: relative;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    .v3_ui_utilities_modal_close {
+        position: absolute;
+        right: 20px;
+        top: 10px;
+        font-size: 28px;
+        font-weight: bold;
+        color: #aaa;
+        cursor: pointer;
+    }
+
+    .v3_ui_utilities_modal_icon {
+        font-size: 4rem;
+        color: #e74c3c;
+        margin-bottom: 1rem;
+    }
+
+    .v3_ui_utilities_modal_title {
+        font-size: 1.8rem;
+        color: #333;
+        margin-bottom: 1rem;
+    }
+
+    .v3_ui_utilities_modal_message {
+        font-size: 1.2rem;
+        color: #666;
+        margin-bottom: 1.5rem;
+    }
+
+    @@media (max-width: 768px) {
+        .v3_ui_utilities_container {
+            padding: 1rem;
+        }
+
+        .v3_ui_utilities_title {
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .v3_ui_utilities_widgets {
+            grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+            gap:1rem;
+        }
+        .v3_ui_utilities_widget{
+            /*width: 150px;*/
+            /*margin:auto;*/
+        }
+
+        .v3_ui_utilities_widget_image {
+            height: 100px;
+        }
+
+        .v3_ui_utilities_modal_content {
+            width: 90%;
+            margin: 20% auto;
+        }
+    }
+</style>
+<div class="v3_ui_utilities_container">
+    <h1 class="v3_ui_utilities_title">Utility Bills </h1>
+    <div class="v3_ui_utilities_widgets">
+
+        @if (Model.Count() > 0)
+        {
+            string title = "";
+
+            foreach (var item in Model.OrderBy(x => x.PlatformId).ThenByDescending(x => x.DisablePlatform == true))
+            {
+                Boolean createIcon = false;
+                string urlPath = null;
+                if (item.PlatformType == (int)PlatformTypeEnum.ELECTRICITY)
+                {
+                    createIcon = true;
+                    urlPath = "/Meter/Recharge";
+                    title = item.Title;
+                }
+                else if (item.PlatformType == (int)PlatformTypeEnum.AIRTIME)
+                {
+                    createIcon = true;
+                    urlPath = "/Airtime/Recharge?provider=" + item.PlatformId;
+                    title = item.Title;
+                }
+                if (createIcon)
+                {
+                    <div class="v3_ui_utilities_widget" data-service="@title" data-message="@item.DiabledPlaformMessage" data-disabled="@item.DisablePlatform" data-url="@urlPath">
+                        @{ string padding = item.PlatformId == 3 ? "20px" : "0px";}
+                        <div class="v3_ui_utilities_widget_image" style="padding: @padding">
+                            <img src="@item.Logo" style="width: 100%; height: 100%;" />
+                        </div>
+                        @if (item.DisablePlatform)
+                        {
+                            <div class="v3_ui_utilities_widget_content">
+                                <h2 class="v3_ui_utilities_widget_title">Service Unavailable</h2>
+                                @*<p class="v3_ui_utilities_widget_description">Utility out of service</p>*@
+                            </div>
+                        }
+
+                    </div>
+                }
+            }
+        }
+        else
+        {
+            <div class="container">
+                <p>
+                    Service not assigned<br />
+                    Please contact VENDTECH on +23279990990
+                </p>
+            </div>
+        }
+
+
+    </div>
+</div>
+<!-- Modal -->
+<div id="v3_ui_utilities_modal" class="v3_ui_utilities_modal">
+    <div class="v3_ui_utilities_modal_content">
+        <span class="v3_ui_utilities_modal_close">&times;</span>
+        <i class="fas fa-ban v3_ui_utilities_modal_icon"></i>
+        <h2 class="v3_ui_utilities_modal_title">Service Unavailable</h2>
+        <p class="v3_ui_utilities_modal_message">This service is currently out of service due to maintenance.</p>
+    </div>
+</div>
+
+<script>
+
+ 
+    // Get the modal
+    var modal = document.getElementById("v3_ui_utilities_modal");
+
+    // Get all widgets
+    var widgets = document.getElementsByClassName("v3_ui_utilities_widget");
+
+    // Get the <span> element that closes the modal
+    var span = document.getElementsByClassName("v3_ui_utilities_modal_close")[0];
+
+    // When the user clicks on a widget, open the modal
+    for (var i = 0; i < widgets.length; i++) {
+        widgets[i].onclick = function () {
+            var service_disabled = this.getAttribute('data-disabled');
+            if (service_disabled == "True") {
+                modal.style.display = "block";
+                const service_title = this.getAttribute('data-service');
+                const service_message = this.getAttribute('data-message');
+                document.querySelector('.v3_ui_utilities_modal_title').textContent = service_title + " - Service Unavailable";
+                const decodedMessage = atob(unescape(service_message));
+                document.querySelector('.v3_ui_utilities_modal_message').textContent = decodedMessage;
+            } else {
+                const service_url = this.getAttribute('data-url');
+                if (service_url == null || service_url == "") alert("No path to product type. Please contact Administrator.");
+                window.location.href = service_url;
+            }
+            
+        }
+    }
+
+    // When the user clicks on <span> (x), close the modal
+    span.onclick = function () {
+        modal.style.display = "none";
+    }
+
+    // When the user clicks anywhere outside of the modal, close it
+    window.onclick = function (event) {
+        if (event.target == modal) {
+            modal.style.display = "none";
+        }
+    }
+</script>

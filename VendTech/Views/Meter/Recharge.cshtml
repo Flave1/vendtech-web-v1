@@ -1,439 +1,679 @@
 ﻿@model  RechargeMeterModel
 @{ ViewBag.Title = "Recharge";
-    Layout = "~/Views/Shared/_Layout.cshtml";
+    Layout = "~/Views/Shared/_Layoutv3.cshtml";
 
     List<MeterRechargeApiListingModel> history = Model.History;
     if (history == null)
     {
         history = new List<MeterRechargeApiListingModel>();
     }
-    var country = VendTech.BLL.Common.Utilities.GetCountry();
+
+
 }
-<div class="container-fluid" id="pcont">
-    <div class="dashright ">
 
-        <link rel="preconnect" href="https://fonts.gstatic.com">
-        @*<link href="https://fonts.googleapis.com/css2?family=Libre+Barcode+39+Text&display=swap" rel="stylesheet">*@
+<style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-        <div class="page-head">
-            <h2>EDSA Recharge</h2>
-        </div>
-        <div class="cl-mcont">
-            <div class="row">
-                <style>
-                    .separator {
-                        display: flex;
-                        align-items: center;
-                        text-align: center;
-                    }
+        section {
+            font-family: 'Inter', sans-serif;
+            background-color: #f5f5f5;
+            /*min-height: 100vh;*/
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
 
-                        .separator::before, .separator::after {
-                            content: '';
-                            flex: 1;
-                            border-bottom: 2px solid #f6eded;
-                        }
+    .v3_ui_edsa_container {
+        width: 100%;
+        max-width: 500px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        padding: 2rem;
+    }
 
-                        .separator::before {
-                            margin-right: .25em;
-                        }
+        .v3_ui_edsa_header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
 
-                        .separator::after {
-                            margin-left: .25em;
-                        }
+    .v3_ui_edsa_pos_id {
+        font-size: 1rem;
+        font-weight: 800;
+        color: #ffd700;
+        margin-bottom: 0.5rem;
+    }
 
-                    label {
-                        font-weight: bold;
-                        font-size: 12px;
-                    }
+    .v3_ui_edsa_subtitle {
+        color: #333;
+        font-size: 0.9rem;
+        font-weight: 600;
+        text-transform:uppercase;
+        font-weight: bold;
+    }
 
-                    .input {
-                        font-weight: bold;
-                    }
-                </style>
-                <div class="col-md-12">
-                    <div class="block-flat">
-                        @if (Convert.ToBoolean(ViewBag.IsPlatformAssigned))
-                        {
-                            <div class="contarea meterpage row">
-                                
-                                <span class="alert-danger" id="error_reponse" style=" display:none; float:left;"></span>
-                                @Html.Partial("_Balancebar")
-                                @*<div class="" style="text-align:right; font-size:20px;   font-weight:bold; padding-bottom:10px; border-bottom:0.8px solid #f4e8e8;">
-                                    <span class="alert-danger" id="error_reponse" style=" display:none; float:left;"></span>
-                                    <span id="balanceSpan" style="color: #00a2e8; "> @VendTech.BLL.Common.Utilities.GetCountry().CurrencyCode: <span id="userBalance">0</span>  </span>
-                                </div>*@
-                                <div class="tabcont-row current">
-                                    <div class="row">
-                                        <div class="col-md-4" style=" border-right:2px solid #f6eded;">
-                                            <form id="rechargeForm" style="box-shadow:0 0 1px #8f7e7e; border:none; ">
-                                                <div class="row">
-                                                    <div class="row padded">
-                                                        @{
-                                                            var pos = (List<SelectListItem>)ViewBag.userPos;
-                                                        }
-                                                        @if (pos.Count > 1)
-                                                        {
-                                                            <div class=" col-md-4">
-                                                                <label class="control-label">SELECT POS ID</label>
-                                                                @Html.DropDownList("PosId", new SelectList(ViewBag.userPos, "value", "text"), null, new { @style = "height:35px; font-weight:bolder; ", @class = " input form-control", @id = "posDrp" })
-                                                            </div>
-                                                        }
-                                                        else
-                                                        {
-                                                            <div class=" col-md-12">
-                                                                <span style="font-weight:bold; font-size:35px">POS ID: @pos.FirstOrDefault().Text</span>
-                                                                @Html.DropDownList("PosId", new SelectList(ViewBag.userPos, "value", "text"), null, new { @style = "height:35px; font-weight:bolder; display:none;", @class = " input form-control", @id = "posDrp" })
+        .v3_ui_edsa_form_group {
+            margin-bottom: 1.5rem;
+        }
 
-                                                            </div>
-                                                            <br />
-                                                            <br />
+        .v3_ui_edsa_label {
+            display: block;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            color: #333;
+            font-size: 0.875rem;
+        }
 
-                                                        }
+    .v3_ui_edsa_label_new {
+        color: #ffd700;
+    }
 
-                                                        <div class="form-group col-md-8">
-                                                            <label class="control-label ">SELECT SAVED METER</label> <br />
-                                                            @Html.DropDownList("MeterId", new SelectList(ViewBag.meters, "value", "text"), "Select Meter", new { @class = " col-md-2 form-control input", @style = "font-weight:bolder; height:35px;", @id = "meterDrp", @onchange = "onSelectMeter()" })
-                                                        </div>
-                                                    </div>
+        .v3_ui_edsa_select,
+        .v3_ui_edsa_input {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid #e1e1e1;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            background-color: white;
+            color: #333;
+        }
 
-                                                    @if (!ViewBag.IsModuleDisable)
-                                                    {
-                                                        <div class="row padded">
-                                                            <div class="col-md-6">
-                                                                <label><span style="color:red; text-align:center;"> ENTER NEW</span> METER NUMBER</label>
-                                                                @Html.TextBoxFor(x => x.MeterNumber, new { @class = "form-control  input", @style = "height:35px; font-weight:bolder;", onkeypress = "javascript:return isNumber(event)", @onkeyup = "onChangeMeterNumber()" })
-                                                                @Html.ValidationMessageFor(x => x.MeterNumber)
-                                                            </div>
-                                                           @* <div class="col-md-6 form-group">
-                                                                <br /><br />
-                                                                <label class="col-md-10">SAVE AS NEW METER </label>
-                                                                @Html.CheckBoxFor(m => m.SaveAsNewMeter, new { @checked = Model.SaveAsNewMeter, @class = "col-md-2", @id = "saveMeterChk" })
-                                                            </div>*@
-                                                        </div>
-                                                    }
+        .v3_ui_edsa_select:focus,
+        .v3_ui_edsa_input:focus {
+            outline: none;
+            border-color: #ffd700;
+            box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.2);
+        }
 
+        .v3_ui_edsa_input:disabled {
+            background-color: #f5f5f5;
+            cursor: not-allowed;
+            color: #999;
+        }
 
+        .v3_ui_edsa_amount_wrapper {
+            position: relative;
+            margin-bottom: 2rem;
+        }
 
-                                                    <div class="row padded">
+        .v3_ui_edsa_amount_input {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: #333;
+            text-align: right;
+            padding: 1rem;
+            letter-spacing: 1px;
+        }
 
-                                                        <div class="col-md-8">
-                                                            <label>AMOUNT</label>
-                                                            <input style="font-weight:bold; color: red; text-align:right;  height:50px; font-size:35px;"
-                                                                   id="AmountDisplay" type="text"
-                                                                   onkeypress="javascript:return isNumber(event)"
-                                                                   onkeyup="amountFormatter()"
-                                                                   class="form-control " />
+        .v3_ui_edsa_amount_currency {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 2rem;
+            font-weight: 700;
+            color: #666;
+        }
 
-                                                            @Html.HiddenFor(x => x.Amount, new { @class = "form-control" })
-                                                            @Html.ValidationMessageFor(x => x.Amount)
-                                                        </div>
+        .v3_ui_edsa_button {
+            width: 100%;
+            padding: 1.25rem;
+            background-color: #ffd700;
+            border: none;
+            border-radius: 8px;
+            color: #1a1a1a;
+            font-weight: 800;
+            font-size: 1rem;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            letter-spacing: 1px;
+        }
 
-                                                        <div class="col-md-4">
-                                                            <div class="row">
-                                                                <input type="button"
-                                                                       style="height:50px;
-                                                                   font-weight:bold;
-                                                                   text-transform:uppercase;
-                                                                   border:none; margin-top:7px;
-                                                                   width:100%; background: #ffd800;
-                                                                   border-radius:5px;" disabled
-                                                                       class="savebttn addDepositBtn"
-                                                                       id="pay_Now_Btn" value="PAY NOW">
-                                                            </div>
-                                                        </div>
+        .v3_ui_edsa_button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 215, 0, 0.4);
+        }
 
-                                                    </div>
+        .v3_ui_edsa_button:disabled {
+            background-color: #e1e1e1;
+            cursor: not-allowed;
+        }
 
-
-                                                </div>
-                                            </form>
-                                        </div>
-                                        <div class="col-md-8 hidden-sm  hidden-xs">
-                                            <h4>Latest (10) recharge history</h4>
-                                            <div class="exportdata table-wrapper-scroll-y my-custom-scrollbar">
-                                                <table class="table table-bordered  mb-0" id="datatable-icons">
-                                                    <thead>
-                                                        <tr>
-                                                            <th>DATE/TIME</th>
-                                                            <th>PRODUCT</th>
-                                                            <th>TRANSACTION ID</th>
-                                                            <th>METER #</th>
-                                                            <th>POS ID</th>
-                                                            <th>TOKEN</th>
-                                                            <th>AMOUNT</th>
-                                                            <th>STATUS</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody id="salesList">
-                                                        @Html.Partial("Partials/_salesListing", history)
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                </div>
-                            </div>
-                        }
-                        else
-                        {
-                            <div class="contarea">
-                                <p>
-                                    Service not assigned<br />
-                                    Please contact VENDTECH on +23279990990
-                                </p>
-                            </div>
-                        }
-
-
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade colored-header colored-header-primary" id="form-bp1" tabindex="-1" role="dialog" aria-hidden="true" style="display: none;">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header modal-header-colored" style="background-color: #e4c200">
-                    <h3 class="modal-title" style="color:black; font-weight:bold; text-transform:capitalize;">PLEASE CONFIRM YOUR PURCHASE</h3>
-                    <button class="close md-close" type="button" data-dismiss="modal" aria-hidden="true"><span class="mdi mdi-close">       </span></button>
-                </div>
-                <div class="modal-body">
-                    <div class="col-md-12">
-                        <div class="row" style="margin-top:55px; margin-bottom: 25px ">
-                            <div class="col-md-6 col-item">
-                                <span class="adv-company-name">Meter No:</span>
-                            </div>
-                            <div class="col-md-6 col-item"><br/>
-                                <span id="meterno" class="adv-company-name" style="font-weight: bold; font-size: 30px;">Peter Bamidele</span>
-                            </div>
-                        </div>
-                        <div class="row" style="margin-top:55px; margin-bottom: 25px">
-                            <div class="col-md-6 col-item">
-                                <span class="adv-company-name text-muted">ALIAS:</span>
-                            </div>
-                            <div class="col-md-6 col-item"><br/>
-                                <span id="allias" class="adv-company-name" style="font-weight: bold; font-size: 30px;">N/A</span>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6 col-item adv-company-name">
-                                <span class="adv-company-name">Amount:</span>
-                            </div>
-                            <div class="col-md-6 col-item">
-                                <span class="amount-currency">@country.CurrencyCode :</span>
-                                <span id="pamount" class="adv-amount-figure" style="font-weight:bold; font-size:30px;">100.00</span>
-
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-secondary md-close" type="button" data-dismiss="modal">Cancel</button>
-                    <button class="btn btn-primary md-close" id="rechargeBtn" type="button" data-dismiss="modal">PROCEED TO PURCHASE</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-
-    @Html.Partial("Partials/_downTimeNotification", "")
-    <div class="modal fade" id="modalCart2">
-        @Html.Partial("_voucherReprint")
-    </div>
-
-    <div class="modal fade" id="modalCart">
-        @Html.Partial("_voucherReceipt")
-    </div>
-
-    <div class="modal fade" id="modalCart3">
-        @Html.Partial("_RequestResponseJSON")
-    </div>
-</div>
-
-
-@section scripts{
-    <script src="~/Scripts/UserScripts/meter.js"></script>
-    <link href="~/Content/transdetails.css" rel="stylesheet" />
-    <link href="~/Content/pos_receipt.css" rel="stylesheet" />
-    <script src="~/Scripts/Receipt.js"></script>
-    <script src="~/Scripts/UserScripts/sms.js"></script>
-
-    <script>
-
-         var salesHandler = {
-                        amount : '@VendTech.BLL.Common.Utilities.FormatAmount(ViewBag.walletBalance)'
-                    }
-        $(document).ready(function () {
-
-
-
-            App.init();
-
-
-            if ('@ViewBag.IsDisable' === 'Truez') {
-                var message = '@Html.Raw(ViewBag.DisabledMessage)';
-                if (message) {
-                    message = escape(message);
-                    const decoded = atob(unescape(message));
-                    $("#downtimeNotifyMessage").text(decoded);
-                }
-                $("#downtimeNotifyModal").modal('show');
-                $('#downtimeNotifyModal').modal({
-                    backdrop: 'static',
-                    keyboard: false
-                })
+        @@media (max-width: 768px) {
+            section {
+                padding: 1rem;
             }
 
-                onSelectMeter();
+            .v3_ui_edsa_container {
+                padding: 1.5rem;
+            }
 
-                $(".savebttn").click(function () {
-
-                    if (!$("#Amount").val() || $("#Amount").val() == "0") {
-                        $.ShowMessage($('div.messageAlert'), "PLEASE ENTER THE AMOUNT YOU WISH TO PURCHASE!!", MessageType.Error);
-                        return;
-                    } else if (!$("#MeterNumber").val() && !$("#meterDrp").val()) {
-                        $.ShowMessage($('div.messageAlert'), "PLEASE ENTER THE METER NUMBER!!", MessageType.Error);
-                        return;
-                    } else {
-                        
-                        const minVend = '@VendTech.BLL.Common.Utilities.FormatAmount(ViewBag.MinumumVend)';
-                        const amtPay = +$("#Amount").val().replace(",", "");
-
-                        if (amtPay < '@ViewBag.MinumumVend') {
-                            $.ShowMessage($('div.messageAlert'), "PLEASE TENDER " + minVend + " & ABOVE", MessageType.Error);
-                            $("#pay_Now_Btn").css({ backgroundColor: '#f1cf09' });
-                            $("#pay_Now_Btn").val('PAY NOW');
-                            $("#pay_Now_Btn").prop('disabled', false);
-                            return;
-                        }
-
-
-                        let meterno = ""
-                        const mn = $("#MeterNumber").val();
-                        if (mn == undefined || mn == "") {
-                            meterno = $("#meterDrp option:selected").text().split("-")[0].trim()
-                        } else {
-                            meterno = mn;
-                        }
-
-                        if (meterno && meterno.length != 11) {
-                            $.ShowMessage($('div.messageAlert'), "PLEASE ENTER A VALID METER NUMBER OF 11 DIGITS!!", MessageType.Error);
-                            return;
-                        }
-
-                        $("#meterno").html(meterno);
-                        $("#allias").html($("#meterDrp option:selected").text().split("-")[1])
-                        $("#pamount").html(thousands_separators($("#Amount").val()))
-                        $("#form-bp1").modal("show")
-                    }
-                })
-
-                $("#AmountDisplay").on('keyup', function (evt) {
-                    if ($("#AmountDisplay").val() == "") {
-                        return false;
-                    }
-                    if (evt.which != 110 ){//not a fullstop
-                        var n = parseFloat($(this).val().replace(/\,/g,''),10);
-                        $(this).val(n.toLocaleString());
-                    }
-                });
-              })
-                $(function () {
-                    $("#posDrp").on("change", function () {
-                        $.ajax({
-                            url: '/Pos/GetPosBalance?posId=' + $("#posDrp").val(),
-                            success: function (res) {
-                                $("#balanceSpan").text("NLe : " + thousands_separators(res.balance));
-                            }
-                        })
-                    }
-                    )
-                })
-                function isNumber(evt) {
-                    var iKeyCode = (evt.which) ? evt.which : evt.keyCode
-                    if (iKeyCode > 31 && (iKeyCode < 48 || iKeyCode > 57))
-                        return false;
-
-                    return true;
-                }
-                function onSelectMeter() {
-                    if ($("#meterDrp").val()) {
-                        $("#MeterNumber").attr("disabled", "disabled");
-                        $("#saveMeterChk").attr("disabled", "disabled");
-                        $("#saveMeterChk").removeAttr("checked");
-                    }
-                    else {
-                        $("#MeterNumber").removeAttr("disabled");
-                        $("#saveMeterChk").removeAttr("disabled");
-
-                    }
-                }
-                function onChangeMeterNumber() {
-                    var val = $("#MeterNumber").val();
-                    if (val && val.length > 0) {
-                        $("#meterDrp").attr("disabled", "disabled");
-                    }
-                    else {
-                        $("#meterDrp").removeAttr("disabled");
-                    }
-                }
-                function thousands_separators(num) {
-                    var num_parts = num.toString().split(".");
-                    num_parts[0] = num_parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-                    return num_parts.join(".");
-                }
-                function amountFormatter() {
-                    $("#pay_Now_Btn").prop('disabled', false);
-
-                    var displayVal = $("#AmountDisplay").val();
-                    var val = "";
-                    if (displayVal) {
-                        var cc = displayVal.replace(/\,/g, "");
-                        $("#Amount").val(cc);
-                        val = $("#Amount").val();
-
-                        var amt_to_display = thousands_separators(val);
-                        var wallet_balance = salesHandler.amount;
-                        var wllBal = wallet_balance.toString().includes(',') ? Number(wallet_balance.toString().replace(/,/g, "")) : wallet_balance;
-
-
-                        if (Number(amt_to_display.replace(/,/g, "")) > wllBal) {
-                            $("#pay_Now_Btn").prop('disabled', true);
-                            $.ShowMessage($('div.messageAlert'), "WALLET BALANCE IS INSUFFICIENT TO MAKE PURCHASE.", MessageType.Error);
-                            return false;
-                        }
-                        $("#AmountDisplay").val();
-                    }
-                }
-                function isNumber(evt) {
-                    var iKeyCode = (evt.which) ? evt.which : evt.keyCode
-                    if (iKeyCode > 31 && (iKeyCode < 48 || iKeyCode > 57))
-                        return false;
-
-                    return true;
+            .v3_ui_edsa_amount_input {
+                font-size: 2rem;
+            }
         }
 
-        function closeDowntimeNotify() {
-            window.location.href = 'Meter/Utility';
-        }
-
-        function closeModal() {
-            $("#modalCart").modal("hide");
-            $("#modalCart2").modal("hide");
-            $("#modalCart3").modal("hide");
-        }
-
-    </script>
-}
-<style type="text/css">
-    input[type=number]::-webkit-inner-spin-button,
-    input[type=number]::-webkit-outer-spin-button {
-        -webkit-appearance: none;
-        -moz-appearance: none;
-        appearance: none;
-        margin: 0;
+    .v3_ui_edsa_modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        display: none;
+        align-items: center;
+        justify-content: center;
     }
+
+    .v3_ui_edsa_modal_content {
+        background-color: white;
+        width: 90%;
+        max-width: 500px;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .v3_ui_edsa_modal_header {
+        background-color: #ffd700;
+        color: #1a1a1a;
+        padding: 1rem;
+        font-weight: 700;
+        font-size: 1.1rem;
+        text-align: center;
+    }
+
+    .v3_ui_edsa_modal_body {
+        padding: 2rem;
+    }
+
+    .v3_ui_edsa_modal_row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+
+        .v3_ui_edsa_modal_row:last-child {
+            margin-bottom: 0;
+        }
+
+    .v3_ui_edsa_modal_label {
+        color: #666;
+        font-weight: 600;
+        font-size: 1rem;
+    }
+
+    .v3_ui_edsa_modal_value {
+        color: #1a1a1a;
+        font-weight: 700;
+        font-size: 1.1rem;
+    }
+
+    .v3_ui_edsa_modal_footer {
+        padding: 1rem;
+        display: flex;
+        justify-content: flex-end;
+        gap: 1rem;
+        border-top: 1px solid #e1e1e1;
+    }
+
+    .v3_ui_edsa_modal_button {
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 4px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .v3_ui_edsa_modal_button_cancel {
+        background-color: #e1e1e1;
+        color: #666;
+    }
+
+        .v3_ui_edsa_modal_button_cancel:hover {
+            background-color: #d1d1d1;
+        }
+
+    .v3_ui_edsa_modal_button_proceed {
+        background-color: #ffd700;
+        color: #1a1a1a;
+    }
+
+        .v3_ui_edsa_modal_button_proceed:hover {
+            background-color: #ffed4a;
+        }
+
+
+
+
 </style>
+<link href="~/Contentv2/css/edsa_receipt_v3.css" rel="stylesheet" />
+<section>
+    <div class="v3_ui_edsa_container">
+        <div class="v3_ui_edsa_header">
+            <div class="v3_ui_edsa_subtitle">EDSA Electricity Purchase</div>
+        </div>
+
+        <form class="v3_ui_edsa_form">
+            @{
+                var pos = (List<SelectListItem>)ViewBag.userPos;
+            }
+            @if (pos.Count > 1)
+            {
+                <div class="v3_ui_edsa_form_group">
+                    <label class="v3_ui_edsa_label">SELECT POS ID</label>
+                    @Html.DropDownList("PosId", new SelectList(ViewBag.userPos, "value", "text"), null, new { @class = "v3_ui_edsa_select", @id = "posDrp" })
+                </div>
+            }
+            else
+            {
+                <div class="v3_ui_edsa_form_group">
+                    <div class=" v3_ui_edsa_pos_id">POS ID: @pos.FirstOrDefault().Text</div>
+                    @Html.DropDownList("PosId", new SelectList(ViewBag.userPos, "value", "text"), null, new { @style = "display:none;", @id = "posDrp" })
+                </div>
+            }
+            <div class="v3_ui_edsa_form_group">
+                <label class="v3_ui_edsa_label">Select Saved Meter</label>
+                @Html.DropDownList("MeterId", new SelectList(ViewBag.meters, "value", "text"), "Select Meter", new { @class = "v3_ui_edsa_select", id = "meterSelect" })
+            </div>
+
+            @if (!ViewBag.IsModuleDisable)
+            {
+                <div class="v3_ui_edsa_form_group">
+                    <label class="v3_ui_edsa_label v3_ui_edsa_label_new">
+                        Enter New Meter Number
+                    </label>
+                    <input type="text"
+                           class="v3_ui_edsa_input"
+                           id="newMeterInput"
+                           placeholder="Enter meter number"
+                           pattern="[0-9]*"
+                           inputmode="numeric">
+                </div>
+            }
+
+
+            <div class="v3_ui_edsa_amount_wrapper">
+                <span class="v3_ui_edsa_amount_currency">SLE</span>
+                <input type="text"
+                       class="v3_ui_edsa_input v3_ui_edsa_amount_input"
+                       id="amountInput"
+                       placeholder="0.00"
+                       pattern="[0-9]*"
+                       inputmode="numeric">
+            </div>
+
+            <button type="button"
+                    class="v3_ui_edsa_button"
+                    id="payButton"
+                    disabled>
+                Pay Now
+            </button>
+        </form>
+    </div>
+
+    @*Confirm Modal*@
+    <div class="v3_ui_edsa_modal" id="confirmModal">
+        <div class="v3_ui_edsa_modal_content">
+            <div class="v3_ui_edsa_modal_header">
+                PLEASE CONFIRM YOUR PURCHASE
+            </div>
+            <div class="v3_ui_edsa_modal_body">
+                <div class="v3_ui_edsa_modal_row">
+                    <div class="v3_ui_edsa_modal_label">METER NO:</div>
+                    <div class="v3_ui_edsa_modal_value" id="confirmMeterNo">98000142897</div>
+                </div>
+                <div class="v3_ui_edsa_modal_row">
+                    <div class="v3_ui_edsa_modal_label">ALIAS:</div>
+                    <div class="v3_ui_edsa_modal_value" id="confirmAlias">APT 1</div>
+                </div>
+                <div class="v3_ui_edsa_modal_row">
+                    <div class="v3_ui_edsa_modal_label">AMOUNT:</div>
+                    <div class="v3_ui_edsa_modal_value">SLE : <span id="confirmAmount">40</span></div>
+                </div>
+            </div>
+            <div class="v3_ui_edsa_modal_footer">
+                <button class="v3_ui_edsa_modal_button v3_ui_edsa_modal_button_cancel" id="cancelButton">
+                    Cancel
+                </button>
+                <button class="v3_ui_edsa_modal_button v3_ui_edsa_modal_button_proceed" id="proceedButton">
+                    PROCEED TO PURCHASE
+                </button>
+            </div>
+        </div>
+    </div>
+
+    @*Receipt Modal*@
+    <div class="v3_ui_edsa_receipt_modal" id="receiptModal">
+        <div class="v3_ui_edsa_receipt_content">
+            <span class="v3_ui_edsa_receipt_close" id="closeReceipt">&times;</span>
+
+            <div class="v3_ui_edsa_receipt_header">
+                @*<img src="~/Content/images/ventech.png" height="100" class="v3_ui_edsa_receipt_logo" width="100" />*@
+                <div class="v3_ui_edsa_receipt_title">VENDTECH</div>
+                <div>ELECTRICITY PURCHASE</div>
+            </div>
+
+            <div class="v3_ui_edsa_receipt_divider"></div>
+
+            <div class="v3_ui_edsa_receipt_row">
+                <span class="v3_ui_edsa_receipt_label">Date:</span>
+                <span class="v3_ui_edsa_receipt_value" id="sales_date"></span>
+            </div>
+
+            <div class="v3_ui_edsa_receipt_row">
+                <span class="v3_ui_edsa_receipt_label">Vendor Name:</span>
+                <span class="v3_ui_edsa_receipt_value" id="vendor_name"></span>
+            </div>
+
+            <div class="v3_ui_edsa_receipt_row">
+                <span class="v3_ui_edsa_receipt_label">POS ID:</span>
+                <span class="v3_ui_edsa_receipt_value" id="pos_id"></span>
+            </div>
+
+            <div class="v3_ui_edsa_receipt_divider"></div>
+
+            <div>Customer Information</div>
+            <div class="v3_ui_edsa_receipt_row">
+                <span class="v3_ui_edsa_receipt_label">Customer:</span>
+                <span class="v3_ui_edsa_receipt_value" id="customer_name"></span>
+            </div>
+
+            <div class="v3_ui_edsa_receipt_row">
+                <span class="v3_ui_edsa_receipt_label">Account #:</span>
+                <span class="v3_ui_edsa_receipt_value" id="customer_account_number"></span>
+            </div>
+
+            <div class="v3_ui_edsa_receipt_row">
+                <span class="v3_ui_edsa_receipt_label">Address:</span>
+                <span class="v3_ui_edsa_receipt_value" id="customer_address"></span>
+            </div>
+
+            <div class="v3_ui_edsa_receipt_row">
+                <span class="v3_ui_edsa_receipt_label">Meter #:</span>
+                <span class="v3_ui_edsa_receipt_value" id="meter_number"></span>
+            </div>
+
+            <div class="v3_ui_edsa_receipt_divider"></div>
+
+            <div class="v3_ui_edsa_receipt_row">
+                <span class="v3_ui_edsa_receipt_label">AMT Tendered: SLE</span>
+                <span class="v3_ui_edsa_receipt_value" id="amount_tender"></span>
+            </div>
+
+            <div>Deductions</div>
+            <div class="v3_ui_edsa_receipt_row">
+                <span class="v3_ui_edsa_receipt_label">GST: SLE</span>
+                <span class="v3_ui_edsa_receipt_value" id="gst"></span>
+            </div>
+
+            <div class="v3_ui_edsa_receipt_row">
+                <span class="v3_ui_edsa_receipt_label">Service Charge: SLE</span>
+                <span class="v3_ui_edsa_receipt_value" id="service_charge"></span>
+            </div>
+
+            <div class="v3_ui_edsa_receipt_row">
+                <span class="v3_ui_edsa_receipt_label">Cost of units: SLE</span>
+                <span class="v3_ui_edsa_receipt_value" id="cost_of_units"></span>
+            </div>
+
+            <div class="v3_ui_edsa_receipt_row">
+                <span class="v3_ui_edsa_receipt_label">Units: kwH</span>
+                <span class="v3_ui_edsa_receipt_value" id="units"></span>
+            </div>
+
+            <div class="v3_ui_edsa_receipt_token" id="token"></div>
+
+            <div class="v3_ui_edsa_receipt_row">
+                <span class="v3_ui_edsa_receipt_label">EDSA Serial #:</span>
+                <span class="v3_ui_edsa_receipt_value" id="edsa_serial"></span>
+            </div>
+
+            <div class="v3_ui_edsa_receipt_row">
+                <span class="v3_ui_edsa_receipt_label">VTECH Serial #:</span>
+                <span class="v3_ui_edsa_receipt_value" id="vendtech_serial"></span>
+            </div>
+
+            <img src="~/Content/images/vtech-receipt.png" alt="VendTech Stamp" class="v3_ui_edsa_receipt_stamp"/>
+            <div class="v3_ui_edsa_receipt_actions">
+                <button class="v3_ui_edsa_receipt_button" id="emailBtn">EMAIL</button>
+                <button class="v3_ui_edsa_receipt_button" id="usbBtn">USB PRINT</button>
+                <button class="v3_ui_edsa_receipt_button" id="bluetoothBtn">BLUETOOTH PRINT</button>
+            </div>
+        </div>
+    </div>
+
+</section>
+<script>
+    var salesHandler = {
+        amount: '@VendTech.BLL.Common.Utilities.FormatAmount(ViewBag.walletBalance)',
+        minVend: @Convert.ToDecimal(ViewBag.MinumumVend),
+        walletBalance: @Convert.ToDecimal(ViewBag.walletBalance),
+        selectedMeterNo:''
+    };
+    const meterSelect = document.getElementById('meterSelect');
+    const newMeterInput = document.getElementById('newMeterInput');
+    const amountInput = document.getElementById('amountInput');
+    const payButton = document.getElementById('payButton');
+    const confirmModal = document.getElementById('confirmModal');
+    const cancelButton = document.getElementById('cancelButton');
+    const proceedButton = document.getElementById('proceedButton');
+    const confirmMeterNo = document.getElementById('confirmMeterNo');
+    const confirmAlias = document.getElementById('confirmAlias');
+    const confirmAmount = document.getElementById('confirmAmount');
+    const pos = document.getElementById('posDrp');
+
+    // Toggle between select and new meter input
+    meterSelect.addEventListener('change', function () {
+        newMeterInput.disabled = this.value !== '';
+        if (this.value !== '') {
+            newMeterInput.value = '';
+        }
+    });
+
+    newMeterInput.addEventListener('input', function () {
+        meterSelect.value = '';
+        meterSelect.disabled = this.value !== '';
+    });
+
+    // Format amount with commas and enable/disable pay button
+    amountInput.addEventListener('input', function (e) {
+        let value = this.value.replace(/[^0-9.]/g, '');
+        let parts = value.split('.');
+
+        if (parts[0].length > 0) {
+            parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+
+        if (parts.length > 1) {
+            parts[1] = parts[1].substring(0, 2);
+        }
+
+        this.value = parts.join('.');
+
+        const numericValue = parseFloat(value);
+
+        //Validate Amount
+        if (salesHandler.walletBalance < numericValue) {
+            $.ShowMessage($('div.messageAlert'), "WALLET BALANCE IS INSUFFICIENT TO MAKE PURCHASE.", MessageType.Error);
+            payButton.disabled = true;
+        } else {
+            // Enable/disable pay button based on amount
+            payButton.disabled = isNaN(numericValue) || numericValue <= 0;
+        }
+    });
+
+
+    payButton.addEventListener('click', function () {
+        // Get the selected or entered meter number
+        const meterNumber = meterSelect.value ?
+            meterSelect.options[meterSelect.selectedIndex].text.split(' ')[0] :
+            newMeterInput.value;
+
+        // Get the amount without commas
+        const amount = amountInput.value.replace(/,/g, '');
+
+        // Update modal content
+        confirmMeterNo.textContent = meterNumber;
+        salesHandler.selectedMeterNo = meterNumber;
+        confirmAmount.textContent = amount;
+        // Show modal
+        confirmModal.style.display = 'flex';
+    });
+
+    cancelButton.addEventListener('click', function () {
+        confirmModal.style.display = 'none';
+    });
+
+    // Close modal when clicking outside
+    confirmModal.addEventListener('click', function (event) {
+        if (event.target === confirmModal) {
+            confirmModal.style.display = 'flex';
+        }
+    });
+
+    proceedButton.addEventListener('click', async function () {
+
+        // Validate inputs
+        const amount = amountInput.value.trim();
+        const meterNumber = newMeterInput.value.trim();
+        const selectedMeter = salesHandler.selectedMeterNo.trim();
+
+        if (!amount || amount === "0") {
+            alert("Please Enter Amount");
+            return;
+        }
+
+        if (!meterNumber && !selectedMeter) {
+            alert("Please enter meter number or select a meter.");
+            return;
+        }
+
+        // Update button state
+        changeButtonState({ active: false });
+
+        try {
+            
+
+            const requestData = {
+                Amount: parseFloat(amount.replace(/,/g, '')),
+                MeterNumber: meterNumber || selectedMeter,
+                PosId: document.getElementById('posDrp').value, // Add POS ID if required
+                SaveAsNewMeter: false // Add this if your backend expects it
+            };
+            const response = await fetch('RechargeReturn2', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest' // Add this for AJAX requests
+                },
+                body: JSON.stringify(requestData)
+            });
+
+            const data = await response.json();
+
+            changeButtonState({ active: true });
+           
+            if (data.Code === 302 || data.Code === 403) {
+                const message = data.Code === 403 ? atob(data.Msg) : data.Msg;
+                $.ShowMessage($('div.messageAlert'), message, MessageType.Error);
+                return;
+            }
+
+            if (data.Code === 200) {
+                // Update receipt data
+                loadReceipt(data);
+                // Clear amount input
+                amountInput.value = '';
+            } else {
+                $.ShowMessage($('div.messageAlert'), data.Msg, MessageType.Error);
+            }
+        } catch (error) {
+            changeButtonState({active: true})
+            $.ShowMessage($('div.messageAlert'), "An error occurred. Please try again.", MessageType.Error);
+        }
+    });
+
+    // Close receipt modal
+    document.getElementById('closeReceipt').addEventListener('click', function () {
+        document.getElementById('receiptModal').style.display = 'none';
+    });
+
+    // Handle print buttons
+    document.getElementById('emailBtn').addEventListener('click', function () {
+        // Implement email functionality
+        alert('Email functionality to be implemented');
+    });
+
+    document.getElementById('usbBtn').addEventListener('click', function () {
+        // Implement USB print functionality
+        alert('USB print functionality to be implemented');
+    });
+
+    document.getElementById('bluetoothBtn').addEventListener('click', function () {
+        // Implement Bluetooth print functionality
+        alert('Bluetooth print functionality to be implemented');
+    });
+
+
+
+    function loadReceipt(data) {
+        document.getElementById('sales_date').textContent = data.Data.TransactionDate;
+        document.getElementById('customer_name').textContent = data.Data.CustomerName;
+        document.getElementById('customer_account_number').textContent = data.Data.AccountNo;
+        document.getElementById('customer_address').textContent = data.Data.Address;
+        document.getElementById('meter_number').textContent = data.Data.DeviceNumber;
+        document.getElementById('amount_tender').textContent = data.Data.Amount;
+        document.getElementById('gst').textContent = data.Data.Tax;
+        document.getElementById('service_charge').textContent = data.Data.Charges;
+        document.getElementById('cost_of_units').textContent = data.Data.UnitCost;
+        document.getElementById('units').textContent = data.Data.Unit;
+        document.getElementById('token').textContent = data.Data.Pin1;
+        document.getElementById('edsa_serial').textContent = data.Data.SerialNo;
+        document.getElementById('vendtech_serial').textContent = data.Data.VTECHSerial;
+        document.getElementById('pos_id').textContent = data.Data.POS;
+
+        // Show receipt modal
+        document.getElementById('receiptModal').style.display = 'flex';
+        confirmModal.style.display = 'none';
+
+    }
+
+    function changeButtonState(state) {
+        if (state.active == false) {
+            payButton.classList.add('loading');
+            payButton.textContent = 'PROCESSING....';
+            payButton.disabled = true;
+
+            proceedButton.classList.add('loading');
+            proceedButton.textContent = 'PROCESSING....';
+            proceedButton.disabled = true;
+        } else {
+            payButton.classList.remove('loading');
+            payButton.textContent = 'PAY NOW';
+            payButton.disabled = false;
+
+            proceedButton.classList.remove('loading');
+            proceedButton.textContent = 'PROCEED TO PURCHASE';
+            proceedButton.disabled = false;
+        }
+    }
+
+</script>
+
+
+
+

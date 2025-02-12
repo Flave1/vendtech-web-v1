@@ -481,7 +481,7 @@ https://go.microsoft.com/fwlink/?LinkID=208121.
       <publishTime>01/01/0001 00:00:00</publishTime>
     </File>
     <File Include="bin/VendTech.BLL.dll">
-      <publishTime>01/24/2025 17:26:29</publishTime>
+      <publishTime>02/09/2025 02:19:27</publishTime>
     </File>
     <File Include="bin/VendTech.BLL.dll.config">
       <publishTime>11/13/2024 17:19:03</publishTime>
@@ -490,7 +490,7 @@ https://go.microsoft.com/fwlink/?LinkID=208121.
       <publishTime>01/20/2025 10:44:59</publishTime>
     </File>
     <File Include="bin/VendTech.DAL.dll">
-      <publishTime>12/11/2024 05:47:35</publishTime>
+      <publishTime>02/08/2025 12:01:01</publishTime>
     </File>
     <File Include="bin/VendTech.DAL.dll.config">
       <publishTime>11/12/2024 11:27:17</publishTime>
@@ -499,13 +499,13 @@ https://go.microsoft.com/fwlink/?LinkID=208121.
       <publishTime>09/26/2024 18:57:50</publishTime>
     </File>
     <File Include="bin/VendTech.dll">
-      <publishTime>01/24/2025 17:36:44</publishTime>
+      <publishTime>02/09/2025 02:19:29</publishTime>
     </File>
     <File Include="bin/VendTech.dll.config">
-      <publishTime>01/24/2025 17:25:56</publishTime>
+      <publishTime>02/09/2025 03:19:48</publishTime>
     </File>
     <File Include="bin/VendTech.Framework.dll">
-      <publishTime>01/24/2025 17:26:30</publishTime>
+      <publishTime>02/09/2025 02:19:28</publishTime>
     </File>
     <File Include="bin/VendTech.Framework.dll.config">
       <publishTime>11/13/2024 17:17:36</publishTime>
@@ -524,6 +524,30 @@ https://go.microsoft.com/fwlink/?LinkID=208121.
     </File>
     <File Include="Content/assets/css/style.min.css">
       <publishTime>01/01/0001 00:00:00</publishTime>
+    </File>
+    <File Include="Contentv2/css/edsa_receipt_v3.css">
+      <publishTime>02/09/2025 03:37:29</publishTime>
+    </File>
+    <File Include="Contentv2/css/layoutv3.css">
+      <publishTime>02/09/2025 20:28:40</publishTime>
+    </File>
+    <File Include="Images/ProductImages/25a83fff-c00c-44d5-a48b-8abc47a6c9cd.jpg">
+      <publishTime>06/05/2024 12:54:32</publishTime>
+    </File>
+    <File Include="Images/ProductImages/47cfeecd-c2cc-4892-8aca-3026efa1cf13.png">
+      <publishTime>06/05/2024 12:54:32</publishTime>
+    </File>
+    <File Include="Images/ProductImages/68c14ce5-9e94-44af-ace6-8b776d703ac8.jpg">
+      <publishTime>06/05/2024 12:54:32</publishTime>
+    </File>
+    <File Include="Images/ProductImages/6e870039-829d-4a62-b30c-bcf56ef7a0cf.png">
+      <publishTime>06/05/2024 12:54:32</publishTime>
+    </File>
+    <File Include="Images/ProductImages/90af8770-010a-4872-aabe-58709e69d1b4.png">
+      <publishTime>06/05/2024 12:54:32</publishTime>
+    </File>
+    <File Include="Images/ProductImages/d1a59f1a-5ea6-4e8d-8017-134b917df042.png">
+      <publishTime>06/05/2024 12:54:32</publishTime>
     </File>
     <File Include="Scripts/AdminScripts/agency.js">
       <publishTime>01/01/0001 00:00:00</publishTime>
@@ -811,7 +835,7 @@ https://go.microsoft.com/fwlink/?LinkID=208121.
       <publishTime>01/01/0001 00:00:00</publishTime>
     </File>
     <File Include="Views/Home/Dashboard.cshtml">
-      <publishTime>01/01/0001 00:00:00</publishTime>
+      <publishTime>02/08/2025 10:31:48</publishTime>
     </File>
     <File Include="Views/Home/Dashboard_e.cshtml">
       <publishTime>01/01/0001 00:00:00</publishTime>
@@ -868,7 +892,7 @@ https://go.microsoft.com/fwlink/?LinkID=208121.
       <publishTime>04/12/2023 11:53:44</publishTime>
     </File>
     <File Include="Views/Meter/Recharge.cshtml">
-      <publishTime>09/10/2024 14:26:43</publishTime>
+      <publishTime>02/09/2025 19:42:28</publishTime>
     </File>
     <File Include="Views/Meter/Recharge_e.cshtml">
       <publishTime>06/01/2024 05:52:46</publishTime>
@@ -972,6 +996,9 @@ https://go.microsoft.com/fwlink/?LinkID=208121.
     <File Include="Views/Shared/_Layout.cshtml">
       <publishTime>01/01/0001 00:00:00</publishTime>
     </File>
+    <File Include="Views/Shared/_Layoutv3.cshtml">
+      <publishTime>02/09/2025 19:23:09</publishTime>
+    </File>
     <File Include="Views/Shared/_SideBaar.cshtml">
       <publishTime>01/01/0001 00:00:00</publishTime>
     </File>
@@ -990,8 +1017,11 @@ https://go.microsoft.com/fwlink/?LinkID=208121.
     <File Include="Views/User/EditProfile_old.cshtml">
       <publishTime>02/11/2023 07:06:04</publishTime>
     </File>
+    <File Include="Views/Utilities/Index.cshtml">
+      <publishTime>02/09/2025 20:46:05</publishTime>
+    </File>
     <File Include="Web.config">
-      <publishTime>10/03/2024 14:23:20</publishTime>
+      <publishTime>02/09/2025 03:48:22</publishTime>
     </File>
   </ItemGroup>
 </Project>

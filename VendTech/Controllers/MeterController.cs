@@ -223,7 +223,7 @@ namespace VendTech.Controllers
                 VendorId = LOGGEDIN_USER.UserID
             };
 
-            model.History = _meterManager.GetUserMeterRechargesHistory(hostory_model, false, PlatformTypeEnum.ELECTRICITY).List;
+            //model.History = _meterManager.GetUserMeterRechargesHistory(hostory_model, false, PlatformTypeEnum.ELECTRICITY).List;
 
             if (meterId > 0) model.MeterId = meterId;
             if (posList.Count > 0)
@@ -346,12 +346,12 @@ namespace VendTech.Controllers
 
         }
 
-        [HttpPost, AjaxOnly, Public]
+        [HttpPost, AjaxOnly]
         public async Task<JsonResult> RechargeReturn2(RechargeMeterModel model)
         {
-            //model.UserId = model.UserId;
             try
             {
+                model.UserId = LOGGEDIN_USER.UserID;
                 var result = await _vendtechExtensionSales.RechargeFromVendtechExtension(model);
                 if (result.ReceiptStatus.Status == "unsuccessful")
                 {

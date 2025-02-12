@@ -1,6 +1,6 @@
 ﻿﻿@model  DashboardViewModel
 @{
-    Layout = "~/Views/Shared/_Layout.cshtml";
+    Layout = "~/Views/Shared/_Layoutv3.cshtml";
 
     var user = (UserDetails)ViewBag.LOGGEDIN_USER;
     var assignerModules = (List<ModulesModel>)ViewBag.USER_PERMISSONS;
@@ -8,282 +8,168 @@
 }
 
 
+
+<link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
 <style>
-
-    .card {
-        border: none;
-        border-radius: 10px;
-        width: 100%;
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
     }
 
-    .c-details {
-        font-size: 8px;
-        margin: auto;
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f0f2f5;
+        color: #333;
     }
 
+    .v3_ui_dashboard_container {
+        padding: 2rem;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
 
-
-    .text2 {
-        color: #808080;
+    .v3_ui_dashboard_title {
+        font-size: 2rem;
         font-weight: bold;
+        color: #333;
+        margin-bottom: 2rem;
     }
 
-
-    .title-container {
-        width: 100%;
+    .v3_ui_dashboard_widgets {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1.5rem;
     }
 
-    .steps {
-        font-weight: bold;
-        color: #55565a;
-    }
-
-    .action {
-        color: #55565a;
-        font-weight: bold;
-    }
-
-    .steps a {
-        color: #f7bf27;
-    }
-
-    a {
-        font-weight: bold;
-    }
-
-    .custom-card {
-        border-radius: 15px;
-        border: 1px solid #ffffff;
-        margin: 20px;
-        background: white;
-        padding: 10px;
-    }
-
-    .data-info {
+    .v3_ui_dashboard_widget {
+        background-color: #ffffff;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        padding: 1.5rem;
         display: flex;
+        align-items: center;
+        transition: transform 0.3s ease;
     }
 
-        .data-info > div {
-            width: 100%;
+        .v3_ui_dashboard_widget:hover {
+            transform: translateY(-5px);
         }
 
-            .data-info > div:first-child {
-                text-align: left;
-            }
+    .v3_ui_dashboard_widget_icon {
+        background-color: rgba(255, 215, 0, 0.1);
+        border-radius: 50%;
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1rem;
+    }
+
+        .v3_ui_dashboard_widget_icon i {
+            font-size: 24px;
+            color: #ffd700;
+        }
+
+    .v3_ui_dashboard_widget_content {
+        flex: 1;
+    }
+
+    .v3_ui_dashboard_widget_title {
+        font-size: 1rem;
+        font-weight: 500;
+        color: #666;
+        margin-bottom: 0.5rem;
+    }
+
+    .v3_ui_dashboard_widget_value {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #333;
+        margin: 0;
+    }
+
+    @@media (max-width: 768px) {
+        .v3_ui_dashboard_container {
+            padding: 1rem;
+        }
+
+        .v3_ui_dashboard_title {
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .v3_ui_dashboard_widgets {
+            grid-template-columns: 1fr;
+        }
+
+        .v3_ui_dashboard_widget {
+            padding: 1rem;
+        }
+
+        .v3_ui_dashboard_widget_title {
+            font-size: 0.9rem;
+        }
+
+        .v3_ui_dashboard_widget_value {
+            font-size: 1.25rem;
+        }
+    }
 </style>
 
-
-
-<div class="container-fluid" id="pcont">
-
-    @if (user.UserType == UserRoles.Vendor || user.UserType == UserRoles.AppUser)
-    {
-        <div class="dashright">
-            <div class="page-head">
-                <h2>Dashboard</h2>
-                @*<div class="" style="text-align:right; font-size:30px;   font-weight:bolder;">
-                    <span id="balanceSpan" style="color: #00a2e8; ">@country.CurrencyCode: <span id="userBalanceMain">@VendTech.BLL.Common.Utilities.FormatAmount(ViewBag.walletBalance)</span></span>
-                </div>*@
-                @Html.Partial("_Balancebar")
-            </div>
-            <div class="cl-mcont">
-                <br />
-                <br />
-                @*<strong>using: <span id="currentDomain">@country.DomainUrl</span></strong>*@
-                <div class="row">
-                    @if (ViewBag.ShowRevenueWidg && Model.currentUser.SelectedWidgets != null && Model.currentUser.SelectedWidgets.Any(y => y == 10))
-                    {
-                        <div class="col-xs-6 col-md-6 col-sm-6 col-lg-2">
-                            <div class="widget widget-tile">
-                                @*<div id="spark1" class="chart sparkline"></div>*@
-                                <div class="data-info">
-                                    <div class="desc">Current agency balance </div>
-                                    <div class="value">
-                                        <span class="indicator indicator-equal mdi mdi-chevron-right"></span><span data-toggle="counter" data-end="113" class="number">
-                                            @country.CurrencyCode: @VendTech.BLL.Common.Utilities.FormatAmount(Model.revenue)
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    }
-                    @if (Model.currentUser.SelectedWidgets != null && Model.currentUser.SelectedWidgets.Any(y => y == 1))
-                    {
-                        <div class="col-xs-6 col-md-6 col-sm-6 col-lg-2">
-                            <div class="widget widget-tile">
-                                @*<div id="spark1" class="chart sparkline"></div>*@
-                                <div class="data-info">
-                                    <div class="desc">Current wallet balance </div>
-                                    <div class="value">
-                                        <span class="indicator indicator-equal mdi mdi-chevron-right"></span><span data-toggle="counter" data-end="113" class="number">
-                                            @country.CurrencyCode: <span id="userBalance">@VendTech.BLL.Common.Utilities.FormatAmount(ViewBag.walletBalance)</span>
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    }
-                    @if (Model.currentUser.SelectedWidgets != null && Model.currentUser.SelectedWidgets.Any(y => y == 2))
-                    {
-                        <div class="col-xs-6 col-md-6 col-sm-6 col-lg-3">
-                            <div class="widget widget-tile">
-                                @*<div id="spark1" class="chart sparkline"></div>*@
-                                <div class="data-info">
-                                    <div class="desc"><a href="@Url.Action("SalesReport", "Report")">Total daily sales(today)</a></div>
-                                    <div class="value">
-                                        <span class="indicator indicator-equal mdi mdi-chevron-right"></span><span data-toggle="counter" data-end="113" class="number">
-                                            @country.CurrencyCode: @VendTech.BLL.Common.Utilities.FormatAmount(Model.totalSales)
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    }
-                    @if (Model.currentUser.SelectedWidgets != null && Model.currentUser.SelectedWidgets.Any(y => y == 3))
-                    {
-                        <div class="col-xs-6 col-md-6 col-sm-6 col-lg-3">
-                            <div class="widget widget-tile">
-                                @*<div id="spark2" class="chart sparkline"></div>*@
-                                <div class="data-info">
-                                    <div class="desc"> Total daily deposit(today)</div>
-                                    <div class="value">
-                                        <span class="indicator indicator-positive mdi mdi-chevron-up"></span><span data-toggle="counter" data-end="80" data-suffix="%" class="number">
-                                            @country.CurrencyCode: @VendTech.BLL.Common.Utilities.FormatAmount(Model.totalDeposit)
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    }
-                    @if (Model.currentUser.SelectedWidgets != null && Model.currentUser.SelectedWidgets.Any(y => y == 4))
-                    {
-
-                        <div class="col-xs-6 col-md-6 col-sm-6 col-lg-2">
-                            <div class="widget widget-tile">
-                                @*<div id="spark3" class="chart sparkline"></div>*@
-                                <div class="data-info">
-                                    <div class="desc">Active POS</div>
-                                    <div class="value">
-                                        <span class="indicator indicator-positive mdi mdi-chevron-up"></span><span data-toggle="counter" data-end="532" class="number">@Model.posCount</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    }
-                    @if (Model.currentUser.SelectedWidgets != null && Model.currentUser.SelectedWidgets.Any(y => y == 6))
-                    {
-                        <div class="col-xs-6 col-md-6 col-sm-6 col-lg-2">
-                            <div class="widget widget-tile">
-                                @*<div id="spark4" class="chart sparkline"></div>*@
-                                <div class="data-info">
-                                    <div class="desc">Products</div>
-                                    <div class="value">
-                                        <span class="indicator indicator-negative mdi mdi-chevron-down"></span><span data-toggle="counter" data-end="113" class="number">@Model.platFormModels.Count</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    }
-
+<div class="v3_ui_dashboard_container">
+    <h1 class="v3_ui_dashboard_title">Dashboard</h1>
+    <div class="v3_ui_dashboard_widgets">
+        @if (ViewBag.ShowRevenueWidg && Model.currentUser.SelectedWidgets != null && Model.currentUser.SelectedWidgets.Any(y => y == 10))
+        {
+            <div class="v3_ui_dashboard_widget">
+                <div class="v3_ui_dashboard_widget_icon">
+                    <i class="ri-bank-card-line"></i>
                 </div>
-
-                @if (!assignerModules.Any(X => X.ControllerName != "26"))
-                {
-                    <div class="row">
-                        <div class="col-md-4 ">
-                            <div class="card custom-card p-3 mb-2">
-                                <div class="d-flex justify-content-between">
-                                    <div class="d-flex flex-row align-items-center title-container">
-                                        <div class=" c-details">
-                                            <h4 class="action">How To - Save Your Meters</h4> <span><hr /></span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="steps row">
-                                    <ol>
-                                        <li>Click on  <a href="@Url.Action("Index", "Meter")">SAVED METERS</a>.</li>
-                                        <li>Enter the meter Information.</li>
-                                    </ol>
-                                </div>
-                                <span class="text2">Note: Alias is important as a short name to enable you differentiate your multiple meters (Eg : Apartment 1)</span>
-                            </div>
-                        </div>
-                        <div class="col-md-4 ">
-                            <div class="card custom-card p-3 mb-2">
-                                <div class="d-flex justify-content-between">
-                                    <div class="d-flex flex-row align-items-center title-container">
-                                        <div class=" c-details">
-                                            <h4 class="action">How To - Fund Your Wallet</h4> <span><hr /></span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="steps row">
-                                    <ol>
-                                        <li>Click on  <a href="@Url.Action("Index", "Deposit")">WALLET</a>.</li>
-                                        <li>
-                                            Enter the payment Information. <br>
-                                            VENDTECH will accept cash or cheque.
-                                            <p>
-                                                <strong>CASH : </strong> Send cash to any VENDTECH office and <br /> your account will be credited as qucik as possible.
-                                                <br /> You can as well make a transfer to GT-BANK <br /> (VENDTECH SL LTD - <a href="#">204/3403314/1/1/6</a>)
-                                            </p>
-                                            <p><strong>CHEQUE : </strong>Input the information on the Wallet screen and send a snapshot of the cheque to VENDTECH on the whatsapp number</p>
-                                        </li>
-                                    </ol>
-                                </div>
-                                <span class="text2"> Please contact <a href="tel:+232 76 277761">+232 76 277761</a> on whatsapp if you have any difficulties</span>
-                            </div>
-                        </div>
-                        <div class="col-md-4 ">
-                            <div class="card custom-card p-3 mb-2">
-                                <div class="d-flex justify-content-between">
-                                    <div class="d-flex flex-row align-items-center title-container">
-                                        <div class=" c-details">
-                                            <h4 class="action">How To - BILL PAYMENT</h4> <span><hr /></span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="steps row">
-                                    <ol>
-                                        <li>Click on  <a href="@Url.Action("Utility", "Meter")">BILL PAYMENT</a>, Utility.</li>
-                                        <li>
-                                            Select a saved meter or enter a new meter
-                                            <br><i class="text2">(Select saved meter is also an option to save new meter)</i>
-                                        </li>
-                                        <li>Enter Amount --> Get Token</li>
-                                        <li>You can print this receipt or write it down to enter into the meter...</li>
-                                    </ol>
-                                </div>
-                                <span class="text2"> <i>Viola.... Life made easy.</i></span>
-                            </div>
-                        </div>
-                    </div>
-                }
-
-
-
-
-
+                <div class="v3_ui_dashboard_widget_content">
+                    <h2 class="v3_ui_dashboard_widget_title">Current Agency Balance</h2>
+                    <p class="v3_ui_dashboard_widget_value"> @country.CurrencyCode: @VendTech.BLL.Common.Utilities.FormatAmount(Model.revenue)</p>
+                </div>
             </div>
-        </div>
-    }
-    else
-    {
-        <div><H1>Access denied! You do not have permission to access this corner</H1></div>
-    }
+        }
+        @if (Model.currentUser.SelectedWidgets != null && Model.currentUser.SelectedWidgets.Any(y => y == 1))
+        {
+            <div class="v3_ui_dashboard_widget">
+                <div class="v3_ui_dashboard_widget_icon">
+                    <i class="ri-wallet-3-line"></i>
+                </div>
+                <div class="v3_ui_dashboard_widget_content">
+                    <h2 class="v3_ui_dashboard_widget_title">Wallet Balance</h2>
+                    <p class="v3_ui_dashboard_widget_value"> @country.CurrencyCode: <span id="userBalance">@VendTech.BLL.Common.Utilities.FormatAmount(ViewBag.walletBalance)</span></p>
+                </div>
+            </div>
+        }
+        @if (Model.currentUser.SelectedWidgets != null && Model.currentUser.SelectedWidgets.Any(y => y == 2))
+        {
+            <div class="v3_ui_dashboard_widget">
+                <div class="v3_ui_dashboard_widget_icon">
+                    <i class="ri-line-chart-line"></i>
+                </div>
+                <div class="v3_ui_dashboard_widget_content">
+                    <h2 class="v3_ui_dashboard_widget_title"><a href="@Url.Action("SalesReport", "Report")"> </a>Total Daily Sales (today)</h2>
+                    <p class="v3_ui_dashboard_widget_value"> @country.CurrencyCode: @VendTech.BLL.Common.Utilities.FormatAmount(Model.totalSales)</p>
+                </div>
+            </div>
+        }
 
+        @if (Model.currentUser.SelectedWidgets != null && Model.currentUser.SelectedWidgets.Any(y => y == 4))
+        {
+            <div class="v3_ui_dashboard_widget">
+                <div class="v3_ui_dashboard_widget_icon">
+                    <i class="ri-line-chart-line"></i>
+                </div>
+                <div class="v3_ui_dashboard_widget_content">
+                    <h2 class="v3_ui_dashboard_widget_title">Active POS</h2>
+                    <p class="v3_ui_dashboard_widget_value"> @Model.posCount</p>
+                </div>
+            </div>
+        }
 
+    </div>
 </div>
-
-
-
-
-@section scripts{
-    <script type="text/javascript">
-        $(document).ready(function () {
-            //initialize the javascript
-            App.init();
-        });
-    </script>
-}
-

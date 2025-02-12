@@ -1,0 +1,198 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VendTech Dashboard</title>
+
+    <link href="~/Contentv2/css/layoutv3.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,300,600,400italic,700,800' rel='stylesheet'
+          type='text/css'>
+    @*<link href='https://fonts.googleapis.com/css?family=Raleway:100' rel='stylesheet' type='text/css'>
+        <link href='https://fonts.googleapis.com/css?family=Open+Sans+Condensed:300,700' rel='stylesheet' type='text/css'>
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">*@
+
+    @*<link href="~/Content/userStyle.css" rel="stylesheet" />
+        <link href="~/Content/assets/css/style.min.css" rel="stylesheet" />
+        <link href="~/Content/style.css" rel="stylesheet" />*@
+
+    @Styles.Render("~/Content/customerLayoutCSS")
+</head>
+<body class="v3_ui_layout_root">
+    <button class="v3_ui_layout_menu_toggle" onclick="document.querySelector('.v3_ui_layout_sidebar').classList.toggle('v3_ui_layout_expanded')">
+        ☰
+    </button>
+
+    <div class="v3_ui_layout_container">
+        <aside class="v3_ui_layout_sidebar">
+            <div class="v3_ui_layout_logo_container">
+                <img src="https://vendtechsl.com/Content/images/logo1.jpg" alt="VendTech Logo" class="v3_ui_layout_logo">
+            </div>
+            <nav class="v3_ui_layout_nav">
+                <a href="@Url.Action("Index", "Utilities")" class="v3_ui_layout_nav_item">
+                    <div class="v3_ui_layout_nav_item_content">
+                        🛒 <span>Bill Payment</span>
+                    </div>
+                </a>
+                <div class="v3_ui_layout_dropdown_container" id="v3_ui_layout_saved_numbers_dropdown">
+                    <div class="v3_ui_layout_nav_item">
+                        <div class="v3_ui_layout_nav_item_content">
+                            📱 <span>Saved Numbers</span>
+                        </div>
+                        <span class="v3_ui_layout_dropdown_arrow">▼</span>
+                    </div>
+                    <div class="v3_ui_layout_subnav">
+                        <a href="#" class="v3_ui_layout_subnav_item">Meter Numbers</a>
+                        <a href="#" class="v3_ui_layout_subnav_item">Phone Numbers</a>
+                    </div>
+                </div>
+                <a href="#" class="v3_ui_layout_nav_item">
+                    <div class="v3_ui_layout_nav_item_content">
+                        💳 <span>Wallet</span>
+                    </div>
+                </a>
+                <a href="#" class="v3_ui_layout_nav_item">
+                    <div class="v3_ui_layout_nav_item_content">
+                        🔄 <span>Transfer</span>
+                    </div>
+                </a>
+                <a href="#" class="v3_ui_layout_nav_item">
+                    <div class="v3_ui_layout_nav_item_content">
+                        🏪 <span>Vendors</span>
+                    </div>
+                </a>
+                <a href="#" class="v3_ui_layout_nav_item">
+                    <div class="v3_ui_layout_nav_item_content">
+                        📊 <span>Reports</span>
+                    </div>
+                </a>
+                <a href="#" class="v3_ui_layout_nav_item">
+                    <div class="v3_ui_layout_nav_item_content">
+                        👤 <span>Manage Profile</span>
+                    </div>
+                </a>
+            </nav>
+        </aside>
+
+        <main class="v3_ui_layout_main">
+            <header class="v3_ui_layout_header">
+                <div></div>
+                <div class="v3_ui_layout_balance">SLE: 1,780.00</div>
+            </header>
+
+            <div class="container-fluid">
+
+                @{ var user = (UserDetails)ViewBag.LOGGEDIN_USER; }
+                @if (user.UserType == UserRoles.AppUser)
+                {
+                    if (user.IsEmailVerified)
+                    {
+                        @RenderBody();
+                    }
+                }
+                else
+                {
+                    <div><H1>Access denied! You do not have permission to access this corner</H1></div>
+                }
+
+            </div>
+
+            <footer class="v3_ui_layout_footer">
+                <div>
+                    <a href="#" class="v3_ui_layout_footer_link">Terms And Conditions</a>
+                    <span> | </span>
+                    <a href="#" class="v3_ui_layout_footer_link">Privacy Policy</a>
+                </div>
+                <div>Vendtech SL. LTD © 2025</div>
+            </footer>
+        </main>
+    </div>
+    @Scripts.Render("~/bundles/jquery")
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    @*<script src="~/Scriptsv2/main.js"></script>*@
+    @Scripts.Render("~/bundles/extendedjs")
+    @Scripts.Render("~/bundles/themeSpecific")
+    @Scripts.Render("~/bundles/jqueryval")
+    @Scripts.Render("~/bundles/custom")
+    @RenderSection("scripts", required: false)
+
+    <script>
+        // Handle mobile menu toggle
+        document.querySelector('.v3_ui_layout_menu_toggle').addEventListener('click', function () {
+            const sidebar = document.querySelector('.v3_ui_layout_sidebar');
+            //sidebar.classList.toggle('v3_ui_layout_expanded');
+
+            // Close dropdown when collapsing sidebar
+            if (!sidebar.classList.contains('v3_ui_layout_expanded')) {
+                closeDropdown();
+            }
+        });
+
+        // Saved Numbers Dropdown functionality
+        const savedNumbersDropdown = document.getElementById('v3_ui_layout_saved_numbers_dropdown');
+        const dropdownContent = savedNumbersDropdown.querySelector('.v3_ui_layout_subnav');
+        let isOpen = false;
+
+        function toggleDropdown() {
+            isOpen = !isOpen;
+            savedNumbersDropdown.classList.toggle('v3_ui_layout_active', isOpen);
+
+            if (isOpen) {
+                const contentHeight = dropdownContent.scrollHeight;
+                dropdownContent.style.maxHeight = contentHeight + 'px';
+            } else {
+                dropdownContent.style.maxHeight = '0px';
+            }
+        }
+
+        function closeDropdown() {
+            if (isOpen) {
+                isOpen = false;
+                savedNumbersDropdown.classList.remove('v3_ui_layout_active');
+                dropdownContent.style.maxHeight = '0px';
+            }
+        }
+
+        savedNumbersDropdown.querySelector('.v3_ui_layout_nav_item').addEventListener('click', function (event) {
+            event.stopPropagation();
+            toggleDropdown();
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function (event) {
+            if (!savedNumbersDropdown.contains(event.target)) {
+                closeDropdown();
+            }
+        });
+
+        // Prevent clicks inside the dropdown from closing it
+        dropdownContent.addEventListener('click', function (event) {
+            event.stopPropagation();
+        });
+
+        // Initialize dropdown state
+        dropdownContent.style.maxHeight = '0px';
+
+
+
+
+
+        setInterval(function () {
+
+            $.ajax({
+                url: '/Home/AutoLogout',
+                success: function (data) {
+                    if (data.Status != 1) {
+                        //window.location.href = '/Home/Index';
+                    }
+                }
+            })
+        }, 60000);
+    </script>
+
+   
+</body>
+</html>

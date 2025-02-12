@@ -1103,3 +1103,129 @@ No connection string named 'VendtechEntities' could be found in the application 
 
 
 
+The following sections have been defined but have not been rendered for the layout page "~/Views/Shared/_Layoutv3.cshtml": "scripts".
+
+
+
+The following sections have been defined but have not been rendered for the layout page "~/Views/Shared/_Layoutv3.cshtml": "scripts".
+
+
+
+The following sections have been defined but have not been rendered for the layout page "~/Views/Shared/_Layoutv3.cshtml": "scripts".
+
+
+
+The following sections have been defined but have not been rendered for the layout page "~/Views/Shared/_Layoutv3.cshtml": "scripts".
+
+
+
+The following sections have been defined but have not been rendered for the layout page "~/Views/Shared/_Layoutv3.cshtml": "scripts".
+
+
+
+The "RenderSection" method has already been called for the section named "scripts".
+
+
+
+c:\Users\thispc\Desktop\FLAVETECH\Vendtech\vendtech-web\VendTech\Views\Home\Dashboard.cshtml(97): error CS1525: Invalid expression term '.'
+
+
+
+The if block is missing a closing "}" character.  Make sure you have a matching "}" character for all the "{" characters within this block, and that none of the "}" characters are being interpreted as markup.
+
+
+
+
+Object reference not set to an instance of an object.
+
+
+
+Unexpected "foreach" keyword after "@" character.  Once inside code, you do not need to prefix constructs like "foreach" with "@".
+
+
+
+
+Object reference not set to an instance of an object.
+
+
+
+Object reference not set to an instance of an object.
+
+
+
+Object reference not set to an instance of an object.
+
+
+
+Object reference not set to an instance of an object.
+
+
+
+Object reference not set to an instance of an object.
+
+
+
+Object reference not set to an instance of an object.
+
+
+
+Object reference not set to an instance of an object.
+
+
+
+Object reference not set to an instance of an object.
+
+
+
+Object reference not set to an instance of an object.
+
+
+
+Object reference not set to an instance of an object.
+
+
+
+Object reference not set to an instance of an object.
+
+
+
+Object reference not set to an instance of an object.
+
+
+
+Object reference not set to an instance of an object.
+
+
+
+Object reference not set to an instance of an object.
+
+
+
+Object reference not set to an instance of an object.
+
+
+
+Object reference not set to an instance of an object.
+
+
+
+Object reference not set to an instance of an object.
+
+
+
+Object reference not set to an instance of an object.
+
+
+
+Object reference not set to an instance of an object.
+
+
+
+Object reference not set to an instance of an object.
+
+
+
+c:\Users\thispc\Desktop\FLAVETECH\Vendtech\vendtech-web\VendTech\Views\Utilities\Index.cshtml(180): error CS1002: ; expected
+
+
+

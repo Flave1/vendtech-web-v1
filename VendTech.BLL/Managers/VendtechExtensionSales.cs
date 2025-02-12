@@ -14,8 +14,6 @@ using VendTech.BLL.Common;
 using System.Data.Entity.Migrations;
 using System.Linq;
 using System.Net.Http;
-using System.Diagnostics;
-using VendTech.BLL.PlatformApi;
 using System.Data.Entity.Validation;
 
 namespace VendTech.BLL.Managers
@@ -23,16 +21,11 @@ namespace VendTech.BLL.Managers
     public class VendtechExtensionSales : BaseManager, IVendtechExtensionSales
     {
         private readonly VendtechEntities _context;
-        private HttpClient _client;
         private readonly TransactionIdGenerator idGenerator;
         public VendtechExtensionSales(VendtechEntities context, TransactionIdGenerator idGenerator)
         {
-            _client = new HttpClient()
-            {
-                Timeout = TimeSpan.FromMinutes(2)
-            };
-            _context = context;
             this.idGenerator = idGenerator;
+            _context = context;
         }
 
         async Task<ReceiptModel> IVendtechExtensionSales.RechargeFromVendtechExtension(RechargeMeterModel model)
@@ -259,100 +252,6 @@ namespace VendTech.BLL.Managers
         private async Task<TransactionDetail> getLastMeterPendingTransaction(string MeterNumber) =>
            await _context.TransactionDetails.OrderByDescending(p => p.TransactionId).FirstOrDefaultAsync(p => p.Status ==
            (int)RechargeMeterStatusEnum.Pending && p.MeterNumber1.ToLower() == MeterNumber.ToLower());
-
-        async Task<Dictionary<string, IcekloudQueryResponse>> QueryVendStatus(RechargeMeterModel model, TransactionDetail transDetail)
-        {
-
-            Utilities.LogExceptionToDatabase(new Exception($"QueryVendStatus starts at {DateTime.UtcNow} for traxId {model.TransactionId}"), $"model : {JsonConvert.SerializeObject(model)}");
-            Dictionary<string, IcekloudQueryResponse> response = new Dictionary<string, IcekloudQueryResponse>();
-            try
-            {
-                var queryRequest = model.StackStatusRequestModel(model);
-                var url = WebConfigurationManager.AppSettings["IcekloudURL"].ToString();
-
-                var icekloudResponse = await _client.PostAsJsonAsync(url, queryRequest);
-
-                var stringsResult = await icekloudResponse.Content.ReadAsStringAsync();
-
-                var statusResponse = JsonConvert.DeserializeObject<IcekloudQueryResponse>(stringsResult);
-
-                transDetail.Request = JsonConvert.SerializeObject(queryRequest);
-                transDetail.Response = stringsResult;
-
-                if (statusResponse.Content.StatusDescription == "The specified Transaction does not exist.")
-                {
-                    response.Add("failed", statusResponse);
-                    Utilities.LogExceptionToDatabase(new Exception($"QueryVendStatus failed 1 ends at {DateTime.UtcNow} for traxId {model.TransactionId}"), $"statusResponse: {JsonConvert.SerializeObject(statusResponse)}");
-                    return response;
-                }
-                else if (statusResponse.Content.StatusDescription == "The specified Transaction does not exist.")
-                {
-                    response.Add("failed", statusResponse);
-                    Utilities.LogExceptionToDatabase(new Exception($"QueryVendStatus failed 2 ends at {DateTime.UtcNow} for traxId {model.TransactionId}"), $"statusResponse :{JsonConvert.SerializeObject(statusResponse)}");
-                    return response;
-                }
-                else if (statusResponse.Content.StatusDescription == "Transaction completed with error")
-                {
-                    _context.SaveChanges();
-                    response.Add("failed", statusResponse);
-                    Utilities.LogExceptionToDatabase(new Exception($"QueryVendStatus failed 3 ends at {DateTime.UtcNow} for traxId {model.TransactionId}"), $"statusResponse :{JsonConvert.SerializeObject(statusResponse)}");
-                    return response;
-                }
-                else if (!statusResponse.Content.Finalised && statusResponse.Content.StatusRequestCount <= 5)
-                {
-                    Utilities.LogExceptionToDatabase(new Exception($"QueryVendStatus 3 ends at {DateTime.UtcNow} for traxId {model.TransactionId}"), $"statusResponse : {JsonConvert.SerializeObject(statusResponse)}");
-                    return await QueryVendStatus(model, transDetail);
-                }
-                else
-                {
-                    transDetail.QueryStatusCount = (int)statusResponse.Content.StatusRequestCount;
-                    if (string.IsNullOrEmpty(statusResponse.Content.VoucherPin))
-                    {
-                        Utilities.LogExceptionToDatabase(new Exception($"QueryVendStatus 4 ends at {DateTime.UtcNow} for traxId {model.TransactionId}"), $"statusResponse: {JsonConvert.SerializeObject(statusResponse)}");
-                        await _context.SaveChangesAsync();
-                        response.Add("failed", statusResponse);
-                        return response;
-                    }
-                    else
-                    {
-                        await _context.SaveChangesAsync();
-                        Utilities.LogExceptionToDatabase(new Exception($"QueryVendStatus 5 ends at {DateTime.UtcNow} for traxId {model.TransactionId}"), $"statusResponse: {JsonConvert.SerializeObject(statusResponse)}");
-                        response.Add("success", statusResponse);
-                        return response;
-                    }
-                }
-            }
-            catch (DbUpdateException ex)
-            {
-                Utilities.LogExceptionToDatabase(new Exception($"QueryVendStatus 6 ends for DbUpdateException at {DateTime.UtcNow} for traxId {model.TransactionId}", ex), $"DbUpdateException: {JsonConvert.SerializeObject(ex)}");
-                response.Add("failed", null);
-                return response;
-            }
-            catch (HttpException ex)
-            {
-                Utilities.LogExceptionToDatabase(new Exception($"QueryVendStatus 6 ends at {DateTime.UtcNow} for traxId {model.TransactionId}", ex), $"HttpException: {JsonConvert.SerializeObject(model)}");
-                response.Add("failed", null);
-                return response;
-            }
-            catch (NullReferenceException ex)
-            {
-                Utilities.LogExceptionToDatabase(ex, $"model: {JsonConvert.SerializeObject(model)}");
-                response.Add("failed", null);
-                return response;
-            }
-            catch (WebException ex)
-            {
-                Utilities.LogExceptionToDatabase(new Exception($"QueryVendStatus  WebException 2 ends at {DateTime.UtcNow} for traxId {model.TransactionId}"), $"Exception: {ex.ToString()}");
-                response.Add("failed", null);
-                return response;
-            }
-            catch (Exception)
-            {
-                Utilities.LogExceptionToDatabase(new Exception($"QueryVendStatus 8 ends at {DateTime.UtcNow} for traxId {model.TransactionId}"), $"Unexpected Exception");
-                response.Add("failed", null);
-                return response;
-            }
-        }
 
         public async Task<ReceiptModel> GetStatusFromVendtechExtension(string trxId, bool billVendor)
         {
@@ -605,23 +504,25 @@ namespace VendTech.BLL.Managers
         {
             Utilities.LogExceptionToDatabase(new Exception($"MakeRechargeRequest START {DateTime.UtcNow} for traxId {model.TransactionId}"), $"model: {JsonConvert.SerializeObject(model)}");
             string url = WebConfigurationManager.AppSettings["VendtechExtentionServer"].ToString() + "sales/v1/buy";
-
+            VtechExtensionResponse response = null;
             try
             {
                 VtechElectricitySaleRequest request_model = Buid_new_request_object(model);
 
                 var apiKey = WebConfigurationManager.AppSettings["ApiKey"].ToString();
-                _client.DefaultRequestHeaders.Add("X-Api-Key", apiKey);
-                HttpResponseMessage icekloud_response = await _client.PostAsJsonAsync(url, request_model);
+                using( var _client = new HttpClient() )
+                {
+                    _client.DefaultRequestHeaders.Add("X-Api-Key", apiKey);
+                    HttpResponseMessage icekloud_response = await _client.PostAsJsonAsync(url, request_model);
 
-                string strings_result = await icekloud_response.Content.ReadAsStringAsync();
+                    string strings_result = await icekloud_response.Content.ReadAsStringAsync();
 
-                transactionDetail.Request = JsonConvert.SerializeObject(request_model);
-                transactionDetail.Response = strings_result;
+                    transactionDetail.Request = JsonConvert.SerializeObject(request_model);
+                    transactionDetail.Response = strings_result;
+                    response = JsonConvert.DeserializeObject<VtechExtensionResponse>(strings_result);
+                    Utilities.LogExceptionToDatabase(new Exception($"MakeRechargeRequest END {DateTime.UtcNow} for traxId {model.TransactionId}"), $"strings_result: {strings_result}");
+                }
 
-                VtechExtensionResponse response = JsonConvert.DeserializeObject<VtechExtensionResponse>(strings_result);
-
-                Utilities.LogExceptionToDatabase(new Exception($"MakeRechargeRequest END {DateTime.UtcNow} for traxId {model.TransactionId}"), $"strings_result: {strings_result}");
                 return response;
             }
             catch (HttpException ex)
@@ -640,27 +541,27 @@ namespace VendTech.BLL.Managers
         {
             Utilities.LogExceptionToDatabase(new Exception($"QueryStatusRequest START {DateTime.UtcNow} for traxId {model.TransactionId}"), $"model: {JsonConvert.SerializeObject(model)}");
             string url = WebConfigurationManager.AppSettings["VendtechExtentionServer"].ToString() + "sales/v1/status";
-
+            VtechExtensionResponse response = null;
             try
             {
                 VtechElectricitySaleStatus request_model = Buid_new_status_object(model);
 
                 var apiKey = WebConfigurationManager.AppSettings["ApiKey"].ToString();
-                if (!_client.DefaultRequestHeaders.Contains("X-Api-Key"))
+                
+                using( var _client = new HttpClient() )
                 {
-                    _client.DefaultRequestHeaders.Add("X-Api-Key", apiKey);
+                    if (!_client.DefaultRequestHeaders.Contains("X-Api-Key"))
+                    {
+                        _client.DefaultRequestHeaders.Add("X-Api-Key", apiKey);
+                    }
+                    HttpResponseMessage icekloud_response = await _client.PostAsJsonAsync(url, request_model);
+                    string strings_result = await icekloud_response.Content.ReadAsStringAsync();
+                    transactionDetail.Request = JsonConvert.SerializeObject(request_model);
+                    transactionDetail.Response = strings_result;
+                    response = JsonConvert.DeserializeObject<VtechExtensionResponse>(strings_result);
+                    Utilities.LogExceptionToDatabase(new Exception($"QueryStatusRequest END {DateTime.UtcNow} for traxId {model.TransactionId}"), $"strings_result: {strings_result}");
                 }
-                HttpResponseMessage icekloud_response = await _client.PostAsJsonAsync(url, request_model);
 
-                string strings_result = await icekloud_response.Content.ReadAsStringAsync();
-
-                transactionDetail.Request = JsonConvert.SerializeObject(request_model);
-                transactionDetail.Response = strings_result;
-
-
-                VtechExtensionResponse response = JsonConvert.DeserializeObject<VtechExtensionResponse>(strings_result);
-
-                Utilities.LogExceptionToDatabase(new Exception($"QueryStatusRequest END {DateTime.UtcNow} for traxId {model.TransactionId}"), $"strings_result: {strings_result}");
                 return response;
             }
             catch (HttpException ex)
