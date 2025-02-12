@@ -134,13 +134,6 @@ namespace VendTech.BLL.Managers
                 }
 
                 vendResponseResult = vendResponse?.Result;
-                if (vendResponse?.Result?.SuccessResponse == null)
-                {
-                    Utilities.LogExceptionToDatabase(new Exception($"{vendResponse}"));
-                    await UpdateTransactionOnFailed(vendResponse?.Result, transactionDetail);
-                    var msg = vendResponse?.Result?.FailedResponse?.ErrorMessage;
-                    throw new ArgumentException(msg);
-                }
 
                 POS pos = transactionDetail.User.POS.FirstOrDefault(d => d.POSId == transactionDetail.POSId);
                 transactionDetail = await UpdateTransactionOnSuccess(vendResponseResult, transactionDetail, pos);
