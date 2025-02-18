@@ -157,11 +157,29 @@ namespace VendTech.BLL.Managers
                 }
 
                 vendResponseResult = vendResponse.Result;
-                if (vendResponse?.Result?.SuccessResponse == null)
+                if (vendResponse?.Status == "failed")
                 {
                     Utilities.LogExceptionToDatabase(new Exception($"{vendResponse}"));
                     await UpdateTransactionOnFailed(vendResponse?.Result, transactionDetail);
                     throw new ArgumentException(vendResponse?.Result.FailedResponse.ErrorMessage);
+                }
+
+                if (vendResponse.Status.ToLower() == "pending")
+                {
+                    int count = 0;
+                    do
+                    {
+                        vendResponse = await QueryStatusRequest(model, transactionDetail);
+                        vendResponseResult = vendResponse.Result;
+
+                        transactionDetail.VendStatus = vendResponseResult.FailedResponse.ErrorMessage;
+                        transactionDetail.VendStatusDescription = vendResponseResult?.FailedResponse?.ErrorDetail;
+                        transactionDetail.QueryStatusCount = count;
+                        count += 1;
+                        _context.TransactionDetails.AddOrUpdate(transactionDetail);
+                        await _context.SaveChangesAsync();
+                    } while (vendResponse.Status.ToLower() == "pending");
+                    ReadErrorMessage(vendResponse.Message, vendResponse.Result.Code, transactionDetail);
                 }
 
                 POS pos = transactionDetail.User.POS.FirstOrDefault(d => d.POSId == transactionDetail.POSId);
@@ -605,7 +623,12 @@ namespace VendTech.BLL.Managers
 
                 var apiKey = WebConfigurationManager.AppSettings["ApiKey"].ToString();
                 _client.DefaultRequestHeaders.Add("X-Api-Key", apiKey);
-                HttpResponseMessage icekloud_response = await _client.PostAsJsonAsync(url, request_model);
+                HttpResponseMessage icekloud_response = null;
+                await new RetryAwaitable(async () =>
+                {
+                    icekloud_response = await _client.PostAsJsonAsync(url, request_model);
+                    icekloud_response.EnsureSuccessStatusCode();
+                });
 
                 string strings_result = await icekloud_response.Content.ReadAsStringAsync();
 
@@ -643,13 +666,16 @@ namespace VendTech.BLL.Managers
                 {
                     _client.DefaultRequestHeaders.Add("X-Api-Key", apiKey);
                 }
-                HttpResponseMessage icekloud_response = await _client.PostAsJsonAsync(url, request_model);
-
+                HttpResponseMessage icekloud_response = null;
+                await new RetryAwaitable(async () =>
+                {
+                    icekloud_response = await _client.PostAsJsonAsync(url, request_model);
+                    icekloud_response.EnsureSuccessStatusCode();
+                });
                 string strings_result = await icekloud_response.Content.ReadAsStringAsync();
 
                 transactionDetail.Request = JsonConvert.SerializeObject(request_model);
                 transactionDetail.Response = strings_result;
-
 
                 VtechExtensionResponse response = JsonConvert.DeserializeObject<VtechExtensionResponse>(strings_result);
 

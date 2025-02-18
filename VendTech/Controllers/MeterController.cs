@@ -242,7 +242,7 @@ namespace VendTech.Controllers
         //    return JsonResult(_meterManager.RechargeMeter(model));
         //}
 
-
+        [Obsolete]
         [AjaxOnly, HttpPost, Public]
         public JsonResult ReturnVoucher(RequestObject tokenobject)
         { 
@@ -261,6 +261,10 @@ namespace VendTech.Controllers
             {
                 //var result = await _meterManager.ReturnTraxStatusReceiptAsync(tokenobject.token_string, tokenobject.billVendor);
                 var result = await _vendtechExtensionSales.GetStatusFromVendtechExtension(tokenobject.token_string, tokenobject.billVendor);
+                if (string.IsNullOrEmpty(result.ReceiptStatus.Status))
+                {
+                    return Json(new { Success = false, Code = 302, Msg = "Meter Recharge not successful" });
+                }
                 if (result.ReceiptStatus.Status == "unsuccessful")
                     return Json(new { Success = false, Code = 302, Msg = result.ReceiptStatus.Message });
                 return Json(new { Success = true, Code = 200, Msg = "Meter recharged successfully.", Data = result });
@@ -328,6 +332,10 @@ namespace VendTech.Controllers
                 else if (result.ReceiptStatus.Status == "disabled")
                 {
                     return Json(new { Success = false, Code = 403, Msg = result.ReceiptStatus.Message });
+                }
+                if (string.IsNullOrEmpty(result.ReceiptStatus.Status))
+                {
+                    return Json(new { Success = false, Code = 302, Msg = "Meter Recharge not successful" });
                 }
 
                 if (result != null)

@@ -199,6 +199,7 @@
     <Compile Include="Common\MobileNotification.cs" />
     <Compile Include="Common\ModelUtils.cs" />
     <Compile Include="Common\PushNotification.cs" />
+    <Compile Include="Common\RetryAwaitable.cs" />
     <Compile Include="Common\TransactionIdGenerator.cs" />
     <Compile Include="Common\Utilities.cs" />
     <Compile Include="DbContext.cs" />
