@@ -926,7 +926,7 @@ namespace VendTech.BLL.Managers
         PagingResult<DepositAuditModel> IDepositManager.GetAuditReportsPagedList(ReportSearchModel model, bool callFromAdmin)
         {
             var result = new PagingResult<DepositAuditModel>();
-            var query = _context.DepositLogs.OrderByDescending(p => p.Deposit.TransactionId).Where(p => p.NewStatus == (int)DepositPaymentStatusEnum.Released);
+            var query = _context.DepositLogs.OrderByDescending(d => d.Deposit.CreatedAt).ThenByDescending(p => p.Deposit.TransactionId).Where(p => p.NewStatus == (int)DepositPaymentStatusEnum.Released);
             if (model.From != null)
             {
                 query = query.Where(p => DbFunctions.TruncateTime(p.Deposit.CreatedAt) >= DbFunctions.TruncateTime(model.From));
@@ -1120,7 +1120,7 @@ namespace VendTech.BLL.Managers
             var totalrecord = query.ToList().Count();
             if (model.SortBy != "UserName" && model.SortBy != "POS" && model.SortBy != "Amount" && model.SortBy != "PercentageAmount" && model.SortBy != "PaymentType" && model.SortBy != "BANK" && model.SortBy != "CheckNumberOrSlipId" && model.SortBy != "Status" && model.SortBy != "NewBalance")
             {
-                 query = query.OrderBy(model.SortBy + " " + model.SortOrder).Skip((model.PageNo - 1));
+                 //query = query.OrderBy(model.SortBy + " " + model.SortOrder).Skip((model.PageNo - 1));
 
                 //query = model.SortBy == "CreatedAt" ?
                 //    (model.SortOrder == "Desc" ?
