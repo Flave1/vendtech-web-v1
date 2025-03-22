@@ -54,9 +54,6 @@ namespace VendTech.Areas.Api.Controllers
         {
             ActionOutput<PendingDeposit> pd = null;
             model.UserId = LOGGEDIN_USER.UserId;
-            //model.TotalAmountWithPercentage = model.Amount;
-            model.BankAccountId = 1;
-            //model.ValueDate = DateTime.Now.Date.ToString("dd/MM/yyyy");
 
             if (model.ContinueDepoit == 0)
             {

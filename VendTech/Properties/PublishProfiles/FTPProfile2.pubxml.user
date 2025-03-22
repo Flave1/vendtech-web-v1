@@ -51,7 +51,7 @@ https://go.microsoft.com/fwlink/?LinkID=208121.
       <publishTime>11/12/2024 10:47:09</publishTime>
     </File>
     <File Include="Areas/Admin/Views/Home/Dashboard.cshtml">
-      <publishTime>02/26/2025 22:31:23</publishTime>
+      <publishTime>03/22/2025 03:35:32</publishTime>
     </File>
     <File Include="Areas/Admin/Views/Home/EditProfileV2.cshtml">
       <publishTime>06/04/2024 18:18:43</publishTime>
@@ -150,7 +150,7 @@ https://go.microsoft.com/fwlink/?LinkID=208121.
       <publishTime>03/05/2024 15:37:59</publishTime>
     </File>
     <File Include="Areas/Admin/Views/Shared/_SideBaar2.cshtml">
-      <publishTime>06/19/2024 10:53:16</publishTime>
+      <publishTime>03/22/2025 13:45:17</publishTime>
     </File>
     <File Include="Areas/Admin/Views/Shared/_SideBaar2Mobile.cshtml">
       <publishTime>06/20/2024 09:32:02</publishTime>
@@ -163,6 +163,9 @@ https://go.microsoft.com/fwlink/?LinkID=208121.
     </File>
     <File Include="Areas/Admin/Views/User/ManageUsersV2.cshtml">
       <publishTime>11/22/2024 02:24:59</publishTime>
+    </File>
+    <File Include="Areas/Admin/Views/User/Partials/_modulesListing.cshtml">
+      <publishTime>03/22/2025 13:42:40</publishTime>
     </File>
     <File Include="Areas/Admin/Views/Vendor/AddEditVendorV2.cshtml">
       <publishTime>06/05/2024 12:54:28</publishTime>
@@ -468,7 +471,7 @@ https://go.microsoft.com/fwlink/?LinkID=208121.
       <publishTime>01/27/2021 21:48:32</publishTime>
     </File>
     <File Include="bin/VendTech.BLL.dll">
-      <publishTime>02/27/2025 16:44:33</publishTime>
+      <publishTime>03/21/2025 11:14:34</publishTime>
     </File>
     <File Include="bin/VendTech.BLL.dll.config">
       <publishTime>11/13/2024 17:19:03</publishTime>
@@ -477,7 +480,7 @@ https://go.microsoft.com/fwlink/?LinkID=208121.
       <publishTime>01/10/2025 17:31:52</publishTime>
     </File>
     <File Include="bin/VendTech.DAL.dll">
-      <publishTime>12/11/2024 05:47:35</publishTime>
+      <publishTime>03/12/2025 08:31:57</publishTime>
     </File>
     <File Include="bin/VendTech.DAL.dll.config">
       <publishTime>11/12/2024 11:27:17</publishTime>
@@ -486,13 +489,13 @@ https://go.microsoft.com/fwlink/?LinkID=208121.
       <publishTime>12/11/2024 05:47:35</publishTime>
     </File>
     <File Include="bin/VendTech.dll">
-      <publishTime>02/27/2025 16:44:35</publishTime>
+      <publishTime>03/22/2025 03:13:18</publishTime>
     </File>
     <File Include="bin/VendTech.dll.config">
-      <publishTime>02/27/2025 14:45:37</publishTime>
+      <publishTime>03/21/2025 11:14:26</publishTime>
     </File>
     <File Include="bin/VendTech.Framework.dll">
-      <publishTime>02/27/2025 16:44:34</publishTime>
+      <publishTime>03/21/2025 11:14:35</publishTime>
     </File>
     <File Include="bin/VendTech.Framework.dll.config">
       <publishTime>11/13/2024 17:17:36</publishTime>

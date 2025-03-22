@@ -592,7 +592,7 @@ namespace VendTech.Areas.Api.Controllers
         public HttpResponseMessage GetBankNamesForCheque()
         {
             var result = _bankAccountManager.GetBankNames_API().ToList();
-            var data = result.ToList().Select(p => new SelectListItem { Text = p.BankName, Value = p.BankName }).ToList();
+            var data = result.ToList().Select(p => new SelectListItem { Text = p.BankName, Value = p.Id.ToString() }).ToList();
             return new JsonContent("Banks  fetched successfully.", Status.Success, data).ConvertToHttpResponseOK();
         }
 

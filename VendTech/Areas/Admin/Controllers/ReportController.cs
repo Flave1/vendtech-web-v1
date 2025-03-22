@@ -117,11 +117,11 @@ namespace VendTech.Areas.Admin.Controllers
                         val = type.ToString();
                     }
 
-                    if (val == "-1")
+                    if (val == "37")
                     {
                         return View("Inquiry", new PagingResult<RtsedsaTransaction>());
                     }
-                    if (val == "-2")
+                    if (val == "38")
                     {
                         return View("Transactions", new PagingResult<RtsedsaTransaction>());
                     }
@@ -203,15 +203,15 @@ namespace VendTech.Areas.Admin.Controllers
         private List<SelectListItem> AssignedReports()
         {
             var assignedReportModule = _userManager.GetAssignedReportModules(LOGGEDIN_USER.UserID, LOGGEDIN_USER.UserType == UserRoles.Admin);
-            if (assignedReportModule.Any())
-            {
-                var rtsReport1 = new SelectListItem { Text = "SHIFT ENQUIRY", Value = "-2" };
-                var rtsReport2 = new SelectListItem { Text = "CUSTOMER ENQUIRIES", Value = "-1" };
-                var rtsRps = new List<SelectListItem>();
-                rtsRps.Add(rtsReport1);
-                rtsRps.Add(rtsReport2);
-                assignedReportModule.AddRange(rtsRps);
-            }
+            //if (assignedReportModule.Any())
+            //{
+            //    var rtsReport1 = new SelectListItem { Text = "SHIFT ENQUIRY", Value = "-2" };
+            //    var rtsReport2 = new SelectListItem { Text = "CUSTOMER ENQUIRIES", Value = "-1" };
+            //    var rtsRps = new List<SelectListItem>();
+            //    rtsRps.Add(rtsReport1);
+            //    rtsRps.Add(rtsReport2);
+            //    assignedReportModule.AddRange(rtsRps);
+            //}
 
             ViewBag.AssignedReports = assignedReportModule;
             return assignedReportModule;

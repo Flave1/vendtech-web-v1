@@ -8,6 +8,7 @@ using VendTech.DAL;
 using System.Web.Mvc;
 using static VendTech.BLL.Jobs.BalanceLowSheduleJob;
 using System.Data.Entity;
+using System.Threading.Tasks;
 
 namespace VendTech.BLL.Managers
 {
@@ -716,5 +717,66 @@ namespace VendTech.BLL.Managers
 
         bool IPOSManager.IsWalletFunded(long userId) =>
            _context.POS.FirstOrDefault(d => d.VendorId == userId && d.Balance != null)?.Balance.Value > 1;
+
+        async Task<TransactionDetail> IPOSManager.DeductBalanceAsync(long posId, TransactionDetail trans)
+        {
+            if (trans.TransactionDetailsId <= 0)
+                throw new ArgumentException("TransactionDetailsId Required.");
+            using (var ctx = new VendtechEntities())
+            {
+                if(trans.PaymentStatus == (int)PaymentStatus.Pending)
+                {
+                    var currentBalance = await ctx.POS
+                        .Where(p => p.POSId == posId)
+                        .Select(p => p.Balance)
+                        .FirstOrDefaultAsync();
+
+                    decimal newBalance = (currentBalance ?? 0) - trans.Amount;
+                    trans.BalanceBefore = currentBalance ?? 0;
+                    trans.CurrentVendorBalance = newBalance;
+                    trans.PaymentStatus = (int)PaymentStatus.Deducted;
+
+                    string updatePosSql = "UPDATE POS SET Balance = @p0 WHERE POSID = @p1";
+                    await ctx.Database.ExecuteSqlCommandAsync(updatePosSql, newBalance, posId);
+
+                    string updateTransactionSql = @"UPDATE TransactionDetails 
+                    SET BalanceBefore = @p1, CurrentVendorBalance = @p2, PaymentStatus = @p3
+                    WHERE TransactionDetailsId = @p0";
+
+                    await ctx.Database.ExecuteSqlCommandAsync(updateTransactionSql, trans.TransactionDetailsId, trans.BalanceBefore, trans.CurrentVendorBalance, trans.PaymentStatus);
+                }
+            }
+            return await _context.TransactionDetails.FindAsync(trans.TransactionDetailsId);
+        }
+
+        async Task<TransactionDetail> IPOSManager.RefundDeductedBalanceAsync(long posId, TransactionDetail trans)
+        {
+            if (trans.TransactionDetailsId <= 0)
+                throw new ArgumentException("TransactionDetailsId Required.");
+            using (var ctx = new VendtechEntities())
+            {
+                if (trans.PaymentStatus == (int)PaymentStatus.Deducted)
+                {
+                    var currentBalance = await ctx.POS
+                        .Where(p => p.POSId == posId)
+                        .Select(p => p.Balance)
+                        .FirstOrDefaultAsync();
+
+                    decimal posBalance = currentBalance.Value + trans.Amount;
+                    trans.CurrentVendorBalance = trans.BalanceBefore;
+                    trans.PaymentStatus = (int)PaymentStatus.Refunded;
+
+                    string updatePosSql = "UPDATE POS SET Balance = @p0 WHERE POSID = @p1";
+                    await ctx.Database.ExecuteSqlCommandAsync(updatePosSql, posBalance, posId);
+
+                    string updateTransactionSql = @"UPDATE TransactionDetails 
+                    SET CurrentVendorBalance = @p1, PaymentStatus = @p2
+                    WHERE TransactionDetailsId = @p0";
+
+                    await ctx.Database.ExecuteSqlCommandAsync(updateTransactionSql, trans.TransactionDetailsId, trans.CurrentVendorBalance, trans.PaymentStatus);
+                }
+            }
+            return await _context.TransactionDetails.FindAsync(trans.TransactionDetailsId);
+        }
     }
 }

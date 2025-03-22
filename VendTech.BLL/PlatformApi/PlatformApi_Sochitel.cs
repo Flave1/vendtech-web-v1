@@ -373,6 +373,7 @@ namespace VendTech.BLL.PlatformApi
         public string AccountId { get; }
         [JsonProperty("userReference")]
         public string UserReference { get; }
+        //public string simulate { get; }
 
         public ExecuteTransaction(ApiAuth auth,
             string userReference,
@@ -389,6 +390,7 @@ namespace VendTech.BLL.PlatformApi
             this.Msisdn = msisdn;
             this.AccountId = accountId;
             this.UserReference = userReference;
+            //this.simulate = "1";
         }
     }
 

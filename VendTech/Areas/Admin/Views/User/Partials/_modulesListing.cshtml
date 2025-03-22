@@ -103,13 +103,13 @@
                     <td>
                         <input class="
                                @(chkbox.ModuleName == "Manage Reports" ? "more-option" :
-                                    chkbox.ModuleName == "Users" ? "more-userOption" :
+                                    chkbox.ModuleName == "MANAGE USERS" ? "more-userOption" :
                                     chkbox.ModuleName == "Platform Settings" ? "more-platformOption" :
                                     chkbox.ModuleName == "Manage Deposits" ? "more-depositOptions" :
                                      chkbox.ModuleName == "Notification Center" ? "more-notificationOption" :
                                      chkbox.ModuleName == "Manage Agents" ? "more-option" :
                                     "" )" type="checkbox" id="@chkbox.ID" name="SelectedModules" value="@chkbox.ID" @Html.Raw(chkbox.Checked ? "checked='checked'" : "") />
-                        @if (chkbox.ModuleName == "Users")
+                        @if (chkbox.ModuleName == "MANAGE USERS")
                         {
                             <span class="more-userOptionspan">
                                 @foreach (var item in (Model.Where(p => p.SubMenuOf == chkbox.ID)))

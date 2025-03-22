@@ -361,7 +361,7 @@ namespace VendTech.BLL.Common
             if (!SendNotification)
                 return;
             string from = WebConfigurationManager.AppSettings["SMTPFromtest"].ToString();
-            string password = "Supt*VT&ch"; //WebConfigurationManager.AppSettings["SMTPPassword"].ToString();
+            string password = "Sppt*V@tech3574"; //WebConfigurationManager.AppSettings["SMTPPassword"].ToString();
             string displayName = WebConfigurationManager.AppSettings["SMTPDisplayName"].ToString();
             string smtp = "smtp.office365.com"; //"smtp.gmail.com";
             int port = 587;//;
@@ -439,7 +439,7 @@ namespace VendTech.BLL.Common
                 return;
 
             string from = WebConfigurationManager.AppSettings["SMTPFromtest"].ToString();
-            string password = "Supt*VT&ch"; //WebConfigurationManager.AppSettings["SMTPPassword"].ToString();
+            string password = "Sppt*V@tech3574"; //WebConfigurationManager.AppSettings["SMTPPassword"].ToString();
             string displayName = WebConfigurationManager.AppSettings["SMTPDisplayName"].ToString();
             string smtp = "smtp.office365.com"; //"smtp.gmail.com";
             int port = 587;

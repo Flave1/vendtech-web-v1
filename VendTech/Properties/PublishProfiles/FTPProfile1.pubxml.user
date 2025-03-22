@@ -481,7 +481,7 @@ https://go.microsoft.com/fwlink/?LinkID=208121.
       <publishTime>01/01/0001 00:00:00</publishTime>
     </File>
     <File Include="bin/VendTech.BLL.dll">
-      <publishTime>02/18/2025 22:23:31</publishTime>
+      <publishTime>03/14/2025 13:53:17</publishTime>
     </File>
     <File Include="bin/VendTech.BLL.dll.config">
       <publishTime>11/13/2024 17:19:03</publishTime>
@@ -490,7 +490,7 @@ https://go.microsoft.com/fwlink/?LinkID=208121.
       <publishTime>01/20/2025 10:44:59</publishTime>
     </File>
     <File Include="bin/VendTech.DAL.dll">
-      <publishTime>12/11/2024 05:47:35</publishTime>
+      <publishTime>03/12/2025 08:31:57</publishTime>
     </File>
     <File Include="bin/VendTech.DAL.dll.config">
       <publishTime>11/12/2024 11:27:17</publishTime>
@@ -499,13 +499,13 @@ https://go.microsoft.com/fwlink/?LinkID=208121.
       <publishTime>09/26/2024 18:57:50</publishTime>
     </File>
     <File Include="bin/VendTech.dll">
-      <publishTime>02/18/2025 22:23:36</publishTime>
+      <publishTime>03/14/2025 13:53:20</publishTime>
     </File>
     <File Include="bin/VendTech.dll.config">
-      <publishTime>02/18/2025 21:54:09</publishTime>
+      <publishTime>03/14/2025 11:08:47</publishTime>
     </File>
     <File Include="bin/VendTech.Framework.dll">
-      <publishTime>02/18/2025 22:23:32</publishTime>
+      <publishTime>03/14/2025 13:53:18</publishTime>
     </File>
     <File Include="bin/VendTech.Framework.dll.config">
       <publishTime>11/13/2024 17:17:36</publishTime>
@@ -811,7 +811,7 @@ https://go.microsoft.com/fwlink/?LinkID=208121.
       <publishTime>01/01/0001 00:00:00</publishTime>
     </File>
     <File Include="Views/Home/Dashboard.cshtml">
-      <publishTime>01/01/0001 00:00:00</publishTime>
+      <publishTime>02/12/2025 12:12:57</publishTime>
     </File>
     <File Include="Views/Home/Dashboard_e.cshtml">
       <publishTime>01/01/0001 00:00:00</publishTime>
@@ -868,7 +868,7 @@ https://go.microsoft.com/fwlink/?LinkID=208121.
       <publishTime>04/12/2023 11:53:44</publishTime>
     </File>
     <File Include="Views/Meter/Recharge.cshtml">
-      <publishTime>09/10/2024 14:26:43</publishTime>
+      <publishTime>02/12/2025 12:12:57</publishTime>
     </File>
     <File Include="Views/Meter/Recharge_e.cshtml">
       <publishTime>06/01/2024 05:52:46</publishTime>
@@ -970,10 +970,13 @@ https://go.microsoft.com/fwlink/?LinkID=208121.
       <publishTime>01/01/0001 00:00:00</publishTime>
     </File>
     <File Include="Views/Shared/_Layout.cshtml">
-      <publishTime>01/01/0001 00:00:00</publishTime>
+      <publishTime>06/06/2024 10:15:21</publishTime>
     </File>
     <File Include="Views/Shared/_SideBaar.cshtml">
-      <publishTime>01/01/0001 00:00:00</publishTime>
+      <publishTime>06/05/2024 12:54:32</publishTime>
+    </File>
+    <File Include="Views/Shared/_SideBarv2.cshtml">
+      <publishTime>02/08/2025 11:36:20</publishTime>
     </File>
     <File Include="Views/Shared/_voucherReceipt.cshtml">
       <publishTime>01/28/2025 12:47:23</publishTime>

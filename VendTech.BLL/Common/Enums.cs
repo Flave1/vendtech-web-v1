@@ -276,6 +276,13 @@ namespace VendTech.BLL.Models
         PendingCheckRequest = 2,
     }
 
+    public enum PaymentStatus
+    {
+        Pending = 0,
+        Deducted = 1,
+        Refunded = 2
+    }
+
     public class EnumUtils
     {
         public static IEnumerable<T> GetEnumValues<T>()

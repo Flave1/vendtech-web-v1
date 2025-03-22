@@ -1217,6 +1217,10 @@ namespace VendTech.BLL.Managers
             data.MeterId = recharge.MeterId;
             data.PlatformId = recharge.PlatFormId;
             data.POSId = recharge.POS == null ? "" : recharge.POS.SerialNumber;
+            data.GST = recharge.TaxCharge;
+            data.Units = recharge.Units;
+            data.CostOfUnits = recharge.CostOfUnits;
+            data.Customer = recharge.Customer;
             var thisTransactionNotification = _context.Notifications.FirstOrDefault(d => d.RowId == rechargeId);
             if (thisTransactionNotification != null)
             {

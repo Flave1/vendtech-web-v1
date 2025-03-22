@@ -25,7 +25,8 @@ namespace VendTech.BLL.Managers
         private readonly VendtechEntities _context;
         private HttpClient _client;
         private readonly TransactionIdGenerator idGenerator;
-        public VendtechExtensionSales(VendtechEntities context, TransactionIdGenerator idGenerator)
+        private readonly IPOSManager _posManager;
+        public VendtechExtensionSales(VendtechEntities context, TransactionIdGenerator idGenerator, IPOSManager posManager)
         {
             _client = new HttpClient()
             {
@@ -33,6 +34,7 @@ namespace VendTech.BLL.Managers
             };
             _context = context;
             this.idGenerator = idGenerator;
+            _posManager = posManager;
         }
 
         async Task<ReceiptModel> IVendtechExtensionSales.RechargeFromVendtechExtension(RechargeMeterModel model)
@@ -135,14 +137,20 @@ namespace VendTech.BLL.Managers
 
                 vendResponseResult = vendResponse?.Result;
 
-                POS pos = transactionDetail.User.POS.FirstOrDefault(d => d.POSId == transactionDetail.POSId);
-                transactionDetail = await UpdateTransactionOnSuccess(vendResponseResult, transactionDetail, pos);
+                if (vendResponse.Status.ToLower() == "success")
+                {
+                    POS pos = transactionDetail.User.POS.FirstOrDefault(d => d.POSId == transactionDetail.POSId);
+                    transactionDetail = await UpdateTransactionOnSuccess(vendResponseResult, transactionDetail, pos);
 
-                Common.PushNotification.Instance
-                    .IncludeAdminWidgetSales()
-                    .IncludeUserBalanceOnTheWeb(transactionDetail.UserId)
-                    .Send();
-
+                    Common.PushNotification.Instance
+                            .IncludeAdminWidgetSales()
+                            .IncludeUserBalanceOnTheWeb(transactionDetail.UserId)
+                            .Send();
+                }
+                else
+                {
+                    throw new ArgumentException(vendResponse?.Result.FailedResponse.ErrorMessage);
+                }
                 return transactionDetail;
             }
             else
@@ -182,13 +190,20 @@ namespace VendTech.BLL.Managers
                     ReadErrorMessage(vendResponse.Message, vendResponse.Result.Code, transactionDetail);
                 }
 
-                POS pos = transactionDetail.User.POS.FirstOrDefault(d => d.POSId == transactionDetail.POSId);
-                transactionDetail = await UpdateTransactionOnSuccess(vendResponseResult, transactionDetail, pos);
+                if(vendResponse.Status.ToLower() == "success")
+                {
+                    POS pos = transactionDetail.User.POS.FirstOrDefault(d => d.POSId == transactionDetail.POSId);
+                    transactionDetail = await UpdateTransactionOnSuccess(vendResponseResult, transactionDetail, pos);
 
-                Common.PushNotification.Instance
-                        .IncludeAdminWidgetSales()
-                        .IncludeUserBalanceOnTheWeb(transactionDetail.UserId)
-                        .Send();
+                    Common.PushNotification.Instance
+                            .IncludeAdminWidgetSales()
+                            .IncludeUserBalanceOnTheWeb(transactionDetail.UserId)
+                            .Send();
+                }
+                else
+                {
+                    throw new ArgumentException(vendResponse?.Result.FailedResponse.ErrorMessage);
+                }
                 return transactionDetail;
             }
         }
@@ -501,8 +516,9 @@ namespace VendTech.BLL.Managers
                 trans.Sold = true;
                 trans.VoucherSerialNumber = "success";
                 trans.VendStatus = "";
+                await _context.SaveChangesAsync();
                 //BALANCE DEDUCTION
-                await Deductbalace(trans, pos);
+                trans = await _posManager.DeductBalanceAsync(pos.POSId, trans);
             }
             catch (Exception ex)
             {
@@ -510,38 +526,6 @@ namespace VendTech.BLL.Managers
             }
 
             return trans;
-        }
-
-        private async Task Deductbalace(TransactionDetail trans, POS pos, bool billVendor = true)
-        {
-            //BALANCE DEDUCTION
-            using(var ctx = new VendtechEntities())
-            {
-                if (billVendor)
-                {
-                    trans.BalanceBefore = pos.Balance ?? 0;
-                    pos.Balance = (pos.Balance - trans.Amount);
-                    trans.CurrentVendorBalance = pos.Balance ?? 0;
-                }
-
-                ctx.TransactionDetails.AddOrUpdate(trans);
-                ctx.POS.AddOrUpdate(pos);
-                try
-                {
-
-                    await ctx.SaveChangesAsync();
-                }
-                catch (DbEntityValidationException ex)
-                {
-                    foreach (var error in ex.EntityValidationErrors)
-                    {
-                        foreach (var validationError in error.ValidationErrors)
-                        {
-                            Console.WriteLine($"Property: {validationError.PropertyName}, Error: {validationError.ErrorMessage}");
-                        }
-                    }
-                }
-            }
         }
 
         private async Task<TransactionDetail> CreateRecordBeforeVend(RechargeMeterModel model)
@@ -583,7 +567,7 @@ namespace VendTech.BLL.Managers
             trans.StatusResponse = "";
             trans.DebitRecovery = "0";
             trans.CostOfUnits = "0";
-
+            trans.PaymentStatus = (int)PaymentStatus.Pending;
             string transactionId = await idGenerator.GenerateNewTransactionId();
             trans.TransactionId = transactionId;
 
@@ -666,7 +650,7 @@ namespace VendTech.BLL.Managers
                 {
                     _client.DefaultRequestHeaders.Add("X-Api-Key", apiKey);
                 }
-                HttpResponseMessage icekloud_response = null;
+                HttpResponseMessage icekloud_response = new HttpResponseMessage();
                 await new RetryAwaitable(async () =>
                 {
                     icekloud_response = await _client.PostAsJsonAsync(url, request_model);
@@ -694,5 +678,7 @@ namespace VendTech.BLL.Managers
 
         }
 
+       
+    
     }
 }

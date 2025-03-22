@@ -300,6 +300,10 @@ namespace VendTech.BLL.Models
         public int? PlatformId { get; set; }
         public string PlatformName { get; set; }
         public DateTime  CreatedAtDate { get; set; }
+        public string GST { get; set; }
+        public string Units { get; set; }
+        public string CostOfUnits { get; set; }
+        public string Customer { get; set; }
         public MeterRechargeApiListingModelMobile() { }
         public MeterRechargeApiListingModelMobile(TransactionDetail x)
         {
@@ -318,6 +322,7 @@ namespace VendTech.BLL.Models
             VendorName = x.POS.User == null ? "" : x.POS.User.Vendor;
             RechargePin = x.Platform.PlatformType == 4 ? Utilities.FormatThisToken(x.MeterToken1) : x.MeterNumber1 + "/" + x.TransactionId;
             PlatformName = x.Platform.Title;
+            
         }
 
         public MeterRechargeApiListingModelMobile(TransactionDetail x, int v)

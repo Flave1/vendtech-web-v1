@@ -62,6 +62,7 @@ namespace VendTech.DAL
         public Nullable<int> QueryStatusCount { get; set; }
         public int isClaimed { get; set; }
         public string UserButtonClickid { get; set; }
+        public int PaymentStatus { get; set; }
     
         public virtual Meter Meter { get; set; }
         public virtual Platform Platform { get; set; }

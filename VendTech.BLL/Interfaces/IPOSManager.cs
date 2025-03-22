@@ -49,6 +49,8 @@ namespace VendTech.BLL.Interfaces
         bool IsWalletFunded(long userId);
         POS GetVendorPos2(long vendorId);
         void UpdatePasscode(long VendorId);
+        Task<TransactionDetail> RefundDeductedBalanceAsync(long posId, TransactionDetail trans);
+        Task<TransactionDetail> DeductBalanceAsync(long posId, TransactionDetail trans);
     }
 
 }
