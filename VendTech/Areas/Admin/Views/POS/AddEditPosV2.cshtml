@@ -79,9 +79,9 @@
                         </div>
                         <div class="form-group">
                             <div class="col-md-12 d-flex">
-                                <label for="inputEmail3" class="col-md-5 control-label">TYPE<em>*</em></label>
+                                <label for="Type" class="col-md-5 control-label">TYPE<em>*</em></label>
                                 <div class="col-md-7">
-                                    @Html.DropDownListFor(x => x.Type, new SelectList(ViewBag.PosTypes, "value", "text"), null, new { @class = "form-control" })
+                                    @Html.DropDownListFor(x => x.Type, Model.PosTypes, "-- Select Type --", new { @class = "form-control" })
                                     @Html.ValidationMessageFor(x => x.Type)
                                 </div>
                             </div>
@@ -90,7 +90,7 @@
                             <div class="col-md-12 d-flex">
                                 <label for="inputEmail3" class="col-md-5 control-label">%</label>
                                 <div class="col-md-7">
-                                    @Html.DropDownListFor(x => x.Percentage, new SelectList(ViewBag.commissions, "value", "text"), null, new { @class = "form-control" })
+                                    @Html.DropDownListFor(x => x.Percentage, Model.Commmissions, "-- Select Commission --", new { @class = "form-control" })
                                 </div>
                             </div>
                         </div>
@@ -145,12 +145,12 @@
                                     <td>EMAIL</td>
                                     <td>
                                         <div class="col-md-8">
-                                            @Html.CheckBoxFor(x => x.EmailNotificationDeposit)
+                                            @Html.CheckBoxFor(x => x.EmailNotificationSales, new { id = "sms_" })
                                         </div>
                                     </td>
                                     <td>
                                         <div class="col-md-8">
-                                            @Html.CheckBoxFor(x => x.SMSNotificationDeposit, new { id = "sms_" })
+                                            @Html.CheckBoxFor(x => x.EmailNotificationDeposit)
                                         </div>
                                     </td>
                                 </tr>

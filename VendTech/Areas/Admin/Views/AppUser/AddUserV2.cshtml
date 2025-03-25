@@ -111,19 +111,11 @@
                         <div class="form-group">
                             <label for="inputEmail3" style="text-align:left;" class="col-md-12 control-label">AGENCY NAME</label>
                             <div class="col-md-12">
-                                @Html.DropDownListFor(x => x.AgentId, new SelectList(ViewBag.Agencies, "value", "text"), "Select Agency", new { @class = "form-control" })
+                                @Html.DropDownListFor(x => x.AgentId, new SelectList(ViewBag.Agencies, "value", "text"), "Select Agency", new { @class = "form-control", @id = "agentId"})
                                 @*<span class="help-block">If you select a vendor, then this user will assign to Vendor.</span>*@
                                 @Html.ValidationMessageFor(x => x.AgentId)
                             </div>
                         </div>
-                        @*<div class="form-group">
-                                <div class="col-md-12">
-                                    <reset style="padding-top: 7px;display: inline-block;font-size: 13px;font-weight: 600;">
-                                        @Html.CheckBoxFor(p => p.IsAgencyAdmin) Agency Administrator
-                                    </reset>
-                                </div>
-
-                            </div>*@
                     </div>
                     <div class="col-md-4">
                         <div class="form-group">
@@ -150,7 +142,9 @@
                             <p><label for="inputEmail3" style="text-align:left;" class="col-md-12 control-label">DASHBOARD WIDGETS</label></p>
 
                             <div class="col-md-12">
-                                @Html.Partial("Partials/_widgetsListing", Model.WidgetList.Where(d => d.Id != 9).ToList() ?? new List<WidgetCheckbox>())
+                                @Html.Partial("Partials/_widgetsListing", Model.WidgetList.Where(d => d.Id != 9)
+                               .OrderByDescending(d => d.Title == "Active POS")
+                               .OrderByDescending(d => d.Title == "Current Wallet Ballance").ToList() ?? new List<WidgetCheckbox>())
                             </div>
                         </div>
                         <div class="form-group">
@@ -198,9 +192,12 @@
 
         const togglePassword = document.querySelector('#togglePassword');
         const password = document.querySelector('#password');
+        const agentId = document.querySelector('#agentId');
 
         const toggleConfirmPassword = document.querySelector('#toggleConfirmPassword');
         const confirmPassword = document.querySelector('#confirmPassword');
+
+        agentId.value = "20";
 
         togglePassword.addEventListener('click', function (e) {
             // toggle the type attribute
@@ -230,15 +227,19 @@
             })
         }, 500)
 
+        document.addEventListener("DOMContentLoaded", function() {
+            document.getElementById("password").value = '@Model.Password';
+            document.getElementById("confirmPassword").value = '@Model.ConfirmPassword';
+        });
 
 
 
         $(document).ready(function () {
             App.init();
+            loadAllCountries();
 
             $("#Country").change(onCountryChange);
             onCountryChange();
-            loadAllCountries();
         });
     </script>
 
@@ -247,13 +248,14 @@
             var array = @Html.Raw(Json.Encode(ViewBag.countries));
             if (array.length > 0)
             {
-                        for (var i = 0; i < array.length; i++) {
-                            $("#Country").append("<option value="+array[i].Value+">"+array[i].Text+" </option>")
-                        }
+                for (var i = 0; i < array.length; i++) {
+                    $("#Country").append("<option selected=" + array[i].Selected + " value=" + array[i].Value + ">" + array[i].Text + " </option>")
+                 }
             }
         }
 
         function onCountryChange() {
+            debugger
             $("#City").empty();
             $("#City").append("<option value=''> Select City </option>")
                 var val = $("#Country").val();
@@ -266,7 +268,7 @@
                             $("#City").append("<option value="+records[i].CityId+">"+records[i].Name+" </option>")
 
                         }
-                        $("#City").val('@Model.City');
+                        $("#City").val('3');
                     }
                 }
         }

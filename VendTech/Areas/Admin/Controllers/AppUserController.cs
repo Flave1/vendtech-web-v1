@@ -74,12 +74,14 @@ namespace VendTech.Areas.Admin.Controllers
             var countryDrpData = new List<SelectListItem>();
             foreach (var item in countries)
             {
-                countryDrpData.Add(new SelectListItem { Text = item.Name, Value = item.CountryId.ToString() });
+                countryDrpData.Add(new SelectListItem { Text = item.Name, Selected = true, Value = item.CountryId.ToString() });
             }
             ViewBag.countries = countryDrpData;
             ViewBag.Cities = _authenticateManager.GetCities();
 
             var model = new AddUserModel();
+            model.Password = Utilities.GenerateByAnyLength(4);
+            model.ConfirmPassword = model.Password;
             model.PlatformList = _userManager.GetAllPlatforms(0);
             model.ResetUserPassword = true;
             model.ModuleList = _userManager.GetAllModules(0);

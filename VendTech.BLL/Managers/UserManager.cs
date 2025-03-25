@@ -311,7 +311,6 @@ namespace VendTech.BLL.Managers
                 else
                     query = _context.Users.Where(p => p.Status != (int)UserStatusEnum.Active);
             }
-            
 
 
             if (model.SortBy == "POS")
@@ -915,6 +914,17 @@ namespace VendTech.BLL.Managers
                         chekboxListOfModules.ToList().ForEach(x => x.Checked = existingPermissons.Where(z => z.ModuleId == x.ID).Any());
                     }
                 }
+                else
+                {
+                    var selectedIds = new HashSet<int> { 19, 18, 9, 16, 17 };
+                    chekboxListOfModules.ToList().ForEach(d =>
+                    {
+                        if (selectedIds.Contains(d.ID))
+                        {
+                            d.Checked = true;
+                        }
+                    });
+                }
             }
             return chekboxListOfModules;
         }
@@ -996,6 +1006,17 @@ namespace VendTech.BLL.Managers
                     {
                         chekboxListOfModules.ToList().ForEach(x => x.Checked = existingPermissons.Where(z => z.WidgetId == x.Id).Any());
                     }
+                }
+                else
+                {
+                    var selectedIds = new HashSet<int> { 1, 4 };
+                    chekboxListOfModules.ToList().ForEach(d =>
+                    {
+                        if (selectedIds.Contains(d.Id))
+                        {
+                            d.Checked = true;
+                        }
+                    });
                 }
             }
             return chekboxListOfModules;
@@ -1223,12 +1244,6 @@ namespace VendTech.BLL.Managers
                 _context.SaveChanges();
                 dbUser.FKVendorId = dbUser.UserId;
                 _context.SaveChanges();
-                //return new ActionOutput
-                //{
-                //    ID = dbUser.UserId,
-                //    Status = ActionStatus.Successfull,
-                //    Message = "User Added Successfully, Verification link has been sent on user email account"
-                //};
 
                 return ReturnSuccess(dbUser.UserId, $"Registration Successful !! Confirnmation email sent to  {userDetails.Email}");
             }

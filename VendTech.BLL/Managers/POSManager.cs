@@ -484,6 +484,14 @@ namespace VendTech.BLL.Managers
                         chekboxListOfModules.ToList().ForEach(x => x.Checked = existingPermissons.Where(z => z.PlatformId == x.Id).Any());
                     }
                 }
+                else
+                {
+                    var selectedIds = new HashSet<int> { 19, 18, 9, 16, 17 };
+                    chekboxListOfModules.ToList().ForEach(d =>
+                    {
+                        d.Checked = true;
+                    });
+                }
             }
             return chekboxListOfModules;
         }

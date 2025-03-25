@@ -35,7 +35,7 @@
     <div class="m_content">
         <div class="header noborder d-flex justify-content-between">
             @Html.Partial("_SearchFilter2", new PagingModel { SortBy = "CreatedAt", SortOrder = "Desc" })
-            <h3> <a href="@Url.Action("AddUser", "AppUser", new { area = "Admin" })" class="btn btn-primary pull-right" title="Add Agent"><i class="fa fa-user "></i><super><i class="fa fa-plus"></i></super></a></h3>
+            <h3> <a href="@Url.Action("AddUser", "user", new { area = "Admin" })" class="btn btn-primary pull-right" title="Add Agent"><i class="fa fa-user "></i><super><i class="fa fa-plus"></i></super></a></h3>
         </div>
         <div id="divResult" class="table-responsive">
             <input id="IsActive" value="true" hidden />

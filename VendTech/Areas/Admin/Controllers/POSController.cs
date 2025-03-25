@@ -1,4 +1,5 @@
 ﻿using DocumentFormat.OpenXml.Spreadsheet;
+using Microsoft.Ajax.Utilities;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -87,7 +88,6 @@ namespace VendTech.Areas.Admin.Controllers
         public ActionResult AddEditPos(SavePosModel model)
         {
             ViewBag.SelectedTab = SelectedAdminTab.POS;
-            
             return JsonResult(_posManager.SavePos(model));
         }
 
@@ -168,11 +168,17 @@ namespace VendTech.Areas.Admin.Controllers
             {
                 model.PosSms = true;
                 model.WebPrint = true;
-                model.SMSNotificationDeposit = true;
+                model.EmailNotificationSales = true;
                 model.SMSNotificationDeposit = true;
             }
 
-            ViewBag.PosTypes = Utilities.EnumToList(typeof(PosTypeEnum));
+            var pos = Utilities.EnumToList(typeof(PosTypeEnum));
+            for (int i = 0; i < pos.Count; i++)
+            {
+                pos[i].Selected = pos[i].Value == "20";
+            }
+
+            model.PosTypes = pos;
             ViewBag.Vendors = _vendorManager.GetVendorsForPOSPageSelectList();
 
             var commissions = _commissionManager.GetCommissions();
@@ -181,7 +187,12 @@ namespace VendTech.Areas.Admin.Controllers
             {
                 drpCommissions.Add(new SelectListItem { Text = item.Value.ToString(), Value = item.CommissionId.ToString() });
             }
-            ViewBag.commissions = drpCommissions;
+
+            for (int i = 0; i < drpCommissions.Count; i++)
+            {
+                drpCommissions[i].Selected = drpCommissions[i].Value == "7";
+            }
+            model.Commmissions = drpCommissions;
             if (id.HasValue && id > 0)
             {
                 model = _posManager.GetPosDetail(id.Value);

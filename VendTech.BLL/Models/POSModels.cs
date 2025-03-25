@@ -5,6 +5,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Web.Mvc;
 using VendTech.BLL.Common;
 using VendTech.DAL;
 
@@ -111,6 +112,8 @@ namespace VendTech.BLL.Models
         public bool PosPrint { get; set; }
         public bool WebBarcode { get; set; }
         public bool PosBarcode { get; set; }
+        public IEnumerable<SelectListItem> PosTypes { get; set; }
+        public IEnumerable<SelectListItem> Commmissions { get; set; }
     }
 
     public class SavePassCodeModel

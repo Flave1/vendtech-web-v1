@@ -320,7 +320,28 @@ namespace VendTech.BLL.Models
         public string APIKey { get; set; } = "";
         public AddUserModel()
         {
+        }
 
+        public AddUserModel GetDefaultChecks(IList<Module> modules)
+        {
+            IList<Checkbox> chekboxListOfModules = null;
+            if (modules.Count() > 0)
+            {
+                chekboxListOfModules = modules.Select(x =>
+                {
+                    return new Checkbox()
+                    {
+                        ID = x.ModuleId,
+                        ModuleName = x.ModuleName,
+                        Description = x.Description,
+                        Checked = false,
+                        SubMenuOf = x.SubMenuOf,
+                        IsAdmin = x.IsAdmin
+                    };
+                }).ToList();
+                ModuleList = chekboxListOfModules;
+            }
+            return this;
         }
 
     }

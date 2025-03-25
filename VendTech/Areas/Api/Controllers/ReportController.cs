@@ -36,18 +36,6 @@ namespace VendTech.Areas.Api.Controllers
             model.VendorId = LOGGEDIN_USER.UserId;
             model.PageNo = ((model.PageNo - 1) * model.RecordsPerPage) + 1;
 
-            //CultureInfo provider = CultureInfo.InvariantCulture;
-
-            //if (model.From != null)
-            //{
-            //    model.From = DateTime.ParseExact(model.From.Value.Date.ToString(), "dd/MM/yyyy", provider);
-            //}
-
-            //if (model.To != null)
-            //{
-            //    model.To = DateTime.ParseExact(model.To.Value.ToString(), "dd/MM/yyyy", provider);
-            //}
-
             var deposits = new PagingResult<MeterRechargeApiListingModelMobile>();
             deposits = _meterManager.GetUserMeterRechargesReportMobileAsync(model);
             return new JsonContent(deposits.TotalCount, deposits.Message, Status.Success, deposits.List).ConvertToHttpResponseOK();
