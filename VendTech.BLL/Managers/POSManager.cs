@@ -35,6 +35,7 @@ namespace VendTech.BLL.Managers
             var result = new PagingResult<POSListingModel>();
             IQueryable<POS> query = _context.POS.Where(p => !p.IsDeleted);
 
+
             if (model.SortBy == null)
             {
                 model.SortBy = "SerialNumber";
@@ -62,10 +63,6 @@ namespace VendTech.BLL.Managers
             {
                 query = query.Where(p => !p.IsDeleted).OrderBy("Balance" + " " + model.SortOrder);
             }
-
-
-
-
             else if (model.SortBy == "POSId")
             {
                 query = query.Where(p => !p.IsDeleted).OrderBy("SerialNumber" + " " + model.SortOrder);
@@ -78,10 +75,6 @@ namespace VendTech.BLL.Managers
             {
                 query = query.Where(p => !p.IsDeleted).OrderBy("User.MobileAppVersion" + " " + model.SortOrder);
             }
-            //else
-            //{
-            //    query = query.Where(p => !p.IsDeleted).OrderBy(model?.SortBy ?? "User.Vendor " + model.SortOrder);
-            //}
             if (vendorId > 0)
             {
                 var user = _context.Users.FirstOrDefault(p => p.UserId == vendorId);
@@ -92,8 +85,6 @@ namespace VendTech.BLL.Managers
             }
             if (!string.IsNullOrEmpty(model.Search) && !string.IsNullOrEmpty(model.SearchField))
             {
-                //query = query.Where(z => z.SerialNumber.ToLower().Contains(model.Search.ToLower()) || z.Vendor.Name.ToLower().Contains(model.Search.ToLower()) || z.Vendor.SurName.ToLower().Contains(model.Search.ToLower()) || z.Phone.Contains(model.Search) || ((PosTypeEnum)z.VendorType).ToString().ToLower().Contains(model.Search.ToLower()) || z.Enabled.ToString().ToLower().Contains(model.Search.ToLower()));
-
                 if (model.SearchField.Equals("POS"))
                     query = query.Where(z => z.SerialNumber.ToLower().Contains(model.Search.ToLower()));
 
@@ -288,7 +279,7 @@ namespace VendTech.BLL.Managers
                     SerialNumber = dbPos.SerialNumber,
                     VendorId = dbPos?.VendorId,
                     Phone = dbPos?.User?.Phone,
-                    Type = dbPos.VendorType,
+                    Type = dbPos.VendorType.ToString(),
                     POSId = dbPos.POSId,
                     Percentage = dbPos.CommissionPercentage,
                     Enabled = dbPos.Enabled == null ? false : dbPos.Enabled.Value,
@@ -328,7 +319,7 @@ namespace VendTech.BLL.Managers
                 SerialNumber = dbPos.SerialNumber,
                 VendorId = dbPos.VendorId,
                 Phone = dbPos.Phone,
-                Type = dbPos.VendorType,
+                Type = dbPos.VendorType.ToString(),
                 POSId = dbPos.POSId,
                 Percentage = dbPos.CommissionPercentage,
                 Enabled = dbPos.Enabled == null ? false : dbPos.Enabled.Value,
@@ -517,7 +508,7 @@ namespace VendTech.BLL.Managers
             {
                 dbPos.User = _context.Users.FirstOrDefault(d => d.UserId == dbPos.VendorId.Value);
             }
-            dbPos.VendorType = model.Type;
+            dbPos.VendorType = Convert.ToInt16(model.Type);
             dbPos.Phone = model.Phone;
             dbPos.Enabled = model.Enabled;
             dbPos.SMSNotificationDeposit = model.SMSNotificationDeposit;

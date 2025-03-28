@@ -94,7 +94,7 @@ namespace VendTech.BLL.Models
         [MaxLength(10)]
         public string Phone { get; set; }
         public string CountryCode { get; set; }
-        public int? Type { get; set; }
+        public string Type { get; set; }
         public bool Enabled { get; set; }
         public IList<PlatformCheckbox> PlatformList { get; set; }
         public List<int> SelectedPlatforms { get; set; }

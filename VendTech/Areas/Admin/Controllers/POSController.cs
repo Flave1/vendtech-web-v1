@@ -163,6 +163,9 @@ namespace VendTech.Areas.Admin.Controllers
             if (id > 0)
             {
                 ViewBag.read = readonlyStr;
+                model.PosTypes = new List<SelectListItem>();
+                model.Commmissions = new List<SelectListItem>();
+
             }
             else
             {
@@ -178,7 +181,7 @@ namespace VendTech.Areas.Admin.Controllers
                 pos[i].Selected = pos[i].Value == "20";
             }
 
-            model.PosTypes = pos;
+            
             ViewBag.Vendors = _vendorManager.GetVendorsForPOSPageSelectList();
 
             var commissions = _commissionManager.GetCommissions();
@@ -192,7 +195,6 @@ namespace VendTech.Areas.Admin.Controllers
             {
                 drpCommissions[i].Selected = drpCommissions[i].Value == "7";
             }
-            model.Commmissions = drpCommissions;
             if (id.HasValue && id > 0)
             {
                 model = _posManager.GetPosDetail(id.Value);
@@ -200,6 +202,9 @@ namespace VendTech.Areas.Admin.Controllers
             }
             else
                 model.PlatformList = _posManager.GetAllPlatforms(0);
+
+            model.PosTypes = pos;
+            model.Commmissions = drpCommissions;
             return View("AddEditPosV2", model);
         }
 
