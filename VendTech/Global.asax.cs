@@ -52,10 +52,10 @@ namespace VendTech
             ///
 
             /// COMMON
-            //ITrigger commonJobsTrigger = TriggerBuilder.Create().StartNow()
-            //.WithSimpleSchedule(s => s.WithIntervalInHours(24).RepeatForever()).Build();
-            //IJobDetail commonJobs = JobBuilder.Create<CommonShedulesJob>().Build();
-            //scheduler.ScheduleJob(commonJobs, commonJobsTrigger);
+            ITrigger commonJobsTrigger = TriggerBuilder.Create().WithIdentity("CommonJobsTrigger")
+            .WithSchedule(CronScheduleBuilder.DailyAtHourAndMinute(1, 0)).Build();
+            IJobDetail commonJobs = JobBuilder.Create<CommonShedulesJob>().WithIdentity("CommonJobs").Build();
+            scheduler.ScheduleJob(commonJobs, commonJobsTrigger);
             ///
 
             AreaRegistration.RegisterAllAreas();

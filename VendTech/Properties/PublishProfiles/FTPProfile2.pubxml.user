@@ -120,13 +120,13 @@ https://go.microsoft.com/fwlink/?LinkID=208121.
       <publishTime>06/04/2024 17:09:56</publishTime>
     </File>
     <File Include="Areas/Admin/Views/Report/ManageSalesReportsV2.cshtml">
-      <publishTime>06/04/2024 17:10:15</publishTime>
+      <publishTime>03/28/2025 16:01:30</publishTime>
     </File>
     <File Include="Areas/Admin/Views/Report/Partials/_miniSalesReport.cshtml">
       <publishTime>06/01/2024 00:01:09</publishTime>
     </File>
     <File Include="Areas/Admin/Views/Report/Partials/_salesReportListing.cshtml">
-      <publishTime>08/27/2024 16:24:34</publishTime>
+      <publishTime>03/28/2025 15:58:51</publishTime>
     </File>
     <File Include="Areas/Admin/Views/Report/Transactions.cshtml">
       <publishTime>08/20/2024 15:17:25</publishTime>
@@ -471,7 +471,7 @@ https://go.microsoft.com/fwlink/?LinkID=208121.
       <publishTime>01/27/2021 21:48:32</publishTime>
     </File>
     <File Include="bin/VendTech.BLL.dll">
-      <publishTime>03/25/2025 10:17:36</publishTime>
+      <publishTime>03/29/2025 16:36:03</publishTime>
     </File>
     <File Include="bin/VendTech.BLL.dll.config">
       <publishTime>11/13/2024 16:19:03</publishTime>
@@ -480,7 +480,7 @@ https://go.microsoft.com/fwlink/?LinkID=208121.
       <publishTime>01/10/2025 17:31:52</publishTime>
     </File>
     <File Include="bin/VendTech.DAL.dll">
-      <publishTime>03/12/2025 07:31:57</publishTime>
+      <publishTime>03/28/2025 18:54:41</publishTime>
     </File>
     <File Include="bin/VendTech.DAL.dll.config">
       <publishTime>11/12/2024 10:27:17</publishTime>
@@ -489,13 +489,13 @@ https://go.microsoft.com/fwlink/?LinkID=208121.
       <publishTime>12/11/2024 05:47:35</publishTime>
     </File>
     <File Include="bin/VendTech.dll">
-      <publishTime>03/25/2025 10:17:38</publishTime>
+      <publishTime>03/29/2025 16:36:06</publishTime>
     </File>
     <File Include="bin/VendTech.dll.config">
-      <publishTime>03/21/2025 10:14:26</publishTime>
+      <publishTime>03/29/2025 16:29:18</publishTime>
     </File>
     <File Include="bin/VendTech.Framework.dll">
-      <publishTime>03/25/2025 10:17:37</publishTime>
+      <publishTime>03/29/2025 16:36:04</publishTime>
     </File>
     <File Include="bin/VendTech.Framework.dll.config">
       <publishTime>11/13/2024 16:17:36</publishTime>
@@ -540,7 +540,7 @@ https://go.microsoft.com/fwlink/?LinkID=208121.
       <publishTime>08/20/2024 15:00:48</publishTime>
     </File>
     <File Include="Scripts/AdminScripts/salesReport.js">
-      <publishTime>08/30/2024 16:43:49</publishTime>
+      <publishTime>03/29/2025 16:49:50</publishTime>
     </File>
     <File Include="Scripts/AdminScripts/superAdminTransfer.js">
       <publishTime>09/16/2024 14:12:27</publishTime>

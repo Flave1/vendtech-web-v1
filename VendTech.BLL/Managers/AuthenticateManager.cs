@@ -334,7 +334,7 @@ namespace VendTech.BLL.Managers
             if (user == null)
                 return ReturnError("User with this email not exist.");
 
-            // Pending person also can reset password:
+            // ProcessPending person also can reset password:
             //if (user.Status != (int)UserStatusEnum.Active)
             //    return ReturnError("User is not active.");
 

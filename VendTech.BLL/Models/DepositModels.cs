@@ -116,7 +116,7 @@ namespace VendTech.BLL.Models
             else
             {
                 if (obj.Status == (int)DepositPaymentStatusEnum.Pending)
-                    Status = "Pending";
+                    Status = "ProcessPending";
                 else if (obj.Status == (int)DepositPaymentStatusEnum.RejectedByAccountant || obj.Status == (int)DepositPaymentStatusEnum.Rejected)
                     Status = "Rejected";
                 else if (obj.Status == (int)DepositPaymentStatusEnum.ApprovedByAccountant)
@@ -149,7 +149,7 @@ namespace VendTech.BLL.Models
             ChkNoOrSlipId = obj.CheckNumberOrSlipId; 
             Comments = obj.Comments;
             // Bank = obj.PendingBankAccount == null ? "GTBANK" : obj.BankAccount.BankName;
-            Status = "Pending";
+            Status = "ProcessPending";
             Amount = Utilities.FormatAmount(obj.Amount);
             NewBalance = obj.NewBalance == null ? Utilities.FormatAmount(obj.Amount) : Utilities.FormatAmount(obj.NewBalance.Value);
             PercentageAmount = Utilities.FormatAmount(obj.PercentageAmount);
@@ -203,7 +203,7 @@ namespace VendTech.BLL.Models
             else
             {
                 if (obj.Status == (int)DepositPaymentStatusEnum.Pending)
-                    Status = "Pending";
+                    Status = "ProcessPending";
                 else if (obj.Status == (int)DepositPaymentStatusEnum.RejectedByAccountant || obj.Status == (int)DepositPaymentStatusEnum.Rejected)
                     Status = "Rejected";
                 else if (obj.Status == (int)DepositPaymentStatusEnum.ApprovedByAccountant)
@@ -234,7 +234,7 @@ namespace VendTech.BLL.Models
             ChkNoOrSlipId = obj.CheckNumberOrSlipId;
             Comments = obj.Comments;
             // Bank = obj.PendingBankAccount == null ? "GTBANK" : obj.BankAccount.BankName;
-            Status = "Pending";
+            Status = "ProcessPending";
             Amount = obj.Amount;
             NewBalance = obj.NewBalance == null ? obj.Amount : obj.NewBalance.Value;
             PercentageAmount = obj.PercentageAmount;

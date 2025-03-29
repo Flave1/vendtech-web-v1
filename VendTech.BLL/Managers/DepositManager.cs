@@ -2246,7 +2246,7 @@ namespace VendTech.BLL.Managers
         //    dbDeposit.TransactionId = "0"; //Utilities.GetLastDepositTransactionId();
         //    dbDeposit.CreatedAt = model.CreatedAt;
         //    dbDeposit.BalanceBefore =  new decimal();
-        //    dbDeposit.Status = (int)DepositPaymentStatusEnum.Pending;
+        //    dbDeposit.Status = (int)DepositPaymentStatusEnum.ProcessPending;
         //    dbDeposit.ValueDate = model.ValueDate;// + //" 12:00";//.ToString("dd/MM/yyyy hh:mm");
         //    //dbDeposit.ValueDateStamp = Convert.ToDateTime(model.ValueDate);
         //    dbDeposit.NextReminderDate = DateTime.UtcNow.AddDays(15);

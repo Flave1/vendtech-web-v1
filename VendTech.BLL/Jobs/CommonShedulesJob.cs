@@ -1,10 +1,8 @@
 ﻿using Quartz;
 using System;
-using System.Linq;
 using System.Web.Mvc;
 using VendTech.BLL.Common;
 using VendTech.BLL.Interfaces;
-using VendTech.BLL.Models;
 
 namespace VendTech.BLL.Jobs
 {
@@ -14,17 +12,19 @@ namespace VendTech.BLL.Jobs
         public void Execute(IJobExecutionContext context)
         {
             var _errorManager = DependencyResolver.Current.GetService<IErrorLogManager>();
+            var _userManager = DependencyResolver.Current.GetService<IUserManager>();
             var _idGenrator = DependencyResolver.Current.GetService<TransactionIdGenerator>();
 
 
             try
             {
-                _idGenrator.EmptyTransactionId(); 
-                _errorManager.LogExceptionToDatabase(new Exception("Successfully cleared in-memory ids"));
+                _idGenrator.EmptyTransactionId();
+                _userManager.DisposeUserNotifications();
+                _errorManager.LogExceptionToDatabase(new Exception("CommonShedulesJobs Run"));
             }
             catch (Exception ex)
             {
-                _errorManager.LogExceptionToDatabase(new Exception("Error ocuured trying to clear IDS", ex));
+                _errorManager.LogExceptionToDatabase(new Exception("CommonShedulesJobs Error", ex));
             }
         }
     }

@@ -723,7 +723,7 @@ namespace VendTech.BLL.Managers
                 throw new ArgumentException("TransactionDetailsId Required.");
             using (var ctx = new VendtechEntities())
             {
-                if(trans.PaymentStatus == (int)PaymentStatus.Pending)
+                if(trans.PaymentStatus == (int)PaymentStatus.Pending || trans.PaymentStatus == (int)PaymentStatus.Refunded)
                 {
                     var currentBalance = await ctx.POS
                         .Where(p => p.POSId == posId)

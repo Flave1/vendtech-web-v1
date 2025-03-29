@@ -176,7 +176,7 @@ namespace VendTech.BLL.PlatformApi
                     response.Status = (int)TransactionStatus.Successful;
                     break;
 
-                //Pending/In Progress
+                //ProcessPending/In Progress
                 case 9:
                 case 46:
                     response.Status = (int)TransactionStatus.Pending;

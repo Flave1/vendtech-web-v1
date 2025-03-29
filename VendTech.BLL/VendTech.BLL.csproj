@@ -196,6 +196,7 @@
     <Compile Include="Common\Constants.cs" />
     <Compile Include="Common\EmailNotification.cs" />
     <Compile Include="Common\Enums.cs" />
+    <Compile Include="Common\HttpRequest.cs" />
     <Compile Include="Common\MobileNotification.cs" />
     <Compile Include="Common\ModelUtils.cs" />
     <Compile Include="Common\PushNotification.cs" />

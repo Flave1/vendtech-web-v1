@@ -88,7 +88,7 @@ namespace VendTech.BLL.Models
     public enum UserStatusEnum
     {
         //Dont change status heading , in app there is check based on text
-        [Description("Pending")]
+        [Description("ProcessPending")]
         Pending = 0,
         [Description("Active")]
         Active = 1,
@@ -184,7 +184,7 @@ namespace VendTech.BLL.Models
     }
     public enum DepositPaymentStatusEnum
     {
-        [Description("Pending")]
+        [Description("ProcessPending")]
         Pending = 1,
         [Description("Rejected By Accountant")]
         RejectedByAccountant = 2,
@@ -280,7 +280,8 @@ namespace VendTech.BLL.Models
     {
         Pending = 0,
         Deducted = 1,
-        Refunded = 2
+        Refunded = 2,
+        Failed = 3
     }
 
     public class EnumUtils

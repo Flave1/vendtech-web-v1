@@ -228,26 +228,19 @@ namespace VendTech.BLL.Managers
             result.List = query.OrderByDescending(p => p.SentOn).Skip((pageNo - 1) * pageSize).Take(pageSize).ToList().Select(x => new NotificationApiListingModel(x)).ToList();
             result.Message = "Notifications fetched successfully.";
             query.ToList().ForEach(p => p.MarkAsRead = true);
-            DisposeUserNotifications(userId);
             _context.SaveChanges();
             return result;
         }
 
-        private void DisposeUserNotifications(long userId)
+        void IUserManager.DisposeUserNotifications()
         {
             try
             {
-                var notifications = _context.Database.SqlQuery<Notification>("SELECT * FROM Notifications WHERE UserId = @userId AND SentOn < DATEADD(day, -7, GETUTCDATE())", userId).ToList();
-
-                if (notifications.Any())
-                {
-                    _context.Notifications.RemoveRange(notifications);
-                    _context.SaveChanges();
-                }
+                _context.Database.ExecuteSqlCommand("DELETE FROM Notifications WHERE SentOn < DATEADD(day, -7, GETUTCDATE())");
             }
             catch (Exception)
             {
-
+                // Handle exception if needed
             }
         }
 

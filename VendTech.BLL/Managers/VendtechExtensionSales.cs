@@ -1,7 +1,4 @@
 ﻿using Newtonsoft.Json;
-using System.Collections.Generic;
-using System.Data.Entity.Infrastructure;
-using System.Net;
 using System.Threading.Tasks;
 using System.Web.Configuration;
 using System.Web;
@@ -14,24 +11,16 @@ using VendTech.BLL.Common;
 using System.Data.Entity.Migrations;
 using System.Linq;
 using System.Net.Http;
-using System.Diagnostics;
-using VendTech.BLL.PlatformApi;
-using System.Data.Entity.Validation;
 
 namespace VendTech.BLL.Managers
 {
     public class VendtechExtensionSales : BaseManager, IVendtechExtensionSales
     {
         private readonly VendtechEntities _context;
-        private HttpClient _client;
         private readonly TransactionIdGenerator idGenerator;
         private readonly IPOSManager _posManager;
         public VendtechExtensionSales(VendtechEntities context, TransactionIdGenerator idGenerator, IPOSManager posManager)
         {
-            _client = new HttpClient()
-            {
-                Timeout = TimeSpan.FromMinutes(2)
-            };
             _context = context;
             this.idGenerator = idGenerator;
             _posManager = posManager;
@@ -45,7 +34,6 @@ namespace VendTech.BLL.Managers
             var user = await _context.Users.FirstOrDefaultAsync(p => p.UserId == model.UserId);
             var pos = await _context.POS.FirstOrDefaultAsync(p => p.POSId == model.POSId);
             var meter = await _context.Meters.FirstOrDefaultAsync(d => d.MeterId == model.MeterId);
-
             var validationResult = model.validateRequest(user, pos);
 
             if (validationResult != "clear")
@@ -73,9 +61,9 @@ namespace VendTech.BLL.Managers
                 response.ReceiptStatus.Status = "unsuccessful";
                 return response;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                response.ReceiptStatus.Message = ex.Message;
+                response.ReceiptStatus.Message = "Did not result in a vend. Please try again!";
                 response.ReceiptStatus.Status = "unsuccessful";
                 return response;
             }
@@ -87,127 +75,139 @@ namespace VendTech.BLL.Managers
         }
 
         public async Task<TransactionDetail> ProcessTransaction(bool isDuplicate, RechargeMeterModel model,
-            TransactionDetail transactionDetail, bool treatAsPending = false, bool billVendor = true)
+            TransactionDetail transactionDetail, bool treatAsPending = false)
         {
             VtechExtensionResponse vendResponse = null;
             VendtechExtSalesResult vendResponseResult = new VendtechExtSalesResult();
-            if (!isDuplicate)
-            {
-                if (!treatAsPending)
-                    transactionDetail = await CreateRecordBeforeVend(model);
-
-                model.UpdateRequestModel(transactionDetail);
-
-                vendResponse = await MakeRechargeRequest(model, transactionDetail);
-
-                if (vendResponse == null)
+            //using(var _dbTransaction = _context.Database.BeginTransaction(System.Data.IsolationLevel.ReadUncommitted))
+            //{
+                try
                 {
-                    Utilities.LogExceptionToDatabase(new Exception($"{vendResponse}"));
-                    throw new ArgumentException("Unable to process transaction");
-                }
-
-                vendResponseResult = vendResponse?.Result;
-
-                if (vendResponse.Status.ToLower() == "pending")
-                {
-                    int count = 0;
-                    do
+                    if (!isDuplicate)
                     {
-                        vendResponse = await QueryStatusRequest(model, transactionDetail);
-                        vendResponseResult = vendResponse.Result;
+                        if (!treatAsPending)
+                            transactionDetail = await CreateRecordBeforeVend(model);
 
-                        transactionDetail.VendStatus = vendResponseResult.FailedResponse.ErrorMessage;
-                        transactionDetail.VendStatusDescription = vendResponseResult?.FailedResponse?.ErrorDetail;
-                        transactionDetail.QueryStatusCount = count;
-                        count += 1;
-                        _context.TransactionDetails.AddOrUpdate(transactionDetail);
-                        await _context.SaveChangesAsync();
-                    } while (vendResponse.Status.ToLower() == "pending");
-                    ReadErrorMessage(vendResponse.Message, vendResponse.Result.Code, transactionDetail);
-                }
-                else if (vendResponse.Status.ToLower() != "success")
-                {
-                    transactionDetail.VendStatus = vendResponseResult.FailedResponse.ErrorMessage;
-                    transactionDetail.VendStatusDescription = vendResponseResult?.FailedResponse?.ErrorDetail;
-                    await UpdateTransactionOnFailed(vendResponse?.Result, transactionDetail);
-                    _context.TransactionDetails.AddOrUpdate(transactionDetail);
-                    await _context.SaveChangesAsync();
-                    ReadErrorMessage(vendResponse.Message, vendResponse.Result.Code, transactionDetail);
-                }
+                        model.UpdateRequestModel(transactionDetail);
+                        vendResponse = await MakeRechargeRequest(model, transactionDetail);
 
-                vendResponseResult = vendResponse?.Result;
+                        if (vendResponse is null || vendResponse?.Result is null)
+                        {
+                            Utilities.LogExceptionToDatabase(new Exception($"{vendResponse}"));
+                            //_dbTransaction.Rollback();
+                            throw new ArgumentException("Unable to process transaction");
+                        }
+                        else
+                        {
+                            if (vendResponse.Status.ToLower() == "pending")
+                            {
+                                await ProcessPending(vendResponse, vendResponseResult, transactionDetail, model);
+                            }
 
-                if (vendResponse.Status.ToLower() == "success")
-                {
-                    POS pos = transactionDetail.User.POS.FirstOrDefault(d => d.POSId == transactionDetail.POSId);
-                    transactionDetail = await UpdateTransactionOnSuccess(vendResponseResult, transactionDetail, pos);
+                            if (vendResponse.Status.ToLower() == "failed")
+                            {
+                                await ProcessFailed(vendResponse, vendResponseResult, transactionDetail);
+                                //_dbTransaction.Commit();
+                                throw new ArgumentException(vendResponseResult.FailedResponse.ErrorMessage);
+                            }
 
-                    Common.PushNotification.Instance
-                            .IncludeAdminWidgetSales()
-                            .IncludeUserBalanceOnTheWeb(transactionDetail.UserId)
-                            .Send();
-                }
-                else
-                {
-                    throw new ArgumentException(vendResponse?.Result.FailedResponse.ErrorMessage);
-                }
-                return transactionDetail;
-            }
-            else
-            {
-                model.UpdateRequestModel(transactionDetail);
-                vendResponse = await QueryStatusRequest(model, transactionDetail);
-                
-                if(vendResponse?.Result == null)
-                {
-                    Utilities.LogExceptionToDatabase(new Exception($"{vendResponse}"));
-                    throw new ArgumentException("Unable to process request");
-                }
-
-                vendResponseResult = vendResponse.Result;
-                if (vendResponse?.Status == "failed")
-                {
-                    Utilities.LogExceptionToDatabase(new Exception($"{vendResponse}"));
-                    await UpdateTransactionOnFailed(vendResponse?.Result, transactionDetail);
-                    throw new ArgumentException(vendResponse?.Result.FailedResponse.ErrorMessage);
-                }
-
-                if (vendResponse.Status.ToLower() == "pending")
-                {
-                    int count = 0;
-                    do
+                            if (vendResponse.Status.ToLower() == "success")
+                            {
+                                await ProcessSuccess(vendResponse, vendResponseResult, transactionDetail);
+                                //_dbTransaction.Commit();
+                            }
+                            return transactionDetail;
+                        }
+                    }
+                    else
                     {
+                        model.UpdateRequestModel(transactionDetail);
                         vendResponse = await QueryStatusRequest(model, transactionDetail);
-                        vendResponseResult = vendResponse.Result;
 
-                        transactionDetail.VendStatus = vendResponseResult.FailedResponse.ErrorMessage;
-                        transactionDetail.VendStatusDescription = vendResponseResult?.FailedResponse?.ErrorDetail;
-                        transactionDetail.QueryStatusCount = count;
-                        count += 1;
-                        _context.TransactionDetails.AddOrUpdate(transactionDetail);
-                        await _context.SaveChangesAsync();
-                    } while (vendResponse.Status.ToLower() == "pending");
-                    ReadErrorMessage(vendResponse.Message, vendResponse.Result.Code, transactionDetail);
+                        if (vendResponse is null || vendResponse?.Result is null)
+                        {
+                            Utilities.LogExceptionToDatabase(new Exception($"{vendResponse}"));
+                            //_dbTransaction.Rollback();
+                            throw new ArgumentException("Unable to process transaction");
+                        }
+                        else
+                        {
+                            if (vendResponse.Status.ToLower() == "pending")
+                            {
+                                await ProcessPending(vendResponse, vendResponseResult, transactionDetail, model);
+                            }
+
+                            if (vendResponse.Status.ToLower() == "failed")
+                            {
+                                await ProcessFailed(vendResponse, vendResponseResult, transactionDetail);
+                                //_dbTransaction.Commit();
+                                throw new ArgumentException(vendResponseResult.FailedResponse.ErrorMessage);
+                            }
+
+                            if (vendResponse.Status.ToLower() == "success")
+                            {
+                                await ProcessSuccess(vendResponse, vendResponseResult, transactionDetail);
+                                //_dbTransaction.Commit();  
+                            }
+                            
+                        }
+                        return transactionDetail;
+                    }
                 }
-
-                if(vendResponse.Status.ToLower() == "success")
+                catch (Exception ex)
                 {
-                    POS pos = transactionDetail.User.POS.FirstOrDefault(d => d.POSId == transactionDetail.POSId);
-                    transactionDetail = await UpdateTransactionOnSuccess(vendResponseResult, transactionDetail, pos);
-
-                    Common.PushNotification.Instance
-                            .IncludeAdminWidgetSales()
-                            .IncludeUserBalanceOnTheWeb(transactionDetail.UserId)
-                            .Send();
+                    //_dbTransaction.Rollback();
+                    //Utilities.LogExceptionToDatabase(new Exception($"RolledBack", ex));
+                    throw;
                 }
-                else
-                {
-                    throw new ArgumentException(vendResponse?.Result.FailedResponse.ErrorMessage);
-                }
-                return transactionDetail;
-            }
+            //}
+            
         }
 
+        private async Task ProcessPending(VtechExtensionResponse vendResponse, 
+            VendtechExtSalesResult vendResponseResult,
+            TransactionDetail transactionDetail, RechargeMeterModel model)
+        {
+            int count = 0;
+            do
+            {
+                vendResponse = await QueryStatusRequest(model, transactionDetail);
+                vendResponseResult = vendResponse.Result;
+
+                transactionDetail.VendStatus = vendResponseResult.FailedResponse.ErrorMessage;
+                transactionDetail.VendStatusDescription = vendResponseResult?.FailedResponse?.ErrorDetail;
+                transactionDetail.QueryStatusCount = count;
+                count += 1;
+                _context.TransactionDetails.AddOrUpdate(transactionDetail);
+                await _context.SaveChangesAsync();
+            } while (vendResponse.Status.ToLower() == "pending");
+        }
+
+        private async Task ProcessFailed(VtechExtensionResponse vendResponse,
+            VendtechExtSalesResult vendResponseResult,
+            TransactionDetail transactionDetail)
+        {
+            vendResponseResult = vendResponse?.Result;
+            transactionDetail.VendStatus = vendResponseResult.FailedResponse.ErrorMessage;
+            transactionDetail.VendStatusDescription = vendResponseResult?.FailedResponse?.ErrorDetail;
+            await UpdateTransactionOnFailed(vendResponse?.Result, transactionDetail);
+            _context.TransactionDetails.AddOrUpdate(transactionDetail);
+            await _context.SaveChangesAsync();
+            ReadErrorMessage(vendResponse.Message, vendResponse.Result.Code, transactionDetail);
+        }
+        private async Task ProcessSuccess(VtechExtensionResponse vendResponse,
+            VendtechExtSalesResult vendResponseResult,
+            TransactionDetail transactionDetail)
+        {
+            vendResponseResult = vendResponse?.Result;
+            POS pos = transactionDetail.User.POS.FirstOrDefault(d => d.POSId == transactionDetail.POSId);
+            transactionDetail = await UpdateTransactionOnSuccess(vendResponseResult, transactionDetail, pos);
+
+            Common.PushNotification.Instance
+                    .IncludeAdminWidgetSales()
+                    .IncludeUserBalanceOnTheWeb(transactionDetail.UserId)
+                    .Send();
+        }
         private void ReadErrorMessage(string message, int code, TransactionDetail tx)
         {
             FlagTransaction(tx, RechargeMeterStatusEnum.Failed);
@@ -283,104 +283,10 @@ namespace VendTech.BLL.Managers
         }
 
         private async Task<TransactionDetail> getLastMeterPendingTransaction(string MeterNumber) =>
-           await _context.TransactionDetails.OrderByDescending(p => p.TransactionId).FirstOrDefaultAsync(p => p.Status ==
-           (int)RechargeMeterStatusEnum.Pending && p.MeterNumber1.ToLower() == MeterNumber.ToLower());
+           await _context.TransactionDetails.Where(p => p.Status ==
+           (int)RechargeMeterStatusEnum.Pending && p.MeterNumber1.ToLower() == MeterNumber.ToLower()).FirstOrDefaultAsync();
 
-        async Task<Dictionary<string, IcekloudQueryResponse>> QueryVendStatus(RechargeMeterModel model, TransactionDetail transDetail)
-        {
-
-            Utilities.LogExceptionToDatabase(new Exception($"QueryVendStatus starts at {DateTime.UtcNow} for traxId {model.TransactionId}"), $"model : {JsonConvert.SerializeObject(model)}");
-            Dictionary<string, IcekloudQueryResponse> response = new Dictionary<string, IcekloudQueryResponse>();
-            try
-            {
-                var queryRequest = model.StackStatusRequestModel(model);
-                var url = WebConfigurationManager.AppSettings["IcekloudURL"].ToString();
-
-                var icekloudResponse = await _client.PostAsJsonAsync(url, queryRequest);
-
-                var stringsResult = await icekloudResponse.Content.ReadAsStringAsync();
-
-                var statusResponse = JsonConvert.DeserializeObject<IcekloudQueryResponse>(stringsResult);
-
-                transDetail.Request = JsonConvert.SerializeObject(queryRequest);
-                transDetail.Response = stringsResult;
-
-                if (statusResponse.Content.StatusDescription == "The specified Transaction does not exist.")
-                {
-                    response.Add("failed", statusResponse);
-                    Utilities.LogExceptionToDatabase(new Exception($"QueryVendStatus failed 1 ends at {DateTime.UtcNow} for traxId {model.TransactionId}"), $"statusResponse: {JsonConvert.SerializeObject(statusResponse)}");
-                    return response;
-                }
-                else if (statusResponse.Content.StatusDescription == "The specified Transaction does not exist.")
-                {
-                    response.Add("failed", statusResponse);
-                    Utilities.LogExceptionToDatabase(new Exception($"QueryVendStatus failed 2 ends at {DateTime.UtcNow} for traxId {model.TransactionId}"), $"statusResponse :{JsonConvert.SerializeObject(statusResponse)}");
-                    return response;
-                }
-                else if (statusResponse.Content.StatusDescription == "Transaction completed with error")
-                {
-                    _context.SaveChanges();
-                    response.Add("failed", statusResponse);
-                    Utilities.LogExceptionToDatabase(new Exception($"QueryVendStatus failed 3 ends at {DateTime.UtcNow} for traxId {model.TransactionId}"), $"statusResponse :{JsonConvert.SerializeObject(statusResponse)}");
-                    return response;
-                }
-                else if (!statusResponse.Content.Finalised && statusResponse.Content.StatusRequestCount <= 5)
-                {
-                    Utilities.LogExceptionToDatabase(new Exception($"QueryVendStatus 3 ends at {DateTime.UtcNow} for traxId {model.TransactionId}"), $"statusResponse : {JsonConvert.SerializeObject(statusResponse)}");
-                    return await QueryVendStatus(model, transDetail);
-                }
-                else
-                {
-                    transDetail.QueryStatusCount = (int)statusResponse.Content.StatusRequestCount;
-                    if (string.IsNullOrEmpty(statusResponse.Content.VoucherPin))
-                    {
-                        Utilities.LogExceptionToDatabase(new Exception($"QueryVendStatus 4 ends at {DateTime.UtcNow} for traxId {model.TransactionId}"), $"statusResponse: {JsonConvert.SerializeObject(statusResponse)}");
-                        await _context.SaveChangesAsync();
-                        response.Add("failed", statusResponse);
-                        return response;
-                    }
-                    else
-                    {
-                        await _context.SaveChangesAsync();
-                        Utilities.LogExceptionToDatabase(new Exception($"QueryVendStatus 5 ends at {DateTime.UtcNow} for traxId {model.TransactionId}"), $"statusResponse: {JsonConvert.SerializeObject(statusResponse)}");
-                        response.Add("success", statusResponse);
-                        return response;
-                    }
-                }
-            }
-            catch (DbUpdateException ex)
-            {
-                Utilities.LogExceptionToDatabase(new Exception($"QueryVendStatus 6 ends for DbUpdateException at {DateTime.UtcNow} for traxId {model.TransactionId}", ex), $"DbUpdateException: {JsonConvert.SerializeObject(ex)}");
-                response.Add("failed", null);
-                return response;
-            }
-            catch (HttpException ex)
-            {
-                Utilities.LogExceptionToDatabase(new Exception($"QueryVendStatus 6 ends at {DateTime.UtcNow} for traxId {model.TransactionId}", ex), $"HttpException: {JsonConvert.SerializeObject(model)}");
-                response.Add("failed", null);
-                return response;
-            }
-            catch (NullReferenceException ex)
-            {
-                Utilities.LogExceptionToDatabase(ex, $"model: {JsonConvert.SerializeObject(model)}");
-                response.Add("failed", null);
-                return response;
-            }
-            catch (WebException ex)
-            {
-                Utilities.LogExceptionToDatabase(new Exception($"QueryVendStatus  WebException 2 ends at {DateTime.UtcNow} for traxId {model.TransactionId}"), $"Exception: {ex.ToString()}");
-                response.Add("failed", null);
-                return response;
-            }
-            catch (Exception)
-            {
-                Utilities.LogExceptionToDatabase(new Exception($"QueryVendStatus 8 ends at {DateTime.UtcNow} for traxId {model.TransactionId}"), $"Unexpected Exception");
-                response.Add("failed", null);
-                return response;
-            }
-        }
-
-        public async Task<ReceiptModel> GetStatusFromVendtechExtension(string trxId, bool billVendor)
+        public async Task<ReceiptModel> GetStatusFromVendtechExtension(string trxId)
         {
             var response = new ReceiptModel { ReceiptStatus = new ReceiptStatus { Status = "", Message = "" } };
             try
@@ -400,7 +306,7 @@ namespace VendTech.BLL.Managers
                     TransactionId = Convert.ToInt64(pendingTrax.TransactionId),
                 };
 
-                var verifiedTrax = await ProcessTransaction(true, requestModel, pendingTrax, true, billVendor);
+                var verifiedTrax = await ProcessTransaction(true, requestModel, pendingTrax, true);
 
                 if (verifiedTrax != null)
                 {
@@ -409,6 +315,7 @@ namespace VendTech.BLL.Managers
                     receipt.ShouldShowPrintButton = (bool)verifiedTrax.POS.WebPrint;
                     receipt.mobileShowSmsButton = (bool)verifiedTrax.POS.PosSms;
                     receipt.mobileShowPrintButton = (bool)verifiedTrax.POS.PosPrint;
+                    receipt.ReceiptStatus.Status = "successful";
                     return receipt;
                 }
 
@@ -476,11 +383,12 @@ namespace VendTech.BLL.Managers
                 Common.PushNotification.PushNotificationToMobile(obj);
             }
         }
-
+         
         private async Task UpdateTransactionOnFailed(VendtechExtSalesResult response_data, TransactionDetail trans)
         {
             trans.Status = (int)RechargeMeterStatusEnum.Failed;
             trans.Finalised = false;
+            trans.PaymentStatus = (int)PaymentStatus.Failed;
             trans.VendStatus = response_data?.Status;
             trans.VendStatusDescription = response_data?.Status;
             trans.StatusResponse = JsonConvert.SerializeObject(response_data);
@@ -514,7 +422,8 @@ namespace VendTech.BLL.Managers
                 trans.VProvider = "";
                 trans.StatusRequestCount = 0;
                 trans.Sold = true;
-                trans.VoucherSerialNumber = "success";
+                trans.VendStatusDescription = "success";
+                trans.VoucherSerialNumber = response_data?.SuccessResponse?.Voucher.VoucherSerialNumber ?? string.Empty;
                 trans.VendStatus = "";
                 await _context.SaveChangesAsync();
                 //BALANCE DEDUCTION
@@ -523,6 +432,7 @@ namespace VendTech.BLL.Managers
             catch (Exception ex)
             {
                 Utilities.LogExceptionToDatabase(new Exception($"UpdateTransact at {DateTime.UtcNow} for traxId {trans.TransactionId} user: {trans.UserId}"), $"Exception: {JsonConvert.SerializeObject(ex)}");
+                throw;
             }
 
             return trans;
@@ -584,6 +494,7 @@ namespace VendTech.BLL.Managers
                 Amount = model.Amount,
                 MeterNumber = model.MeterNumber,
                 TransactionId = model.TransactionId.ToString(),
+                Simulate = "pending"
             };
         }
 
@@ -598,84 +509,41 @@ namespace VendTech.BLL.Managers
 
         private async Task<VtechExtensionResponse> MakeRechargeRequest(RechargeMeterModel model, TransactionDetail transactionDetail)
         {
-            Utilities.LogExceptionToDatabase(new Exception($"MakeRechargeRequest START {DateTime.UtcNow} for traxId {model.TransactionId}"), $"model: {JsonConvert.SerializeObject(model)}");
-            string url = WebConfigurationManager.AppSettings["VendtechExtentionServer"].ToString() + "sales/v1/buy";
-
             try
             {
+                string url = WebConfigurationManager.AppSettings["VendtechExtentionServer"].ToString() + "sales/v1/buy";
                 VtechElectricitySaleRequest request_model = Buid_new_request_object(model);
+                var json = JsonConvert.SerializeObject(request_model);
 
-                var apiKey = WebConfigurationManager.AppSettings["ApiKey"].ToString();
-                _client.DefaultRequestHeaders.Add("X-Api-Key", apiKey);
-                HttpResponseMessage icekloud_response = null;
-                await new RetryAwaitable(async () =>
-                {
-                    icekloud_response = await _client.PostAsJsonAsync(url, request_model);
-                    icekloud_response.EnsureSuccessStatusCode();
-                });
-
-                string strings_result = await icekloud_response.Content.ReadAsStringAsync();
+                var client = new ReliableHttpClient();
+                string strings_result = await client.SendPostRequestAsync(url, json);
 
                 transactionDetail.Request = JsonConvert.SerializeObject(request_model);
                 transactionDetail.Response = strings_result;
 
                 VtechExtensionResponse response = JsonConvert.DeserializeObject<VtechExtensionResponse>(strings_result);
-
-                Utilities.LogExceptionToDatabase(new Exception($"MakeRechargeRequest END {DateTime.UtcNow} for traxId {model.TransactionId}"), $"strings_result: {strings_result}");
                 return response;
             }
-            catch (HttpException ex)
-            {
-                Utilities.LogExceptionToDatabase(new Exception($"HttpException ERROR {DateTime.UtcNow} for traxId {model.TransactionId}"), $"Exception: {ex.Message}");
-                throw new ArgumentException("Unable to Access service");
-            }
-            catch (Exception)
+            catch (HttpRequestException)
             {
                 throw;
             }
-
         }
 
         private async Task<VtechExtensionResponse> QueryStatusRequest(RechargeMeterModel model, TransactionDetail transactionDetail)
         {
-            Utilities.LogExceptionToDatabase(new Exception($"QueryStatusRequest START {DateTime.UtcNow} for traxId {model.TransactionId}"), $"model: {JsonConvert.SerializeObject(model)}");
             string url = WebConfigurationManager.AppSettings["VendtechExtentionServer"].ToString() + "sales/v1/status";
+            VtechElectricitySaleStatus request_model = Buid_new_status_object(model);
+            var json = JsonConvert.SerializeObject(request_model);
 
-            try
-            {
-                VtechElectricitySaleStatus request_model = Buid_new_status_object(model);
+            var client = new ReliableHttpClient();
+            string strings_result = await client.SendPostRequestAsync(url, json);
 
-                var apiKey = WebConfigurationManager.AppSettings["ApiKey"].ToString();
-                if (!_client.DefaultRequestHeaders.Contains("X-Api-Key"))
-                {
-                    _client.DefaultRequestHeaders.Add("X-Api-Key", apiKey);
-                }
-                HttpResponseMessage icekloud_response = new HttpResponseMessage();
-                await new RetryAwaitable(async () =>
-                {
-                    icekloud_response = await _client.PostAsJsonAsync(url, request_model);
-                    icekloud_response.EnsureSuccessStatusCode();
-                });
-                string strings_result = await icekloud_response.Content.ReadAsStringAsync();
+            transactionDetail.Request = JsonConvert.SerializeObject(request_model);
+            transactionDetail.Response = strings_result;
 
-                transactionDetail.Request = JsonConvert.SerializeObject(request_model);
-                transactionDetail.Response = strings_result;
-
-                VtechExtensionResponse response = JsonConvert.DeserializeObject<VtechExtensionResponse>(strings_result);
-
-                Utilities.LogExceptionToDatabase(new Exception($"QueryStatusRequest END {DateTime.UtcNow} for traxId {model.TransactionId}"), $"strings_result: {strings_result}");
-                return response;
-            }
-            catch (HttpException ex)
-            {
-                Utilities.LogExceptionToDatabase(new Exception($"HttpException ERROR {DateTime.UtcNow} for traxId {model.TransactionId}"), $"Exception: {ex.Message}");
-                throw new ArgumentException("Unable to Access service");
-            }
-            catch (Exception)
-            {
-                throw;
-            }
-
+            VtechExtensionResponse response = JsonConvert.DeserializeObject<VtechExtensionResponse>(strings_result);
+            return response;
         }
 
        

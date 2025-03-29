@@ -463,6 +463,21 @@ async function initTable(response) {
             : `<a href="javascript:void(0);" style="color: #ff6a00;" data-token="${response[i].TransactionId}" onclick="fetchVoucherStatusDialog('${response[i].TransactionId}', false, '${response[i].Amount}')" id="${response[i].TransactionId}">Request status for ${response[i].TransactionId}</a>`;
 
         tr.classList.add('odd', 'gradeX')
+
+        let statusLabel = '';
+        if (response[i].Paymentstatus === 'PENDING') {
+            statusLabel = '<span style="color: orange; font-weight: bold;">PENDING</span>';
+        } else if (response[i].Paymentstatus === 'DEDUCTED') {
+            statusLabel = '<span style="color: green; font-weight: bold;">DEDUCTED</span>';
+        } else if (response[i].Paymentstatus === 'REFUNDED') {
+            statusLabel = '<span style="color: purple; font-weight: bold;">REFUNDED</span>';
+        }else if (response[i].Paymentstatus === 'FAILED') {
+            statusLabel = '<span style="color: purple; font-weight: bold;">FAILED</span>';
+        }
+        else {
+            statusLabel = `<span style="color: gray; font-weight: bold;">UNKNOWN</span>`;
+        }
+
         tr.innerHTML = `
             <td style="text-align:right;"> ${response[i].CreatedAtDate}</td>
             <td style="text-align:left;"> ${response[i].ProductShortName}</td>
@@ -483,6 +498,7 @@ async function initTable(response) {
                    ${token}
                 </strong>
              </td>
+             <td style="text-align:left;"> ${statusLabel} </td>
             <td style="text-align:right;"> <strong> ${response[i].Amount}</strong></td>
         `;
         tableBody.appendChild(tr);

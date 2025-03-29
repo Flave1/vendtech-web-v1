@@ -21,7 +21,7 @@ namespace VendTech.BLL.Common
                     return false;
                 else
                 {
-                    Utilities.LogExceptionToDatabase(new Exception($"ID EXIST : {transactionId}"), JsonConvert.SerializeObject(Ids));
+                    Utilities.LogExceptionToDatabase(new Exception($"ID EXIST : {transactionId}"));
                     return true;
                 }
             }
@@ -44,44 +44,36 @@ namespace VendTech.BLL.Common
 
         public async Task<string> GenerateNewTransactionId()
         {
-            try
-            {
-                string _connectionString = WebConfigurationManager.ConnectionStrings["DefaultConnection"].ToString();
-                long transactionId = 0;
-                string query = @"SELECT TOP 1 TransactionId FROM TransactionDetails ORDER BY TransactionDetailsId DESC";
+            string _connectionString = WebConfigurationManager.ConnectionStrings["DefaultConnection"].ToString();
+            long transactionId = 0;
+            string query = @"SELECT TOP 1 TransactionId FROM TransactionDetails ORDER BY TransactionDetailsId DESC";
 
-                using (SqlConnection connection = new SqlConnection(_connectionString))
+            using (SqlConnection connection = new SqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+
+                using (SqlCommand command = new SqlCommand(query, connection))
                 {
-                    await connection.OpenAsync();
-
-                    using (SqlCommand command = new SqlCommand(query, connection))
+                    var result = await command.ExecuteScalarAsync();
+                    if (result != null && long.TryParse(result.ToString(), out long lastTransactionId))
                     {
-                        var result = await command.ExecuteScalarAsync();
-                        if (result != null && long.TryParse(result.ToString(), out long lastTransactionId))
+                        transactionId = lastTransactionId;
+                        do
                         {
-                            transactionId = lastTransactionId;
-                            do
-                            {
-                                transactionId = transactionId + 1;
-                            } while (TransactionIdExist(transactionId));
+                            transactionId = transactionId + 1;
+                        } while (TransactionIdExist(transactionId));
 
-                            SetTransactionId(transactionId);
-                        }
-                        else
-                        {
-                            transactionId = 1;
-                        }
+                        SetTransactionId(transactionId);
                     }
-                    connection.Close();
+                    else
+                    {
+                        transactionId = 1;
+                    }
                 }
+                connection.Close();
+            }
 
-                return transactionId.ToString();
-            }
-            catch (Exception ex)
-            {
-                Utilities.LogExceptionToDatabase(new Exception($"Error on GenerateNewTransactionId"), ex.Message);
-                throw;
-            }
+            return transactionId.ToString();
         }
     }
 }

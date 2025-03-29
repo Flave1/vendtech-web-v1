@@ -100,6 +100,7 @@ namespace VendTech.BLL.Interfaces
         PagingResult<B2bUserListingModel> GetB2BUserPagedList(PagingModel model, string status);
         AddUserModel GetB2bUserDetailsByUserId(long userId);
         Task<List<string>> GetActiveUsersDeviceTokens(int pageNo, int pageSize);
+        void DisposeUserNotifications();
     }
 
 }

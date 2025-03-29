@@ -1,7 +1,7 @@
 ﻿using System;
+using System.Net.Http;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
-
 
 namespace VendTech.BLL.Common
 {
@@ -13,7 +13,7 @@ namespace VendTech.BLL.Common
 
         public RetryAwaitable(Func<Task> action, int retries = 5, int delay = 1000)
         {
-            _action = action;
+            _action = action ?? throw new ArgumentNullException(nameof(action));
             _retries = retries;
             _delay = delay;
         }
@@ -26,17 +26,17 @@ namespace VendTech.BLL.Common
         private readonly Func<Task> _action;
         private readonly int _retries;
         private readonly int _delay;
-        private TaskCompletionSource<bool> _tcs = new TaskCompletionSource<bool>();
+        private readonly Task _task;
 
         public RetryAwaiter(Func<Task> action, int retries, int delay)
         {
             _action = action;
             _retries = retries;
             _delay = delay;
-            ExecuteWithRetry();
+            _task = ExecuteWithRetry();
         }
 
-        private async void ExecuteWithRetry()
+        private async Task ExecuteWithRetry()
         {
             int attempt = 0;
             while (attempt < _retries)
@@ -45,23 +45,52 @@ namespace VendTech.BLL.Common
                 {
                     attempt++;
                     await _action();
-                    _tcs.SetResult(true);
                     return;
                 }
-                catch (Exception) when (attempt < _retries)
+                catch (Exception ex) when (attempt < _retries && IsTransient(ex))
                 {
-                    Console.WriteLine($"Attempt {attempt} failed. Retrying in {_delay}ms...");
+                    string msg = $"Attempt {attempt} failed due to {ex.GetType().Name}. Retrying in {_delay}ms...";
+                    Console.WriteLine(msg);
+                    Utilities.LogExceptionToDatabase(new Exception(msg), $"retried_exception: {ex.Message}");
+
                     await Task.Delay(_delay);
                 }
+                catch (Exception ex)
+                {
+                    string errorMsg = $"Final failure after {attempt} attempts: {ex.Message}";
+                    Console.WriteLine(errorMsg);
+                    Utilities.LogExceptionToDatabase(ex, "final_retry_failure");
+
+                    throw new Exception($"Final failure in RetryAwaitable after {attempt} attempts: {ex.Message}", ex);
+                }
             }
-            _tcs.SetException(new Exception("Max retry attempts reached."));
+
+            throw new Exception("Max retry attempts reached.");
         }
 
-        public bool IsCompleted => _tcs.Task.IsCompleted;
+        private static bool IsTransient(Exception ex)
+        {
+            return ex is HttpRequestException ||
+                   ex is TimeoutException ||
+                   ex is TaskCanceledException ||
+                   ex is OperationCanceledException;
+        }
 
-        public void OnCompleted(Action continuation) => _tcs.Task.ContinueWith(_ => continuation());
+        public bool IsCompleted => _task.IsCompleted;
 
-        public void GetResult() => _tcs.Task.GetAwaiter().GetResult();
+        public void OnCompleted(Action continuation) => _task.ContinueWith(_ => continuation());
+
+        public void GetResult()
+        {
+            try
+            {
+                _task.GetAwaiter().GetResult();
+            }
+            catch (Exception ex)
+            {
+                Utilities.LogExceptionToDatabase(ex, "retry_final_get_result");
+                throw;
+            }
+        }
     }
-
 }

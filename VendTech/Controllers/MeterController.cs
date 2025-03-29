@@ -259,8 +259,7 @@ namespace VendTech.Controllers
 
             try
             {
-                //var result = await _meterManager.ReturnTraxStatusReceiptAsync(tokenobject.token_string, tokenobject.billVendor);
-                var result = await _vendtechExtensionSales.GetStatusFromVendtechExtension(tokenobject.token_string, tokenobject.billVendor);
+                var result = await _vendtechExtensionSales.GetStatusFromVendtechExtension(tokenobject.token_string);
                 if (string.IsNullOrEmpty(result.ReceiptStatus.Status))
                 {
                     return Json(new { Success = false, Code = 302, Msg = "Meter Recharge not successful" });
@@ -268,6 +267,10 @@ namespace VendTech.Controllers
                 if (result.ReceiptStatus.Status == "unsuccessful")
                     return Json(new { Success = false, Code = 302, Msg = result.ReceiptStatus.Message });
                 return Json(new { Success = true, Code = 200, Msg = "Meter recharged successfully.", Data = result });
+            }
+            catch (ArgumentException ex)
+            {
+                return Json(new { Success = false, Code = 302, Msg = ex.Message });
             }
             catch (Exception ex)
             {
