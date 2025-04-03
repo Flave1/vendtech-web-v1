@@ -99,11 +99,12 @@ namespace VendTech.BLL.Models
         public long TransactionId { get; set; }
         public bool IsSame_Request { get; set; } = false;
         public List<MeterRechargeApiListingModel> History { get; set; }
-        public void UpdateRequestModel(string number = null)
+        public void UpdateRequestModel(string number = null, long posId = 0)
         {
             if (string.IsNullOrEmpty(UserClickId))
                 UserClickId = "web";
 
+            POSId = posId;
             if (MeterId != null)
             {
                 MeterNumber = number;
@@ -112,9 +113,10 @@ namespace VendTech.BLL.Models
                 IsSaved = false;
         }
 
-        public void UpdateRequestModel(TransactionDetail trx)
+        public void UpdateRequestModel(TransactionDetail trx, long posId)
         {
             TransactionId = Convert.ToInt64(trx.TransactionId);
+            POSId = posId;
         }
 
         public bool IsRequestADuplicate(TransactionDetail trx)

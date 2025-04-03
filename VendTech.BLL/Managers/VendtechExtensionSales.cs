@@ -11,6 +11,7 @@ using VendTech.BLL.Common;
 using System.Data.Entity.Migrations;
 using System.Linq;
 using System.Net.Http;
+using System.IdentityModel;
 
 namespace VendTech.BLL.Managers
 {
@@ -43,7 +44,7 @@ namespace VendTech.BLL.Managers
                 return response;
             }
 
-            model.UpdateRequestModel(meter == null ? "" : meter?.Number);
+            model.UpdateRequestModel(meter == null ? "" : meter?.Number, pos.POSId);
 
             var pendingTrx = await getLastMeterPendingTransaction(model.MeterNumber);
 
@@ -79,8 +80,7 @@ namespace VendTech.BLL.Managers
         {
             VtechExtensionResponse vendResponse = null;
             VendtechExtSalesResult vendResponseResult = new VendtechExtSalesResult();
-            //using(var _dbTransaction = _context.Database.BeginTransaction(System.Data.IsolationLevel.ReadUncommitted))
-            //{
+
                 try
                 {
                     if (!isDuplicate)
@@ -88,13 +88,12 @@ namespace VendTech.BLL.Managers
                         if (!treatAsPending)
                             transactionDetail = await CreateRecordBeforeVend(model);
 
-                        model.UpdateRequestModel(transactionDetail);
+                        model.UpdateRequestModel(transactionDetail, model.POSId);
                         vendResponse = await MakeRechargeRequest(model, transactionDetail);
 
                         if (vendResponse is null || vendResponse?.Result is null)
                         {
                             Utilities.LogExceptionToDatabase(new Exception($"{vendResponse}"));
-                            //_dbTransaction.Rollback();
                             throw new ArgumentException("Unable to process transaction");
                         }
                         else
@@ -107,27 +106,24 @@ namespace VendTech.BLL.Managers
                             if (vendResponse.Status.ToLower() == "failed")
                             {
                                 await ProcessFailed(vendResponse, vendResponseResult, transactionDetail);
-                                //_dbTransaction.Commit();
                                 throw new ArgumentException(vendResponseResult.FailedResponse.ErrorMessage);
                             }
 
                             if (vendResponse.Status.ToLower() == "success")
                             {
-                                await ProcessSuccess(vendResponse, vendResponseResult, transactionDetail);
-                                //_dbTransaction.Commit();
+                                await ProcessSuccess(vendResponse, vendResponseResult, transactionDetail, model.POSId);
                             }
                             return transactionDetail;
                         }
                     }
                     else
                     {
-                        model.UpdateRequestModel(transactionDetail);
+                        model.UpdateRequestModel(transactionDetail, model.POSId);
                         vendResponse = await QueryStatusRequest(model, transactionDetail);
 
                         if (vendResponse is null || vendResponse?.Result is null)
                         {
                             Utilities.LogExceptionToDatabase(new Exception($"{vendResponse}"));
-                            //_dbTransaction.Rollback();
                             throw new ArgumentException("Unable to process transaction");
                         }
                         else
@@ -140,14 +136,12 @@ namespace VendTech.BLL.Managers
                             if (vendResponse.Status.ToLower() == "failed")
                             {
                                 await ProcessFailed(vendResponse, vendResponseResult, transactionDetail);
-                                //_dbTransaction.Commit();
-                                throw new ArgumentException(vendResponseResult.FailedResponse.ErrorMessage);
+                                throw new ArgumentException(vendResponse.Message);
                             }
 
                             if (vendResponse.Status.ToLower() == "success")
                             {
-                                await ProcessSuccess(vendResponse, vendResponseResult, transactionDetail);
-                                //_dbTransaction.Commit();  
+                                await ProcessSuccess(vendResponse, vendResponseResult, transactionDetail, model.POSId);
                             }
                             
                         }
@@ -156,11 +150,9 @@ namespace VendTech.BLL.Managers
                 }
                 catch (Exception ex)
                 {
-                    //_dbTransaction.Rollback();
-                    //Utilities.LogExceptionToDatabase(new Exception($"RolledBack", ex));
+                    Utilities.LogExceptionToDatabase(new Exception($"ProcessTransactionException for {model.TransactionId}", ex), ex.Source);
                     throw;
                 }
-            //}
             
         }
 
@@ -197,10 +189,10 @@ namespace VendTech.BLL.Managers
         }
         private async Task ProcessSuccess(VtechExtensionResponse vendResponse,
             VendtechExtSalesResult vendResponseResult,
-            TransactionDetail transactionDetail)
+            TransactionDetail transactionDetail, long posId)
         {
             vendResponseResult = vendResponse?.Result;
-            POS pos = transactionDetail.User.POS.FirstOrDefault(d => d.POSId == transactionDetail.POSId);
+            POS pos = transactionDetail.User.POS.FirstOrDefault(d => d.POSId == posId);
             transactionDetail = await UpdateTransactionOnSuccess(vendResponseResult, transactionDetail, pos);
 
             Common.PushNotification.Instance
@@ -286,47 +278,49 @@ namespace VendTech.BLL.Managers
            await _context.TransactionDetails.Where(p => p.Status ==
            (int)RechargeMeterStatusEnum.Pending && p.MeterNumber1.ToLower() == MeterNumber.ToLower()).FirstOrDefaultAsync();
 
-        public async Task<ReceiptModel> GetStatusFromVendtechExtension(string trxId)
+        public async Task<ReceiptModel> GetStatusFromVendtechExtension(string trxId, long userId)
         {
             var response = new ReceiptModel { ReceiptStatus = new ReceiptStatus { Status = "", Message = "" } };
-            try
-            {
-                var pendingTrax = _context.TransactionDetails.FirstOrDefault(e => e.TransactionId == trxId);
+            var pendingTrax = _context.TransactionDetails.FirstOrDefault(e => e.TransactionId == trxId);
+            if (userId == 0)
+                userId = pendingTrax.UserId;
 
-                if (pendingTrax == null)
-                {
-                    response.ReceiptStatus.Status = "unsuccessful";
-                    response.ReceiptStatus.Message = "Unable to find transaction";
-                    return response;
-                }
-
-                var requestModel = new RechargeMeterModel
-                {
-                    UserId = pendingTrax.UserId,
-                    TransactionId = Convert.ToInt64(pendingTrax.TransactionId),
-                };
-
-                var verifiedTrax = await ProcessTransaction(true, requestModel, pendingTrax, true);
-
-                if (verifiedTrax != null)
-                {
-                    var receipt = BuildRceipt(verifiedTrax);
-                    receipt.ShouldShowSmsButton = (bool)verifiedTrax.POS.WebSms;
-                    receipt.ShouldShowPrintButton = (bool)verifiedTrax.POS.WebPrint;
-                    receipt.mobileShowSmsButton = (bool)verifiedTrax.POS.PosSms;
-                    receipt.mobileShowPrintButton = (bool)verifiedTrax.POS.PosPrint;
-                    receipt.ReceiptStatus.Status = "successful";
-                    return receipt;
-                }
-
-                return response;
-            }
-            catch (ArgumentException ex)
+            var pos = await _context.POS.FirstOrDefaultAsync(p => p.VendorId == userId);
+            if (pendingTrax == null)
             {
                 response.ReceiptStatus.Status = "unsuccessful";
-                response.ReceiptStatus.Message = ex.Message;
+                response.ReceiptStatus.Message = "Unable to find transaction";
                 return response;
             }
+
+            if (pos == null)
+            {
+                response.ReceiptStatus.Status = "unsuccessful";
+                response.ReceiptStatus.Message = "Uuser account does not have a pos";
+                return response;
+            }
+
+            var requestModel = new RechargeMeterModel
+            {
+                UserId = pendingTrax.UserId,
+                TransactionId = Convert.ToInt64(pendingTrax.TransactionId),
+                POSId = pos.POSId
+            };
+
+            var verifiedTrax = await ProcessTransaction(true, requestModel, pendingTrax, true);
+
+            if (verifiedTrax != null)
+            {
+                var receipt = BuildRceipt(verifiedTrax);
+                receipt.ShouldShowSmsButton = (bool)verifiedTrax.POS.WebSms;
+                receipt.ShouldShowPrintButton = (bool)verifiedTrax.POS.WebPrint;
+                receipt.mobileShowSmsButton = (bool)verifiedTrax.POS.PosSms;
+                receipt.mobileShowPrintButton = (bool)verifiedTrax.POS.PosPrint;
+                receipt.ReceiptStatus.Status = "successful";
+                return receipt;
+            }
+
+            return response;
         }
 
         public ReceiptModel BuildRceipt(TransactionDetail model)
@@ -407,6 +401,8 @@ namespace VendTech.BLL.Managers
                 trans.MeterToken2 = voucher.MeterToken2?.ToString() ?? string.Empty;
                 trans.MeterToken3 = voucher?.MeterToken3?.ToString() ?? string.Empty;
                 trans.Status = (int)RechargeMeterStatusEnum.Success;
+                trans.POSId = pos.POSId;
+                trans.UserId = pos.VendorId.Value;
                 trans.AccountNumber = voucher?.AccountNumber ?? string.Empty;
                 trans.Customer = voucher?.Customer ?? string.Empty;
                 trans.ReceiptNumber = voucher?.ReceiptNumber ?? string.Empty;
@@ -494,7 +490,7 @@ namespace VendTech.BLL.Managers
                 Amount = model.Amount,
                 MeterNumber = model.MeterNumber,
                 TransactionId = model.TransactionId.ToString(),
-                Simulate = "pending"
+                Simulate = ""
             };
         }
 

@@ -701,7 +701,7 @@ namespace VendTech.BLL.Managers
                 return response;
             }
 
-            model.UpdateRequestModel(meter == null ? "" : meter?.Number);
+            model.UpdateRequestModel(meter == null ? "" : meter?.Number, posId: pos.POSId);
 
             var pendingTrx = await getLastMeterPendingTransaction(model.MeterNumber);
 
@@ -742,7 +742,7 @@ namespace VendTech.BLL.Managers
                 if (!treatAsPending)
                     transactionDetail = await CreateRecordBeforeVend(model);
 
-                model.UpdateRequestModel(transactionDetail);
+                model.UpdateRequestModel(transactionDetail, model.POSId);
 
                 vendResponse = await MakeRechargeRequest(model, transactionDetail);
 
@@ -782,7 +782,7 @@ namespace VendTech.BLL.Managers
             }
             else
             {
-                model.UpdateRequestModel(transactionDetail);
+                model.UpdateRequestModel(transactionDetail, model.POSId);
 
                 var vendStatus = await QueryVendStatus(model, transactionDetail);
                 transactionDetail = await ProcessQueryVendStatus(vendStatus, transactionDetail, model);
@@ -2006,7 +2006,8 @@ namespace VendTech.BLL.Managers
                     if (string.IsNullOrEmpty(unclaimedVo_vendStatus?.Values?.FirstOrDefault()?.Content?.VoucherPin))
                     {
                         await Task.Run(() => FlagTransaction(current_transaction_record, RechargeMeterStatusEnum.Pending));
-                        return await ProcessTransaction(false, model, current_transaction_record, true, true);
+                        //return await ProcessTransaction(false, model, current_transaction_record, true, true);
+                        return null;
                     }
 
                     if (!string.IsNullOrEmpty(unclaimedVo_vendStatus?.Values?.FirstOrDefault()?.Content?.VoucherPin))

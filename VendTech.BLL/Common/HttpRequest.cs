@@ -4,6 +4,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web.Configuration;
+using VendTech.BLL.Common;
 
 public class ReliableHttpClient
 {
@@ -17,7 +18,6 @@ public class ReliableHttpClient
         _maxRetries = maxRetries;
         _timeoutSeconds = timeoutSeconds;
 
-        // Load API Key from Web.config
         string apiKey = WebConfigurationManager.AppSettings["ApiKey"]?.ToString();
         if (!string.IsNullOrEmpty(apiKey) && !_httpClient.DefaultRequestHeaders.Contains("X-Api-Key"))
         {
@@ -50,12 +50,14 @@ public class ReliableHttpClient
                     }
                 }
             }
-            catch (TaskCanceledException)
+            catch (TaskCanceledException ex)
             {
+                Utilities.LogExceptionToDatabase(new Exception($"TaskCanceledException"), ex.Message);
                 Console.WriteLine($"Request timeout on attempt {attempt}. Retrying...");
             }
             catch (HttpRequestException ex)
             {
+                Utilities.LogExceptionToDatabase(new Exception($"HttpRequestException"), ex.Message);
                 Console.WriteLine($"Network error: {ex.Message}. Retrying...");
             }
 

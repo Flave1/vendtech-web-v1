@@ -5,7 +5,7 @@ import { connection } from './admin_connection.js';
 connection.on("UpdateWigdetSales", function (message) {
     refreshBalances();
     //refreshVendStatus();
-    refreshSalesStatus();
+    //refreshSalesStatus();
 });
 
 connection.on("UpdateWigdetDeposits", function (message) {

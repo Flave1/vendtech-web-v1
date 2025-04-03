@@ -2,6 +2,7 @@
 using Quartz.Impl;
 using System;
 using System.Security.Cryptography;
+using System.Threading.Tasks;
 using System.Web;
 using System.Web.Http;
 using System.Web.Mvc;
@@ -62,8 +63,7 @@ namespace VendTech
             GlobalConfiguration.Configure(WebApiConfig.Register);
             FilterConfig.RegisterGlobalFilters(GlobalFilters.Filters);
             RouteConfig.RegisterRoutes(RouteTable.Routes);
-            BundleConfig.RegisterBundles(BundleTable.Bundles);
-           
+            BundleConfig.RegisterBundles(BundleTable.Bundles);           
         }
         
 
@@ -116,6 +116,12 @@ namespace VendTech
                     if (error is OperationCanceledException canceledException)
                     {
                         LogOperationCanceledException(canceledException);
+                        Server.ClearError(); // Clear the error to prevent further handling
+                        return;
+                    }
+                    if (error is TaskCanceledException taskCanceledException)
+                    {
+                        LogOperationCanceledException(taskCanceledException);
                         Server.ClearError(); // Clear the error to prevent further handling
                         return;
                     }

@@ -234,14 +234,6 @@ namespace VendTech.Controllers
 
         }
 
-        //[HttpPost, AjaxOnly]
-        //public JsonResult Recharge(RechargeMeterModel model)
-        //{
-        //    model.UserId = LOGGEDIN_USER.UserID;
-
-        //    return JsonResult(_meterManager.RechargeMeter(model));
-        //}
-
         [Obsolete]
         [AjaxOnly, HttpPost, Public]
         public JsonResult ReturnVoucher(RequestObject tokenobject)
@@ -259,7 +251,9 @@ namespace VendTech.Controllers
 
             try
             {
-                var result = await _vendtechExtensionSales.GetStatusFromVendtechExtension(tokenobject.token_string);
+                long userId = LOGGEDIN_USER.UserID;
+
+                var result = await _vendtechExtensionSales.GetStatusFromVendtechExtension(tokenobject.token_string, userId);
                 if (string.IsNullOrEmpty(result.ReceiptStatus.Status))
                 {
                     return Json(new { Success = false, Code = 302, Msg = "Meter Recharge not successful" });
