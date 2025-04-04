@@ -340,20 +340,52 @@ namespace VendTech.BLL.Common
 
         }
 
-        public static string LogExceptionToDatabase(Exception exc, string source = "")
+        public static string LogExceptionToDatabase(Exception exception, string sourceInfo = "")
         {
-            var context = new VendtechEntities();
-            ErrorLog errorObj = new ErrorLog();
-            errorObj.Message = exc.Message;
-            errorObj.StackTrace = exc.StackTrace;
-            errorObj.InnerException = exc.InnerException == null ? "" : exc.InnerException.Message;
-            errorObj.LoggedInDetails = source;
-            errorObj.LoggedAt = DateTime.UtcNow;
-            errorObj.UserId = 0;
-            context.ErrorLogs.Add(errorObj);
-            // To do
-            context.SaveChanges();
-            return errorObj.ErrorLogID.ToString();
+            try
+            {
+                using (var context = new VendtechEntities())
+                {
+                    var errorObj = new ErrorLog
+                    {
+                        Message = exception.Message,
+                        StackTrace = exception.StackTrace,
+                        InnerException = GetFullInnerExceptionMessage(exception),
+                        LoggedInDetails = sourceInfo,
+                        LoggedAt = DateTime.UtcNow,
+                        FormData = exception.GetType().FullName,
+                        RouteData = exception.Source,
+                        UserId = 0 // You can later pass a userId parameter
+                    };
+
+                    context.ErrorLogs.Add(errorObj);
+                    context.SaveChanges();
+
+                    return errorObj.ErrorLogID.ToString();
+                }
+            }
+            catch (Exception logEx)
+            {
+                // In case logging itself fails, write to file or event log
+                System.Diagnostics.Debug.WriteLine("Logging failed: " + logEx.Message);
+                return null;
+            }
+        }
+
+        private static string GetFullInnerExceptionMessage(Exception ex)
+        {
+            if (ex == null) return string.Empty;
+
+            var messages = new List<string>();
+            var current = ex.InnerException;
+
+            while (current != null)
+            {
+                messages.Add($"{current.GetType().Name}: {current.Message}");
+                current = current.InnerException;
+            }
+
+            return string.Join(" | ", messages);
         }
 
         public static void SendEmail(string to, string sub, string body)

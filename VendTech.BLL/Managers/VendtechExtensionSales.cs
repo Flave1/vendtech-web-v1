@@ -80,7 +80,7 @@ namespace VendTech.BLL.Managers
         {
             VtechExtensionResponse vendResponse = null;
             VendtechExtSalesResult vendResponseResult = new VendtechExtSalesResult();
-
+            int retryCount = 0;
                 try
                 {
                     if (!isDuplicate)
@@ -150,8 +150,25 @@ namespace VendTech.BLL.Managers
                 }
                 catch (Exception ex)
                 {
-                    Utilities.LogExceptionToDatabase(new Exception($"ProcessTransactionException for {model.TransactionId}", ex), ex.Source);
-                    throw;
+                    retryCount = retryCount + 1;
+                    Utilities.LogExceptionToDatabase(
+                        new Exception($"ProcessTransactionException for {model.TransactionId} || {transactionDetail.TransactionId} || retried {retryCount} time(s)", ex),
+                        $"Source: {ex?.Source ?? "Unknown"}, Inner: {ex?.InnerException?.Message ?? "None"}"
+                    );
+
+                    if (transactionDetail != null && !string.IsNullOrEmpty(transactionDetail.TransactionId) && retryCount != 5)
+                    {
+                        var requestModel = new RechargeMeterModel
+                        {
+                            UserId = transactionDetail.UserId,
+                            TransactionId = Convert.ToInt64(transactionDetail.TransactionId),
+                            POSId = transactionDetail.POSId.Value
+                        };
+                        return await ProcessTransaction(true, requestModel, transactionDetail, true);
+                    }
+                    else
+                        throw;
+
                 }
             
         }
@@ -422,16 +439,20 @@ namespace VendTech.BLL.Managers
                 trans.VoucherSerialNumber = response_data?.SuccessResponse?.Voucher.VoucherSerialNumber ?? string.Empty;
                 trans.VendStatus = "";
                 await _context.SaveChangesAsync();
+
                 //BALANCE DEDUCTION
                 trans = await _posManager.DeductBalanceAsync(pos.POSId, trans);
+
+
+                return trans;
             }
-            catch (Exception ex)
+            catch (NullReferenceException ex)
             {
-                Utilities.LogExceptionToDatabase(new Exception($"UpdateTransact at {DateTime.UtcNow} for traxId {trans.TransactionId} user: {trans.UserId}"), $"Exception: {JsonConvert.SerializeObject(ex)}");
+                string contextInfo = $"NullReferenceException at {DateTime.UtcNow} for traxId: {trans?.TransactionId ?? "N/A"}";
+                Utilities.LogExceptionToDatabase(ex, contextInfo);
+
                 throw;
             }
-
-            return trans;
         }
 
         private async Task<TransactionDetail> CreateRecordBeforeVend(RechargeMeterModel model)
