@@ -25,7 +25,7 @@ namespace VendTech.BLL.Interfaces
         PagingResult<DepositListingModel> GetAllPendingDepositPagedList(PagingModel model, bool getForRelease = false, long vendorId = 0, string status = "");
         PagingResult<DepositLogListingModel> GetDepositLogsPagedList(PagingModel model);
         decimal GetPendingDepositTotal();
-        Task<ActionOutput> ChangeDepositStatus(long depositId, DepositPaymentStatusEnum status, bool isAutoApprove = false); 
+        Task<ActionOutput> ChangeDepositStatus(long depositId, DepositPaymentStatusEnum status, bool isAutoApprove = false, long approver = 40249); 
         ActionOutput<string> SendOTP();
         ActionOutput<PendingDeposit> SaveDepositRequest(DepositModel model, bool forAgents = false);
         Task<ActionOutput<List<long>>> ChangeMultipleDepositStatus(ReleaseDepositModel model, long userId);

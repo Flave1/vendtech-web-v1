@@ -120,27 +120,27 @@ namespace VendTech.Areas.Admin.Controllers
         public async Task<JsonResult> ApproveDeposit(long depositId)
         {
             ViewBag.SelectedTab = SelectedAdminTab.Deposits;
-            var result = await _depositManager.ChangeDepositStatus(depositId, DepositPaymentStatusEnum.ApprovedByAccountant);
+            var result = await _depositManager.ChangeDepositStatus(depositId, DepositPaymentStatusEnum.ApprovedByAccountant,false, LOGGEDIN_USER.UserID);
             return JsonResult(result.Results);
         }
         [AjaxOnly, HttpPost]
         public async Task<JsonResult> RejectDeposit(long depositId)
         {
             ViewBag.SelectedTab = SelectedAdminTab.Deposits;
-            return JsonResult(await _depositManager.ChangeDepositStatus(depositId, DepositPaymentStatusEnum.RejectedByAccountant));
+            return JsonResult(await _depositManager.ChangeDepositStatus(depositId, DepositPaymentStatusEnum.RejectedByAccountant, false, LOGGEDIN_USER.UserID));
         }
 
         [AjaxOnly, HttpPost]
         public async Task<JsonResult> ApproveReleaseDeposit(long depositId)
         {
             ViewBag.SelectedTab = SelectedAdminTab.Deposits; 
-            return JsonResult(await _depositManager.ChangeDepositStatus(depositId, DepositPaymentStatusEnum.Released));
+            return JsonResult(await _depositManager.ChangeDepositStatus(depositId, DepositPaymentStatusEnum.Released,false, LOGGEDIN_USER.UserID));
         }
         [AjaxOnly, HttpPost]
         public async Task<JsonResult> RejectReleaseDeposit(long depositId)
         {
             ViewBag.SelectedTab = SelectedAdminTab.Deposits;
-            return JsonResult(await _depositManager.ChangeDepositStatus(depositId, DepositPaymentStatusEnum.Rejected));
+            return JsonResult(await _depositManager.ChangeDepositStatus(depositId, DepositPaymentStatusEnum.Rejected, false, LOGGEDIN_USER.UserID));
         }
 
         public ActionResult AddDeposit()

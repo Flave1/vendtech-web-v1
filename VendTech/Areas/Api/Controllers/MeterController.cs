@@ -181,7 +181,11 @@ namespace VendTech.Areas.Api.Controllers
             }
             model.UserId = LOGGEDIN_USER.UserId;
             var result = await _vendtechExtensionSales.RechargeFromVendtechExtension(model);
-            if(string.IsNullOrEmpty(result.Pin1))
+            if (result == null)
+            {
+                return new JsonContent("Please try again!", Status.Failed, result).ConvertToHttpResponseOK();
+            }
+            if (string.IsNullOrEmpty(result.Pin1))
                     result.ReceiptStatus.Status = "unsuccessfull";
 
             return new JsonContent(result.ReceiptStatus.Message, result.ReceiptStatus.Status == "unsuccessfull" ? Status.Failed : Status.Success, result).ConvertToHttpResponseOK();

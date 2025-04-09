@@ -68,7 +68,7 @@ namespace VendTech.Areas.Api.Controllers
             string mesg = pd.Message;
             if (pd.Object.User.AutoApprove.Value)
             {
-                await _depositManager.ChangeDepositStatus(pd.Object.PendingDepositId, DepositPaymentStatusEnum.Released, true);
+                await _depositManager.ChangeDepositStatus(pd.Object.PendingDepositId, DepositPaymentStatusEnum.Released, true, LOGGEDIN_USER.UserId);
 
                 var deposit = _depositManager.GetDeposit(pd.Object.PendingDepositId);
                 emailNotification.SendEmailToUserOnDepositApproval(deposit);

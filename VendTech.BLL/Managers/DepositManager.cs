@@ -1875,7 +1875,7 @@ namespace VendTech.BLL.Managers
             return amt;
         }
 
-        async Task<ActionOutput> IDepositManager.ChangeDepositStatus(long depositId, DepositPaymentStatusEnum status, bool isAutoApprove)
+        async Task<ActionOutput> IDepositManager.ChangeDepositStatus(long depositId, DepositPaymentStatusEnum status, bool isAutoApprove, long approver)
         {
             try
             {
@@ -1887,7 +1887,7 @@ namespace VendTech.BLL.Managers
                 {
                     if (status == DepositPaymentStatusEnum.Released)
                     {
-                        dbDeposit = await ProcessTransaction(dbpendingDeposit, status);
+                        dbDeposit = await ProcessTransaction(dbpendingDeposit, status, approver);
                     }
                 }
 
@@ -1900,7 +1900,7 @@ namespace VendTech.BLL.Managers
             }
         }
 
-        private async Task<Deposit> ProcessTransaction(PendingDeposit dbpendingDeposit, DepositPaymentStatusEnum status)
+        private async Task<Deposit> ProcessTransaction(PendingDeposit dbpendingDeposit, DepositPaymentStatusEnum status, long approver)
         {
             var depositDto = new DepositDTOV2
             {
@@ -1913,6 +1913,7 @@ namespace VendTech.BLL.Managers
                 UserId = dbpendingDeposit.UserId,
                 NameOnCheque = dbpendingDeposit.NameOnCheque,
                 Status = (int)status,
+                Approver = approver
             };
 
             var deposit = await _balDepOperations.CreateDeposit(depositDto, true);
@@ -2034,7 +2035,7 @@ namespace VendTech.BLL.Managers
                 {
                     foreach (var depositId in model.ReleaseDepositIds)
                     {
-                        await (this as IDepositManager).ChangeDepositStatus(depositId, DepositPaymentStatusEnum.Released, false);
+                        await (this as IDepositManager).ChangeDepositStatus(depositId, DepositPaymentStatusEnum.Released, false, userId);
                     }
                 }
                 return ReturnSuccess(userIds, "DEPOSIT APPROVED SUCCESSFULLY");

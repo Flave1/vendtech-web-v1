@@ -84,14 +84,14 @@ namespace VendTech.Areas.Admin.Controllers
         public async Task<JsonResult> ApproveReleaseDeposit(long depositId)
         {
             ViewBag.SelectedTab = SelectedAdminTab.Deposits;
-            var result = await _depositManager.ChangeDepositStatus(depositId, DepositPaymentStatusEnum.Released, false);
+            var result = await _depositManager.ChangeDepositStatus(depositId, DepositPaymentStatusEnum.Released, false, LOGGEDIN_USER.UserID);
             return JsonResult(result);
         }
         [AjaxOnly, HttpPost]
         public async Task<JsonResult> RejectReleaseDeposit(long depositId)
         {
             ViewBag.SelectedTab = SelectedAdminTab.Deposits;
-            return JsonResult(await _depositManager.ChangeDepositStatus(depositId, DepositPaymentStatusEnum.Rejected, false));
+            return JsonResult(await _depositManager.ChangeDepositStatus(depositId, DepositPaymentStatusEnum.Rejected, false, LOGGEDIN_USER.UserID));
         }
         [AjaxOnly, HttpPost]
         public JsonResult SendOTP()
@@ -201,7 +201,7 @@ namespace VendTech.Areas.Admin.Controllers
                 var pds = _depositManager.GetPendingDeposits(model.ReleaseDepositIds);
                 for (int i = 0; i < pds.Count; i++)
                 {
-                    ActionOutput result = await _depositManager.ChangeDepositStatus(pds[i].PendingDepositId, DepositPaymentStatusEnum.Released, true);
+                    ActionOutput result = await _depositManager.ChangeDepositStatus(pds[i].PendingDepositId, DepositPaymentStatusEnum.Released, true, LOGGEDIN_USER.UserID);
 
                     var deposit = _depositManager.GetDeposit(pds[i].PendingDepositId);
                     emailNotification.SendEmailToUserOnDepositApproval(deposit);
