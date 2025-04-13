@@ -195,8 +195,52 @@ namespace VendTech.Areas.Api.Controllers
         [ResponseType(typeof(ResponseBase))]
         public HttpResponseMessage TransactionDetail(Tokenobject tokenobject)
         {
-            var result = _meterManager.ReturnVoucherReceipt(tokenobject.Token.Trim());
-            return new JsonContent(result.ReceiptStatus.Message, result.ReceiptStatus.Status == "unsuccessfull" ? Status.Failed : Status.Success, result).ConvertToHttpResponseOK();
+            try
+            {
+                if (tokenobject == null || string.IsNullOrWhiteSpace(tokenobject.Token))
+                {
+                    return new JsonContent("Invalid token provided", Status.Failed).ConvertToHttpResponseOK();
+                }
+
+                var cleanedToken = string.Concat(tokenobject.Token.Where(c => !Char.IsWhiteSpace(c)));
+                if (string.IsNullOrEmpty(cleanedToken))
+                {
+                    return new JsonContent("Invalid token format", Status.Failed).ConvertToHttpResponseOK();
+                }
+
+                // Execute synchronously to maintain HttpContext
+                var result = _meterManager.ReturnVoucherReceipt(cleanedToken);
+                
+                if (result == null)
+                {
+                    return new JsonContent("Transaction not found", Status.Failed).ConvertToHttpResponseOK();
+                }
+
+                if (result.ReceiptStatus?.Status == "unsuccessful")
+                {
+                    return new JsonContent(
+                        result.ReceiptStatus.Message ?? "Unable to process transaction",
+                        Status.Failed
+                    ).ConvertToHttpResponseOK();
+                }
+
+
+                return new JsonContent(
+                    null,
+                    Status.Success,
+                    result
+                ).ConvertToHttpResponseOK();
+            }
+            catch (InvalidOperationException ex)
+            {
+                _errorLogManager.LogExceptionToDatabase(ex);
+                return new JsonContent("System configuration error", Status.Failed).ConvertToHttpResponseOK();
+            }
+            catch (Exception ex)
+            {
+                _errorLogManager.LogExceptionToDatabase(ex);
+                return new JsonContent("An error occurred while processing the transaction", Status.Failed).ConvertToHttpResponseOK();
+            }
         }
 
 

@@ -155,10 +155,31 @@ namespace VendTech.BLL.Common
         {
             get
             {
-                var domain = string.Empty;
-                Uri url = System.Web.HttpContext.Current.Request.Url;
-                domain = url.AbsoluteUri.Replace(url.PathAndQuery, string.Empty);
-                return domain;
+                try
+                {
+                    if (System.Web.HttpContext.Current == null)
+                    {
+                        // Fallback to configuration if running in background
+                        return WebConfigurationManager.AppSettings["BaseUrl"]?.ToString() ?? 
+                               throw new InvalidOperationException("Domain URL not configured");
+                    }
+
+                    Uri url = System.Web.HttpContext.Current.Request.Url;
+                    if (url == null)
+                    {
+                        return WebConfigurationManager.AppSettings["BaseUrl"]?.ToString() ?? 
+                               throw new InvalidOperationException("Domain URL not configured");
+                    }
+
+                    return url.AbsoluteUri.Replace(url.PathAndQuery, string.Empty);
+                }
+                catch (Exception ex)
+                {
+                    LogExceptionToDatabase(ex, "Error getting domain URL");
+                    // Fallback to configuration
+                    return WebConfigurationManager.AppSettings["DomainUrl"]?.ToString() ?? 
+                           throw new InvalidOperationException("Domain URL not configured");
+                }
             }
         }
 
@@ -440,7 +461,7 @@ namespace VendTech.BLL.Common
             }
             catch (Exception x)
             {
-                LogExceptionToDatabase(new Exception("SendEmail err 1", x));
+                //LogExceptionToDatabase(new Exception("SendEmail err 1", x));
             }
 
         }

@@ -124,7 +124,7 @@ namespace VendTech.BLL.Models
             if (trx == null) return false;
             if(MeterNumber == trx.MeterNumber1 && Amount == trx.Amount)
             {
-                return true;
+                return false; ///reverse later
             }
             return false;
         }

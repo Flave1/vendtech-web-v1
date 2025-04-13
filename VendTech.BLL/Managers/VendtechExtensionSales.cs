@@ -1,7 +1,6 @@
 ﻿using Newtonsoft.Json;
 using System.Threading.Tasks;
 using System.Web.Configuration;
-using System.Web;
 using System;
 using VendTech.BLL.Interfaces;
 using VendTech.BLL.Models;
@@ -11,13 +10,11 @@ using VendTech.BLL.Common;
 using System.Data.Entity.Migrations;
 using System.Linq;
 using System.Net.Http;
-using System.IdentityModel;
-using Google.Api.Gax;
 using System.Data.Entity.Infrastructure;
 using System.Transactions;
 using Polly;
-using System.Threading;
 using System.Data.SqlClient;
+using Org.BouncyCastle.Asn1.Ocsp;
 
 namespace VendTech.BLL.Managers
 {
@@ -34,12 +31,11 @@ namespace VendTech.BLL.Managers
             this.idGenerator = idGenerator;
             _posManager = posManager;
             
-            // Configure retry policy for database operations
             _retryPolicy = Policy
                 .Handle<DbUpdateException>()
                 .Or<DbUpdateConcurrencyException>()
                 .Or<SqlException>()
-                .WaitAndRetryAsync(3, retryAttempt => 
+                .WaitAndRetryAsync(5, retryAttempt => 
                     TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
         }
 
@@ -201,9 +197,14 @@ namespace VendTech.BLL.Managers
                 transactionDetail.VendStatus = vendResponseResult.FailedResponse.ErrorMessage;
                 transactionDetail.VendStatusDescription = vendResponseResult?.FailedResponse?.ErrorDetail;
                 transactionDetail.QueryStatusCount = count;
+                transactionDetail.StatusResponse = JsonConvert.SerializeObject(vendResponseResult);
                 count += 1;
-                _context.TransactionDetails.AddOrUpdate(transactionDetail);
-                await _context.SaveChangesAsync();
+                
+                using (var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+                {
+                    await _retryPolicy.ExecuteAsync(async () => await _context.SaveChangesAsync());
+                    transaction.Complete();
+                }
             } while (vendResponse.Status.ToLower() == "pending");
         }
 
@@ -211,12 +212,22 @@ namespace VendTech.BLL.Managers
             VendtechExtSalesResult vendResponseResult,
             TransactionDetail transactionDetail)
         {
-            vendResponseResult = vendResponse?.Result;
-            transactionDetail.VendStatus = vendResponseResult.FailedResponse.ErrorMessage;
-            transactionDetail.VendStatusDescription = vendResponseResult?.FailedResponse?.ErrorDetail;
-            await UpdateTransactionOnFailed(vendResponse?.Result, transactionDetail);
-            _context.TransactionDetails.AddOrUpdate(transactionDetail);
-            await _context.SaveChangesAsync();
+            using (var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+            {
+                vendResponseResult = vendResponse?.Result;
+
+                transactionDetail.VendStatus = vendResponseResult.FailedResponse.ErrorMessage;
+                transactionDetail.VendStatusDescription = vendResponseResult?.FailedResponse?.ErrorDetail;
+                transactionDetail.Status = (int)RechargeMeterStatusEnum.Failed;
+                transactionDetail.Finalised = true;
+                transactionDetail.PaymentStatus = (int)PaymentStatus.Failed;
+                transactionDetail.VendStatus = vendResponseResult?.Status;
+                transactionDetail.VendStatusDescription = vendResponseResult?.Status;
+
+                await _retryPolicy.ExecuteAsync(async () => await _context.SaveChangesAsync());
+                transaction.Complete();
+            }
+            
             ReadErrorMessage(vendResponse.Message, vendResponse.Result.Code, transactionDetail);
         }
         private async Task ProcessSuccess(VtechExtensionResponse vendResponse,
@@ -279,18 +290,24 @@ namespace VendTech.BLL.Managers
 
         private void FlagTransaction(TransactionDetail tx, RechargeMeterStatusEnum status)
         {
-            tx.Status = (int)status;
-            _context.TransactionDetails.AddOrUpdate(tx);
-            _context.SaveChanges();
+            using (var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+            {
+                tx.Status = (int)status;
+                _retryPolicy.ExecuteAsync(async () => await _context.SaveChangesAsync()).GetAwaiter().GetResult();
+                transaction.Complete();
+            }
         }
         private void DisablePlatform(PlatformTypeEnum pl)
         {
             var plt = _context.Platforms.FirstOrDefault(d => d.PlatformType == (int)pl);
             if (plt != null)
             {
-                plt.DisablePlatform = true;
-                _context.Platforms.AddOrUpdate(plt);
-                _context.SaveChanges();
+                using (var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+                {
+                    plt.DisablePlatform = true;
+                    _retryPolicy.ExecuteAsync(async () => await _context.SaveChangesAsync()).GetAwaiter().GetResult();
+                    transaction.Complete();
+                }
             }
         }
 
@@ -328,7 +345,7 @@ namespace VendTech.BLL.Managers
             if (pos == null)
             {
                 response.ReceiptStatus.Status = "unsuccessful";
-                response.ReceiptStatus.Message = "Uuser account does not have a pos";
+                response.ReceiptStatus.Message = "User account does not have a pos";
                 return response;
             }
 
@@ -433,19 +450,7 @@ namespace VendTech.BLL.Managers
             }
         }
          
-        private async Task UpdateTransactionOnFailed(VendtechExtSalesResult response_data, TransactionDetail trans)
-        {
-            trans.Status = (int)RechargeMeterStatusEnum.Failed;
-            trans.Finalised = false;
-            trans.PaymentStatus = (int)PaymentStatus.Failed;
-            trans.VendStatus = response_data?.Status;
-            trans.VendStatusDescription = response_data?.Status;
-            trans.StatusResponse = JsonConvert.SerializeObject(response_data);
-
-            await _context.SaveChangesAsync();
-            return;
-
-        }
+       
         private async Task<TransactionDetail> UpdateTransactionOnSuccess(VendtechExtSalesResult response_data, TransactionDetail trans, POS pos)
         {
             try
@@ -459,7 +464,6 @@ namespace VendTech.BLL.Managers
                 {
                     // Update transaction details
                     trans.CostOfUnits = voucher.CostOfUnits ?? "0";
-                    trans.CreatedAt = DateTime.UtcNow;
                     trans.MeterToken1 = voucher.MeterToken1?.ToString() ?? string.Empty;
                     trans.MeterToken2 = voucher.MeterToken2?.ToString() ?? string.Empty;
                     trans.MeterToken3 = voucher?.MeterToken3?.ToString() ?? string.Empty;
@@ -622,8 +626,5 @@ namespace VendTech.BLL.Managers
             VtechExtensionResponse response = JsonConvert.DeserializeObject<VtechExtensionResponse>(strings_result);
             return response;
         }
-
-       
-    
     }
 }

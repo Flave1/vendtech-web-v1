@@ -21,7 +21,7 @@ namespace VendTech.BLL.Common
                     return false;
                 else
                 {
-                    Utilities.LogExceptionToDatabase(new Exception($"ID EXIST : {transactionId}"));
+                    //Utilities.LogExceptionToDatabase(new Exception($"ID EXIST : {transactionId}"));
                     return true;
                 }
             }
