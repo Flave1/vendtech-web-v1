@@ -124,21 +124,20 @@ namespace VendTech.BLL.Models
             if (trx == null) return false;
             if(MeterNumber == trx.MeterNumber1 && Amount == trx.Amount)
             {
-                return false; ///reverse later
+                return true; ///reverse later
             }
             return false;
         }
-        public string validateRequest(User user, POS pos)
+        public string validateRequest(User user, POS pos, Platform platform)
         {
-            Platform platf = new Platform();
             if (PlatformId == null)
             {
                 PlatformId = 1;
             }
 
-            if (platf.DisablePlatform)
+            if (platform != null && platform.DisablePlatform)
             {
-                return platf.DisabledPlatformMessage;
+                return platform.DisabledPlatformMessage;
             }
 
             if (user == null)

@@ -15,6 +15,7 @@ using System.Transactions;
 using Polly;
 using System.Data.SqlClient;
 using Org.BouncyCastle.Asn1.Ocsp;
+using System.Runtime.InteropServices;
 
 namespace VendTech.BLL.Managers
 {
@@ -24,6 +25,8 @@ namespace VendTech.BLL.Managers
         private readonly TransactionIdGenerator idGenerator;
         private readonly IPOSManager _posManager;
         private readonly IAsyncPolicy _retryPolicy;
+        private readonly IAsyncPolicy _timeoutPolicy;
+        private const int DEFAULT_TIMEOUT_SECONDS = 30;
 
         public VendtechExtensionSales(VendtechEntities context, TransactionIdGenerator idGenerator, IPOSManager posManager)
         {
@@ -31,12 +34,85 @@ namespace VendTech.BLL.Managers
             this.idGenerator = idGenerator;
             _posManager = posManager;
             
+            // Configure retry policy for retriable database operations
             _retryPolicy = Policy
-                .Handle<DbUpdateException>()
+                .Handle<DbUpdateException>(ex => !IsDeadlockException(ex)) // Don't retry deadlocks
                 .Or<DbUpdateConcurrencyException>()
-                .Or<SqlException>()
-                .WaitAndRetryAsync(5, retryAttempt => 
-                    TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
+                .Or<SqlException>(ex => IsRetriableSqlException(ex))
+                .WaitAndRetryAsync(3, retryAttempt => 
+                    TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
+                    onRetry: (exception, timeSpan, retryCount) =>
+                    {
+                        //{ context?.CorrelationId}
+                        Utilities.LogExceptionToDatabase(
+                            exception, 
+                            $"Retry {retryCount} after {timeSpan.TotalSeconds}s for transaction "
+                        );
+                    });
+
+            // Configure timeout policy
+            _timeoutPolicy = Policy.TimeoutAsync(DEFAULT_TIMEOUT_SECONDS);
+        }
+
+        private bool IsDeadlockException(DbUpdateException ex)
+        {
+            var sqlEx = ex.InnerException as SqlException;
+            return sqlEx?.Number == 1205; // SQL Server deadlock error number
+        }
+
+        private bool IsRetriableSqlException(SqlException ex)
+        {
+            // SQL Server error numbers that are safe to retry
+            int[] retryableErrors = { 
+                -2, // Timeout
+                4060, // Cannot open database
+                40197, // The service has encountered an error processing your request
+                40501, // The service is currently busy
+                40613, // Database is not currently available
+                49918, // Cannot process request
+                49919, // Cannot process create or update request
+                49920, // Service is too busy
+            };
+            
+            return retryableErrors.Contains(ex.Number);
+        }
+
+        private async Task<T> ExecuteInTransaction<T>(Func<Task<T>> operation, string correlationId)
+        {
+            var transactionOptions = new TransactionOptions
+            {
+                IsolationLevel = IsolationLevel.ReadCommitted,
+                Timeout = TimeSpan.FromSeconds(DEFAULT_TIMEOUT_SECONDS)
+            };
+
+            try
+            {
+                using (var scope = new TransactionScope(
+                    TransactionScopeOption.Required,
+                    transactionOptions,
+                    TransactionScopeAsyncFlowOption.Enabled))
+                {
+                    var result = await _timeoutPolicy.ExecuteAsync(async () =>
+                        await _retryPolicy.ExecuteAsync(async (context) =>
+                        {
+                            context["CorrelationId"] = correlationId;
+                            return await operation();
+                        }, new Context()));
+
+                    scope.Complete();
+                    return result;
+                }
+            }
+            catch (TimeoutException ex)
+            {
+                Utilities.LogExceptionToDatabase(ex, $"Transaction timeout for {correlationId}");
+                throw new InvalidOperationException("The operation timed out. Please try again.", ex);
+            }
+            catch (TransactionException ex)
+            {
+                Utilities.LogExceptionToDatabase(ex, $"Transaction error for {correlationId}");
+                throw new InvalidOperationException("Transaction error occurred. Please try again.", ex);
+            }
         }
 
         async Task<ReceiptModel> IVendtechExtensionSales.RechargeFromVendtechExtension(RechargeMeterModel model)
@@ -47,7 +123,8 @@ namespace VendTech.BLL.Managers
             var user = await _context.Users.FirstOrDefaultAsync(p => p.UserId == model.UserId);
             var pos = await _context.POS.FirstOrDefaultAsync(p => p.POSId == model.POSId);
             var meter = await _context.Meters.FirstOrDefaultAsync(d => d.MeterId == model.MeterId);
-            var validationResult = model.validateRequest(user, pos);
+            var platform = await _context.Platforms.FirstOrDefaultAsync(d => d.PlatformType == (int)PlatformTypeEnum.ELECTRICITY);
+            var validationResult = model.validateRequest(user, pos, platform);
 
             if (validationResult != "clear")
             {
@@ -117,6 +194,7 @@ namespace VendTech.BLL.Managers
                         if (vendResponse.Status.ToLower() == "failed")
                         {
                             await ProcessFailed(vendResponse, vendResponseResult, transactionDetail);
+                            //ReadErrorMessage(vendResponseResult.FailedResponse.ErrorMessage, vendResponseResult.Code, transactionDetail);
                             throw new ArgumentException(vendResponseResult.FailedResponse.ErrorMessage);
                         }
 
@@ -458,10 +536,10 @@ namespace VendTech.BLL.Managers
                 if (response_data?.SuccessResponse?.Voucher == null)
                     throw new ArgumentNullException(nameof(response_data.SuccessResponse.Voucher));
 
-                var voucher = response_data.SuccessResponse.Voucher;
-                
-                using (var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+                return await ExecuteInTransaction(async () =>
                 {
+                    var voucher = response_data.SuccessResponse.Voucher;
+                    
                     // Update transaction details
                     trans.CostOfUnits = voucher.CostOfUnits ?? "0";
                     trans.MeterToken1 = voucher.MeterToken1?.ToString() ?? string.Empty;
@@ -488,17 +566,15 @@ namespace VendTech.BLL.Managers
                     trans.VendStatusDescription = "success";
                     trans.VoucherSerialNumber = response_data?.SuccessResponse?.Voucher.VoucherSerialNumber ?? string.Empty;
                     trans.VendStatus = string.Empty;
+                    trans.CreatedAt = DateTime.UtcNow;
 
-                    // Save changes with retry
-                    await _retryPolicy.ExecuteAsync(async () => await _context.SaveChangesAsync());
-
+                    await _context.SaveChangesAsync();
+                    
                     // Deduct balance
                     trans = await _posManager.DeductBalanceAsync(pos.POSId, trans);
-
-                    transaction.Complete();
-                }
-
-                return trans;
+                    
+                    return trans;
+                }, trans.TransactionId);
             }
             catch (Exception ex)
             {
@@ -510,56 +586,57 @@ namespace VendTech.BLL.Managers
 
         private async Task<TransactionDetail> CreateRecordBeforeVend(RechargeMeterModel model)
         {
-            var trans = new TransactionDetail();
-            trans.PlatFormId = (int)model.PlatformId;
-            trans.UserId = model.UserId;
-            trans.MeterId = model.MeterId;
-            trans.POSId = model.POSId;
-            trans.MeterNumber1 = model.MeterNumber;
-            trans.MeterToken1 = model.MeterToken1;
-            trans.Amount = model.Amount;
-            trans.IsDeleted = false;
-            trans.Status = (int)RechargeMeterStatusEnum.Pending;
-            trans.CreatedAt = DateTime.UtcNow;
-            trans.AccountNumber = "";
-            trans.CurrentDealerBalance = 00;
-            trans.Customer = "";
-            trans.ReceiptNumber = "";
-            trans.RequestDate = DateTime.UtcNow;
-            trans.RTSUniqueID = "00";
-            trans.SerialNumber = "";
-            trans.ServiceCharge = "";
-            trans.Tariff = "";
-            trans.TaxCharge = "";
-            trans.TenderedAmount = model.Amount;
-            trans.TransactionAmount = model.Amount;
-            trans.Units = "";
-            trans.VProvider = "";
-            trans.Finalised = false;
-            trans.StatusRequestCount = 0;
-            trans.Sold = false;
-            trans.DateAndTimeSold = "";
-            trans.DateAndTimeFinalised = "";
-            trans.DateAndTimeLinked = "";
-            trans.VoucherSerialNumber = "";
-            trans.VendStatus = "";
-            trans.VendStatusDescription = "";
-            trans.StatusResponse = "";
-            trans.DebitRecovery = "0";
-            trans.CostOfUnits = "0";
-            trans.PaymentStatus = (int)PaymentStatus.Pending;
-            string transactionId = await idGenerator.GenerateNewTransactionId();
-            trans.TransactionId = transactionId;
+            var trans = new TransactionDetail
+            {
+                PlatFormId = (int)model.PlatformId,
+                UserId = model.UserId,
+                MeterId = model.MeterId,
+                POSId = model.POSId,
+                MeterNumber1 = model.MeterNumber,
+                MeterToken1 = model.MeterToken1,
+                Amount = model.Amount,
+                IsDeleted = false,
+                Status = (int)RechargeMeterStatusEnum.Pending,
+                CreatedAt = DateTime.UtcNow,
+                AccountNumber = string.Empty,
+                CurrentDealerBalance = 0,
+                Customer = string.Empty,
+                ReceiptNumber = string.Empty,
+                RequestDate = DateTime.UtcNow,
+                RTSUniqueID = "00",
+                SerialNumber = string.Empty,
+                ServiceCharge = string.Empty,
+                Tariff = string.Empty,
+                TaxCharge = string.Empty,
+                TenderedAmount = model.Amount,
+                TransactionAmount = model.Amount,
+                Units = string.Empty,
+                VProvider = string.Empty,
+                Finalised = false,
+                StatusRequestCount = 0,
+                Sold = false,
+                DateAndTimeSold = string.Empty,
+                DateAndTimeFinalised = string.Empty,
+                DateAndTimeLinked = string.Empty,
+                VoucherSerialNumber = string.Empty,
+                VendStatus = string.Empty,
+                VendStatusDescription = string.Empty,
+                StatusResponse = string.Empty,
+                DebitRecovery = "0",
+                CostOfUnits = "0",
+                PaymentStatus = (int)PaymentStatus.Pending
+            };
 
             try
             {
-                using (var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+                trans.TransactionId = await idGenerator.GenerateNewTransactionId();
+                
+                return await ExecuteInTransaction(async () =>
                 {
                     _context.TransactionDetails.Add(trans);
-                    await _retryPolicy.ExecuteAsync(async () => await _context.SaveChangesAsync());
-                    transaction.Complete();
-                }
-                return trans;
+                    await _context.SaveChangesAsync();
+                    return trans;
+                }, trans.TransactionId);
             }
             catch (Exception ex)
             {
@@ -590,25 +667,18 @@ namespace VendTech.BLL.Managers
 
         private async Task<VtechExtensionResponse> MakeRechargeRequest(RechargeMeterModel model, TransactionDetail transactionDetail)
         {
-            try
-            {
-                string url = WebConfigurationManager.AppSettings["VendtechExtentionServer"].ToString() + "sales/v1/buy";
-                VtechElectricitySaleRequest request_model = Buid_new_request_object(model);
-                var json = JsonConvert.SerializeObject(request_model);
+            string url = WebConfigurationManager.AppSettings["VendtechExtentionServer"].ToString() + "sales/v1/buy";
+            VtechElectricitySaleRequest request_model = Buid_new_request_object(model);
+            var json = JsonConvert.SerializeObject(request_model);
 
-                var client = new ReliableHttpClient();
-                string strings_result = await client.SendPostRequestAsync(url, json);
+            var client = new ReliableHttpClient();
+            string strings_result = await client.SendPostRequestAsync(url, json);
 
-                transactionDetail.Request = JsonConvert.SerializeObject(request_model);
-                transactionDetail.Response = strings_result;
+            transactionDetail.Request = JsonConvert.SerializeObject(request_model);
+            transactionDetail.Response = strings_result;
 
-                VtechExtensionResponse response = JsonConvert.DeserializeObject<VtechExtensionResponse>(strings_result);
-                return response;
-            }
-            catch (HttpRequestException)
-            {
-                throw;
-            }
+            VtechExtensionResponse response = JsonConvert.DeserializeObject<VtechExtensionResponse>(strings_result);
+            return response;
         }
 
         private async Task<VtechExtensionResponse> QueryStatusRequest(RechargeMeterModel model, TransactionDetail transactionDetail)

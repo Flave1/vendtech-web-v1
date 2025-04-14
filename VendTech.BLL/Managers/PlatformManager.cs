@@ -242,9 +242,9 @@ namespace VendTech.BLL.Managers
                     .FirstOrDefault();
                  
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                return new PlatformModel();
+                throw;
             }  
         }
 

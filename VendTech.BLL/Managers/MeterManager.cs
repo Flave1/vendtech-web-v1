@@ -431,9 +431,10 @@ namespace VendTech.BLL.Managers
 
             IQueryable<TransactionDetail> query = null;
             if (!model.IsInitialLoad)
-                query = _context.TransactionDetails.Where(p => !p.IsDeleted && p.POSId != null && p.Finalised == true);
+                query = _context.TransactionDetails.Where(p => !p.IsDeleted && p.POSId != null && p.Finalised == true && p.Status == (int)RechargeMeterStatusEnum.Success);
             else
-                query = _context.TransactionDetails.Where(p => !p.IsDeleted && p.POSId != null && p.Finalised == true && DbFunctions.TruncateTime(p.CreatedAt) == DbFunctions.TruncateTime(DateTime.UtcNow));
+                query = _context.TransactionDetails.Where(p => !p.IsDeleted && p.POSId != null && p.Finalised == true 
+                && DbFunctions.TruncateTime(p.CreatedAt) == DbFunctions.TruncateTime(DateTime.UtcNow) && p.Status == (int)RechargeMeterStatusEnum.Success);
 
             if (model.VendorId > 0)
             {
@@ -615,11 +616,11 @@ namespace VendTech.BLL.Managers
             IQueryable<TransactionDetail> query = null;
             if (platform != PlatformTypeEnum.All)
                 query = _context.TransactionDetails
-                .Where(p => !p.IsDeleted && p.POSId != null && (int)platform == p.Platform.PlatformType && p.Finalised == true)
+                .Where(p => !p.IsDeleted && p.POSId != null && (int)platform == p.Platform.PlatformType && p.Finalised == true && p.Status == (int)RechargeMeterStatusEnum.Success)
                 .OrderByDescending(d => d.CreatedAt);
             else
                 query = _context.TransactionDetails.OrderByDescending(d => d.CreatedAt)
-                 .Where(p => !p.IsDeleted && p.Finalised == true && p.POSId != null);
+                 .Where(p => !p.IsDeleted && p.Finalised == true && p.POSId != null && p.Status == (int)RechargeMeterStatusEnum.Success);
 
             if (model.VendorId > 0)
             {
@@ -691,8 +692,9 @@ namespace VendTech.BLL.Managers
             var user = _context.Users.FirstOrDefault(p => p.UserId == model.UserId);
             var pos = _context.POS.FirstOrDefault(p => p.POSId == model.POSId);
             var meter = _context.Meters.FirstOrDefault(d => d.MeterId == model.MeterId);
+            var platform = await _context.Platforms.FirstOrDefaultAsync(d => d.PlatformType == (int)PlatformTypeEnum.ELECTRICITY);
 
-            var validationResult = model.validateRequest(user, pos);
+            var validationResult = model.validateRequest(user, pos, platform);
 
             if (validationResult != "clear")
             {
