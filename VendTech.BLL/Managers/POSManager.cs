@@ -9,6 +9,9 @@ using System.Web.Mvc;
 using static VendTech.BLL.Jobs.BalanceLowSheduleJob;
 using System.Data.Entity;
 using System.Threading.Tasks;
+using System.Transactions;
+using System.Data.Entity.Infrastructure;
+using VendTech.BLL.Common;
 
 namespace VendTech.BLL.Managers
 {
@@ -717,13 +720,15 @@ namespace VendTech.BLL.Managers
         bool IPOSManager.IsWalletFunded(long userId) =>
            _context.POS.FirstOrDefault(d => d.VendorId == userId && d.Balance != null)?.Balance.Value > 1;
 
+
         async Task<TransactionDetail> IPOSManager.DeductBalanceAsync(long posId, TransactionDetail trans)
         {
             if (trans.TransactionDetailsId <= 0)
                 throw new ArgumentException("TransactionDetailsId Required.");
+
             using (var ctx = new VendtechEntities())
             {
-                if(trans.PaymentStatus != (int)PaymentStatus.Deducted)
+                if (trans.PaymentStatus != (int)PaymentStatus.Deducted)
                 {
                     var currentBalance = await ctx.POS
                         .Where(p => p.POSId == posId)

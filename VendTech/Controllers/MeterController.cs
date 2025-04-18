@@ -199,38 +199,45 @@ namespace VendTech.Controllers
         /// <returns></returns>
         public ActionResult Recharge(long? meterId)
         {
-            var platform = _platformManager.GetSinglePlatform(1); //1 is not to be changed
-            var posList = _posManager.GetPOSSelectList(LOGGEDIN_USER.UserID, LOGGEDIN_USER.AgencyId);
-            RechargeMeterModel model = new RechargeMeterModel();
-
-            ViewBag.UserId = LOGGEDIN_USER.UserID;
-            ViewBag.walletBalance = _userManager.GetUserWalletBalance(LOGGEDIN_USER.UserID);
-            ViewBag.title = "EDSA Recharge";          
-            ViewBag.IsDisable = platform.DisablePlatform;
-            ViewBag.DisabledMessage = platform.DiabledPlaformMessage;
-            ViewBag.MinumumVend = platform.MinimumAmount;
-            ViewBag.SelectedTab = SelectedAdminTab.BillPayment;
-            ViewBag.IsPlatformAssigned = _platformManager.GetUserAssignedPlatforms(LOGGEDIN_USER.UserID).Count > 0;
-            ViewBag.userPos = posList; 
-            ViewBag.meters = _meterManager.GetMetersDropDown(LOGGEDIN_USER.UserID);
-            ViewBag.IsModuleDisable = _meterManager.IsModuleLocked(34, LOGGEDIN_USER.UserID);
-
-            var hostory_model = new ReportSearchModel
+            try
             {
-                SortBy = "CreatedAt",
-                SortOrder = "Desc",
-                PageNo = 1,
-                VendorId = LOGGEDIN_USER.UserID
-            };
+                var platform = _platformManager.GetSinglePlatform(1); //1 is not to be changed
+                var posList = _posManager.GetPOSSelectList(LOGGEDIN_USER.UserID, LOGGEDIN_USER.AgencyId);
+                RechargeMeterModel model = new RechargeMeterModel();
 
-            model.History = _meterManager.GetUserMeterRechargesHistory(hostory_model, false, PlatformTypeEnum.ELECTRICITY).List;
+                ViewBag.UserId = LOGGEDIN_USER.UserID;
+                ViewBag.walletBalance = _userManager.GetUserWalletBalance(LOGGEDIN_USER.UserID);
+                ViewBag.title = "EDSA Recharge";
+                ViewBag.IsDisable = platform.DisablePlatform;
+                ViewBag.DisabledMessage = platform.DiabledPlaformMessage;
+                ViewBag.MinumumVend = platform.MinimumAmount;
+                ViewBag.SelectedTab = SelectedAdminTab.BillPayment;
+                ViewBag.IsPlatformAssigned = _platformManager.GetUserAssignedPlatforms(LOGGEDIN_USER.UserID).Count > 0;
+                ViewBag.userPos = posList;
+                ViewBag.meters = _meterManager.GetMetersDropDown(LOGGEDIN_USER.UserID);
+                ViewBag.IsModuleDisable = _meterManager.IsModuleLocked(34, LOGGEDIN_USER.UserID);
 
-            if (meterId > 0) model.MeterId = meterId;
-            if (posList.Count > 0)
-                ViewBag.walletBalance = _posManager.GetPosBalance(Convert.ToInt64(posList[0].Value));
-            else
-                ViewBag.walletBalance = 0;
-            return View(model);
+                var hostory_model = new ReportSearchModel
+                {
+                    SortBy = "CreatedAt",
+                    SortOrder = "Desc",
+                    PageNo = 1,
+                    VendorId = LOGGEDIN_USER.UserID
+                };
+
+                model.History = _meterManager.GetUserMeterRechargesHistory(hostory_model, false, PlatformTypeEnum.ELECTRICITY).List;
+
+                if (meterId > 0) model.MeterId = meterId;
+                if (posList.Count > 0)
+                    ViewBag.walletBalance = _posManager.GetPosBalance(Convert.ToInt64(posList[0].Value));
+                else
+                    ViewBag.walletBalance = 0;
+                return View(model);
+            }
+            catch (Exception)
+            {
+                throw;
+            }
 
         }
 

@@ -1535,9 +1535,9 @@ namespace VendTech.BLL.Managers
                             TransactionType = a.Platform.Title,
                             DepositAmount = 0,
                             SaleAmount = a.Amount,
-                            Balance = (a.BalanceBefore.Value - a.Amount),
                             POSId = a.POSId,
-                            BalanceBefore = a.BalanceBefore.Value
+                            Balance = ((a.BalanceBefore ?? 0) - a.Amount),
+                            BalanceBefore = a.BalanceBefore ?? 0
                         };
             }
 
