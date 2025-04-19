@@ -124,7 +124,7 @@ namespace VendTech.BLL.Models
             if (trx == null) return false;
             if(MeterNumber == trx.MeterNumber1 && Amount == trx.Amount)
             {
-                return true; ///reverse later
+                return true;
             }
             return false;
         }
@@ -137,7 +137,7 @@ namespace VendTech.BLL.Models
 
             if (platform != null && platform.DisablePlatform)
             {
-                return platform.DisabledPlatformMessage;
+                return "Vending Disabled! Please try again later";
             }
 
             if (user == null)

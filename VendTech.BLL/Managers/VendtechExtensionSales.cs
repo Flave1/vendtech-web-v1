@@ -117,16 +117,16 @@ namespace VendTech.BLL.Managers
                 return response;
             }
 
-            model.UpdateRequestModel(meter == null ? "" : meter?.Number, pos.POSId);
-
-            var pendingTrx = await getLastMeterPendingTransaction(model.MeterNumber);
-
-            var isDuplicate = model.IsRequestADuplicate(pendingTrx);
-
-            var transaction = isDuplicate ? pendingTrx : trax;
-
             try
             {
+                model.UpdateRequestModel(meter == null ? "" : meter?.Number, pos.POSId);
+
+                var pendingTrx = await getLastMeterPendingTransaction(model.MeterNumber, model.Amount);
+
+                var isDuplicate = model.IsRequestADuplicate(pendingTrx);
+
+                var transaction = isDuplicate ? pendingTrx : trax;
+
                 trax = await ProcessTransaction(isDuplicate, model, transaction);
                 var receipt = await BuildRceipt(trax.TransactionDetailsId);
                 PushNotification(user, model, trax.TransactionDetailsId);
@@ -178,7 +178,7 @@ namespace VendTech.BLL.Managers
                         if (vendResponse.Status.ToLower() == "failed")
                         {
                             await ProcessFailed(vendResponse, vendResponseResult, transactionDetail);
-                            throw new ArgumentException(vendResponseResult.FailedResponse.ErrorMessage);
+                            throw new ArgumentException(vendResponse.Result.FailedResponse.ErrorMessage);
                         }
 
                         if (vendResponse.Status.ToLower() == "success")
@@ -213,7 +213,7 @@ namespace VendTech.BLL.Managers
                         if (vendResponse.Status.ToLower() == "failed")
                         {
                             await ProcessFailed(vendResponse, vendResponseResult, transactionDetail);
-                            throw new ArgumentException(vendResponse.Message);
+                            throw new ArgumentException(vendResponse.Result.FailedResponse.ErrorMessage);
                         }
 
                         if (vendResponse.Status.ToLower() == "success")
@@ -230,15 +230,11 @@ namespace VendTech.BLL.Managers
                     }
                 }
             }
-            catch (ArgumentException)
-            {
-                throw;
-            }
             catch (Exception ex)
             {
                 Utilities.LogExceptionToDatabase(
                     new Exception($"ProcessTransactionException for {model.TransactionId} || {transactionDetail.TransactionId}", ex),
-                    $"Source: {ex?.Source ?? "Unknown"}, Inner: {ex?.InnerException?.Message ?? "None"}"
+                    $"Source: {ex?.Source ?? "Unknown"}, Inner: {ex?.Message ?? ex?.InnerException?.Message}"
                 );
                 throw;
 
@@ -292,7 +288,7 @@ namespace VendTech.BLL.Managers
                             cmd.Parameters.AddWithValue("@Request", transactionDetail.Request ?? string.Empty);
                             cmd.Parameters.AddWithValue("@Response", transactionDetail.Response ?? string.Empty);
 
-                            cmd.CommandTimeout = 120;
+                            cmd.CommandTimeout = 60;
                             await conn.OpenAsync();
                             await cmd.ExecuteNonQueryAsync();
                         }
@@ -302,8 +298,8 @@ namespace VendTech.BLL.Managers
                     count++;
 
                     // Optional: add delay between retries if needed
-                    // await Task.Delay(2000);
-
+                   await Task.Delay(2000);
+                   Utilities.LogExceptionToDatabase(new Exception("count on repeat: " + count), $"requesting pending transaction: {transactionDetail?.TransactionId ?? "N/A"}");
                 } while (vendResponse.Status?.ToLower() == "pending");
             }
             catch (Exception ex)
@@ -321,16 +317,14 @@ namespace VendTech.BLL.Managers
          VendtechExtSalesResult vendResponseResult,
          TransactionDetail transactionDetail)
         {
-            try
-            {
-                // Extract result safely
-                vendResponseResult = vendResponse?.Result;
+            // Extract result safely
+            vendResponseResult = vendResponse?.Result;
 
-                // Build connection
-                string connectionString = WebConfigurationManager.ConnectionStrings["DefaultConnection"].ToString();
-                using (SqlConnection conn = new SqlConnection(connectionString))
-                {
-                    string sql = @"
+            // Build connection
+            string connectionString = WebConfigurationManager.ConnectionStrings["DefaultConnection"].ToString();
+            using (SqlConnection conn = new SqlConnection(connectionString))
+            {
+                string sql = @"
                     UPDATE TransactionDetails
                     SET
                         VendStatus = @VendStatus,
@@ -342,43 +336,40 @@ namespace VendTech.BLL.Managers
                         Response = @Response
                     WHERE TransactionDetailsId = @TransactionDetailsId";
 
-                    using (SqlCommand cmd = new SqlCommand(sql, conn))
+                using (SqlCommand cmd = new SqlCommand(sql, conn))
+                {
+                    cmd.Parameters.AddWithValue("@VendStatus", vendResponseResult?.Status ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@VendStatusDescription", vendResponseResult?.Status ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@Status", (int)RechargeMeterStatusEnum.Failed);
+                    cmd.Parameters.AddWithValue("@Finalised", true);
+                    cmd.Parameters.AddWithValue("@PaymentStatus", (int)PaymentStatus.Failed);
+                    cmd.Parameters.AddWithValue("@TransactionDetailsId", transactionDetail.TransactionDetailsId);
+                    cmd.Parameters.AddWithValue("@Request", transactionDetail.Request ?? string.Empty);
+                    cmd.Parameters.AddWithValue("@Response", transactionDetail.Response ?? string.Empty);
+
+                    await ExecuteOperation(async () =>
                     {
-                        cmd.Parameters.AddWithValue("@VendStatus", vendResponseResult?.Status ?? (object)DBNull.Value);
-                        cmd.Parameters.AddWithValue("@VendStatusDescription", vendResponseResult?.Status ?? (object)DBNull.Value);
-                        cmd.Parameters.AddWithValue("@Status", (int)RechargeMeterStatusEnum.Failed);
-                        cmd.Parameters.AddWithValue("@Finalised", true);
-                        cmd.Parameters.AddWithValue("@PaymentStatus", (int)PaymentStatus.Failed);
-                        cmd.Parameters.AddWithValue("@TransactionDetailsId", transactionDetail.TransactionDetailsId);
-                        cmd.Parameters.AddWithValue("@Request", transactionDetail.Request ?? string.Empty);
-                        cmd.Parameters.AddWithValue("@Response", transactionDetail.Response?? string.Empty);
-
-                        cmd.CommandTimeout = 120;
+                        cmd.CommandTimeout = 60;
                         await conn.OpenAsync();
-                        await cmd.ExecuteNonQueryAsync();
-                    }
+                        return await cmd.ExecuteNonQueryAsync();
+                    }, "ProcessFailed");
+
                 }
-
-                // Reflect changes in the in-memory object
-                transactionDetail.VendStatus = vendResponseResult?.Status;
-                transactionDetail.VendStatusDescription = vendResponseResult?.Status;
-                transactionDetail.Status = (int)RechargeMeterStatusEnum.Failed;
-                transactionDetail.Finalised = true;
-                transactionDetail.PaymentStatus = (int)PaymentStatus.Failed;
-
-                // Optional: capture error message details for reporting/logging
-                await ReadErrorMessage(
-                    vendResponse?.Message,
-                    vendResponseResult.Code,
-                    transactionDetail
-                );
             }
-            catch (Exception ex)
-            {
-                //Utilities.LogExceptionToDatabase(ex,
-                //    $"Error processing failed transaction {transactionDetail?.TransactionId ?? "N/A"}");
-                throw;
-            }
+
+            // Reflect changes in the in-memory object
+            transactionDetail.VendStatus = vendResponseResult?.Status;
+            transactionDetail.VendStatusDescription = vendResponseResult?.Status;
+            transactionDetail.Status = (int)RechargeMeterStatusEnum.Failed;
+            transactionDetail.Finalised = true;
+            transactionDetail.PaymentStatus = (int)PaymentStatus.Failed;
+
+            // Optional: capture error message details for reporting/logging
+            await ReadErrorMessage(
+                vendResponse?.Message,
+                vendResponse.Result.Code,
+                transactionDetail
+            );
         }
 
 
@@ -408,14 +399,14 @@ namespace VendTech.BLL.Managers
             }
             if (code == 4514)
             {
-                DisablePlatform(PlatformTypeEnum.ELECTRICITY);
+                await DisablePlatform(PlatformTypeEnum.ELECTRICITY);
                 NotifyAdmin();
                 throw new ArgumentException("Error: Vending is disabled");
             }
 
             if (code == 4094)
             {
-                DisablePlatform(PlatformTypeEnum.ELECTRICITY);
+                await DisablePlatform(PlatformTypeEnum.ELECTRICITY);
                 NotifyAdmin();
                 throw new ArgumentException("Error: Vending is disabled");
             }
@@ -427,7 +418,7 @@ namespace VendTech.BLL.Managers
 
             if (message == "Unexpected error in OUC VendVoucher")
             {
-                throw new ArgumentException(message);
+                throw new ArgumentException("EDSA service is currently down! Please try again later");
             }
 
             if (message == "CB001600 : InCMS-BL-CB001600. Error serial number, contracted service not found or not active.")
@@ -464,9 +455,12 @@ namespace VendTech.BLL.Managers
                         cmd.Parameters.AddWithValue("@Status", (int)status);
                         cmd.Parameters.AddWithValue("@TransactionDetailsId", tx.TransactionDetailsId);
 
-                        await conn.OpenAsync();
-                        cmd.CommandTimeout = 120;
-                        await cmd.ExecuteNonQueryAsync();
+                        await ExecuteOperation(async () =>
+                        {
+                            await conn.OpenAsync();
+                            cmd.CommandTimeout = 60;
+                            return await cmd.ExecuteNonQueryAsync();
+                        }, "FlagTransaction");
                     }
                 }
 
@@ -480,7 +474,7 @@ namespace VendTech.BLL.Managers
             }
         }
 
-        private void DisablePlatform(PlatformTypeEnum pl)
+        private async Task DisablePlatform(PlatformTypeEnum pl)
         {
             try
             {
@@ -488,7 +482,7 @@ namespace VendTech.BLL.Managers
                 using (SqlConnection conn = new SqlConnection(connectionString))
                 {
                     string sql = @"
-                    UPDATE Platforms
+                    UPDATE Platform
                     SET DisablePlatform = @DisablePlatform
                     WHERE PlatformType = @PlatformType";
 
@@ -497,9 +491,12 @@ namespace VendTech.BLL.Managers
                         cmd.Parameters.AddWithValue("@DisablePlatform", true);
                         cmd.Parameters.AddWithValue("@PlatformType", (int)pl);
 
-                        conn.Open();
-                        cmd.CommandTimeout = 120;
-                        cmd.ExecuteNonQuery();
+                        await ExecuteOperation(async () =>
+                        {
+                            conn.Open();
+                            cmd.CommandTimeout = 60;
+                            return cmd.ExecuteNonQuery();
+                        }, "DisablePlatform");
                     }
                 }
             }
@@ -523,13 +520,14 @@ namespace VendTech.BLL.Managers
 
         }
 
-        private async Task<TransactionDetail> getLastMeterPendingTransaction(string MeterNumber)
+        private async Task<TransactionDetail> getLastMeterPendingTransaction(string MeterNumber, decimal amount)
         {
             TransactionDetail transactionDetail;
             using (var _context = new VendtechEntities())
             {
                 transactionDetail = await _context.TransactionDetails.Where(p => p.Status ==
-                (int)RechargeMeterStatusEnum.Pending && p.MeterNumber1.ToLower() == MeterNumber.ToLower()).OrderByDescending(d => d.CreatedAt).FirstOrDefaultAsync();
+                (int)RechargeMeterStatusEnum.Pending && p.MeterNumber1.ToLower() == MeterNumber.ToLower() && p.Amount == amount)
+                    .OrderByDescending(d => d.CreatedAt).FirstOrDefaultAsync();
             }
             return transactionDetail;
         }
@@ -749,10 +747,13 @@ namespace VendTech.BLL.Managers
                         cmd.Parameters.AddWithValue("@Response", trans.Response ?? string.Empty);
                         cmd.Parameters.AddWithValue("@CreatedAt", DateTime.UtcNow);
 
-                        cmd.CommandTimeout = 120;
-                        await conn.OpenAsync();
-                        await cmd.ExecuteNonQueryAsync();
-
+                        
+                        await ExecuteOperation(async () =>
+                        {
+                            cmd.CommandTimeout = 60;
+                            await conn.OpenAsync();
+                            return await cmd.ExecuteNonQueryAsync();
+                        }, "UpdateTransactionOnSuccess");
                     }
                 }
 
@@ -878,9 +879,15 @@ namespace VendTech.BLL.Managers
                         cmd.Parameters.AddWithValue("@CostOfUnits", trans.CostOfUnits);
                         cmd.Parameters.AddWithValue("@PaymentStatus", trans.PaymentStatus);
 
-                        await conn.OpenAsync();
-                        object insertedId = await cmd.ExecuteScalarAsync();
-                        trans.TransactionDetailsId = Convert.ToInt64(insertedId);
+                        await ExecuteOperation(async () =>
+                        {
+                            cmd.CommandTimeout = 60;
+                            await conn.OpenAsync();
+                            object insertedId = await cmd.ExecuteScalarAsync();
+                            trans.TransactionDetailsId = Convert.ToInt64(insertedId);
+                            return trans;
+                        }, "CreateRecordBeforeVend");
+                        
                     }
                 }
 
@@ -904,7 +911,7 @@ namespace VendTech.BLL.Managers
                 Amount = model.Amount,
                 MeterNumber = model.MeterNumber,
                 TransactionId = model.TransactionId.ToString(),
-                Simulate = ""
+                Simulate = "failed"
             };
         }
 
