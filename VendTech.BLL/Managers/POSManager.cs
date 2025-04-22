@@ -9,20 +9,82 @@ using System.Web.Mvc;
 using static VendTech.BLL.Jobs.BalanceLowSheduleJob;
 using System.Data.Entity;
 using System.Threading.Tasks;
-using System.Transactions;
 using System.Data.Entity.Infrastructure;
 using VendTech.BLL.Common;
+using System.Data.SqlClient;
+using Polly;
+using System.Data.Entity.Core;
 
 namespace VendTech.BLL.Managers
 {
     public class POSManager : BaseManager, IPOSManager
     {
         private readonly VendtechEntities _context;
+        private readonly IAsyncPolicy _retryPolicy;
         public POSManager(VendtechEntities context)
         {
             _context = context;
+            _retryPolicy = Policy
+
+               .Handle<DbUpdateConcurrencyException>()
+               .Or<SqlException>(ex => IsRetriableSqlException(ex))
+               .Or<EntityException>()
+               .Or<TimeoutException>()
+               .WaitAndRetryAsync(
+                   Config.MAX_RETRY_ATTEMPTS,
+                   retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
+                   onRetry: (exception, timeSpan, retryCount) =>
+                   {
+                       Utilities.LogExceptionToDatabase(
+                           exception,
+                           $"Retry {retryCount} after {timeSpan.TotalSeconds}s"
+                       );
+                   });
         }
 
+        private bool IsRetriableSqlException(SqlException ex)
+        {
+            int[] retryableErrors = {
+                -2,     // Timeout
+                4060,   // Cannot open database
+                //40197,  // The service has encountered an error processing your request
+                40501,  // The service is currently busy
+               // 40613,  // Database is not currently available
+                49918,  // Cannot process request
+                //49919,  // Cannot process create or update request
+                49920,  // Service is too busy
+                11001   // Network error
+            };
+
+            return retryableErrors.Contains(ex.Number);
+        }
+
+        private async Task<T> ExecuteOperation<T>(Func<Task<T>> operation, string operationName)
+        {
+            try
+            {
+                return await _retryPolicy.ExecuteAsync(async () =>
+                {
+                    var result = await operation();
+                    return result;
+                });
+            }
+            catch (DbUpdateException ex)
+            {
+                Utilities.LogExceptionToDatabase(ex, $"Database update error during {operationName}");
+                throw new InvalidOperationException($"Failed to save changes during {operationName}. Please try again.", ex);
+            }
+            catch (TimeoutException ex)
+            {
+                Utilities.LogExceptionToDatabase(ex, $"Timeout during {operationName}");
+                throw new InvalidOperationException("The operation timed out. Please try again.", ex);
+            }
+            catch (Exception ex)
+            {
+                Utilities.LogExceptionToDatabase(ex, $"Error during {operationName}");
+                throw;
+            }
+        }
         KeyValuePair<string, string> IPOSManager.GetVendorDetail(long posId)
         {
             var pos = _context.POS.FirstOrDefault(d => d.POSId == posId);
@@ -730,24 +792,29 @@ namespace VendTech.BLL.Managers
             {
                 if (trans.PaymentStatus != (int)PaymentStatus.Deducted)
                 {
-                    var currentBalance = await ctx.POS
+                    return await ExecuteOperation(async () =>
+                    {
+                        var currentBalance = await ctx.POS
                         .Where(p => p.POSId == posId)
                         .Select(p => p.Balance)
                         .FirstOrDefaultAsync();
 
-                    decimal newBalance = (currentBalance ?? 0) - trans.Amount;
-                    trans.BalanceBefore = currentBalance ?? 0;
-                    trans.CurrentVendorBalance = newBalance;
-                    trans.PaymentStatus = (int)PaymentStatus.Deducted;
+                        decimal newBalance = (currentBalance ?? 0) - trans.Amount;
+                        trans.BalanceBefore = currentBalance ?? 0;
+                        trans.CurrentVendorBalance = newBalance;
+                        trans.PaymentStatus = (int)PaymentStatus.Deducted;
 
-                    string updatePosSql = "UPDATE POS SET Balance = @p0 WHERE POSID = @p1";
-                    await ctx.Database.ExecuteSqlCommandAsync(updatePosSql, newBalance, posId);
+                        string updatePosSql = "UPDATE POS SET Balance = @p0 WHERE POSID = @p1";
+                        await ctx.Database.ExecuteSqlCommandAsync(updatePosSql, newBalance, posId);
 
-                    string updateTransactionSql = @"UPDATE TransactionDetails 
-                    SET BalanceBefore = @p1, CurrentVendorBalance = @p2, PaymentStatus = @p3
-                    WHERE TransactionDetailsId = @p0";
+                        string updateTransactionSql = @"UPDATE TransactionDetails 
+                        SET BalanceBefore = @p1, CurrentVendorBalance = @p2, PaymentStatus = @p3
+                        WHERE TransactionDetailsId = @p0";
 
-                    await ctx.Database.ExecuteSqlCommandAsync(updateTransactionSql, trans.TransactionDetailsId, trans.BalanceBefore, trans.CurrentVendorBalance, trans.PaymentStatus);
+                        await ctx.Database.ExecuteSqlCommandAsync(updateTransactionSql, trans.TransactionDetailsId, trans.BalanceBefore, trans.CurrentVendorBalance, trans.PaymentStatus);
+                        return trans;
+                    }, "DeductBalanceAsync");
+                    
                 }
             }
             return await _context.TransactionDetails.FindAsync(trans.TransactionDetailsId);
@@ -761,23 +828,29 @@ namespace VendTech.BLL.Managers
             {
                 if (trans.PaymentStatus == (int)PaymentStatus.Deducted)
                 {
-                    var currentBalance = await ctx.POS
+
+                    await ExecuteOperation(async () =>
+                    {
+                        var currentBalance = await ctx.POS
                         .Where(p => p.POSId == posId)
                         .Select(p => p.Balance)
                         .FirstOrDefaultAsync();
 
-                    decimal posBalance = currentBalance.Value + trans.Amount;
-                    trans.CurrentVendorBalance = trans.BalanceBefore;
-                    trans.PaymentStatus = (int)PaymentStatus.Refunded;
+                        decimal posBalance = currentBalance.Value + trans.Amount;
+                        trans.CurrentVendorBalance = trans.BalanceBefore;
+                        trans.PaymentStatus = (int)PaymentStatus.Refunded;
 
-                    string updatePosSql = "UPDATE POS SET Balance = @p0 WHERE POSID = @p1";
-                    await ctx.Database.ExecuteSqlCommandAsync(updatePosSql, posBalance, posId);
+                        string updatePosSql = "UPDATE POS SET Balance = @p0 WHERE POSID = @p1";
+                        await ctx.Database.ExecuteSqlCommandAsync(updatePosSql, posBalance, posId);
 
-                    string updateTransactionSql = @"UPDATE TransactionDetails 
-                    SET CurrentVendorBalance = @p1, PaymentStatus = @p2
-                    WHERE TransactionDetailsId = @p0";
+                        string updateTransactionSql = @"UPDATE TransactionDetails 
+                        SET CurrentVendorBalance = @p1, PaymentStatus = @p2
+                        WHERE TransactionDetailsId = @p0";
 
-                    await ctx.Database.ExecuteSqlCommandAsync(updateTransactionSql, trans.TransactionDetailsId, trans.CurrentVendorBalance, trans.PaymentStatus);
+                        await ctx.Database.ExecuteSqlCommandAsync(updateTransactionSql, trans.TransactionDetailsId, trans.CurrentVendorBalance, trans.PaymentStatus);
+                        return trans;
+                    }, "RefundDeductedBalanceAsync");
+                    
                 }
             }
             return await _context.TransactionDetails.FindAsync(trans.TransactionDetailsId);

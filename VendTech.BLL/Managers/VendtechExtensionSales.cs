@@ -20,7 +20,6 @@ namespace VendTech.BLL.Managers
         private readonly TransactionIdGenerator idGenerator;
         private readonly IPOSManager _posManager;
         private readonly IAsyncPolicy _retryPolicy;
-        private const int MAX_RETRY_ATTEMPTS = 3;
 
         public VendtechExtensionSales(TransactionIdGenerator idGenerator, IPOSManager posManager)
         {
@@ -31,11 +30,11 @@ namespace VendTech.BLL.Managers
             _retryPolicy = Policy
                 
                 .Handle<DbUpdateConcurrencyException>()
-                .Or<SqlException>(ex => IsRetriableSqlException(ex))
+                .Or<SqlException>()
                 .Or<EntityException>()
                 .Or<TimeoutException>()
                 .WaitAndRetryAsync(
-                    MAX_RETRY_ATTEMPTS,
+                    Config.MAX_RETRY_ATTEMPTS,
                     retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
                     onRetry: (exception, timeSpan, retryCount) =>
                     {
@@ -232,11 +231,16 @@ namespace VendTech.BLL.Managers
             }
             catch (Exception ex)
             {
-                Utilities.LogExceptionToDatabase(
-                    new Exception($"ProcessTransactionException for {model.TransactionId} || {transactionDetail.TransactionId}", ex),
-                    $"Source: {ex?.Source ?? "Unknown"}, Inner: {ex?.Message ?? ex?.InnerException?.Message}"
-                );
-                throw;
+                if(ex is ArgumentException)
+                    throw;
+                else
+                {
+                    Utilities.LogExceptionToDatabase(
+                        new Exception($"ProcessTransactionException for {model.TransactionId} || {transactionDetail.TransactionId}", ex),
+                        $"Source: {ex?.Source ?? "Unknown"}, Inner: {ex?.Message ?? ex?.InnerException?.Message}"
+                    );
+                    throw;
+                }
 
             }
 
@@ -516,7 +520,7 @@ namespace VendTech.BLL.Managers
                 $"2) RTS SERVICES IS DISABLED</br></br>" +
                 $"Please keep in mind to ENABLE Services again.</br></br>" +
                 $"{Utilities.DomainUrl}/Admin/Platform/ManagePlatforms (ENABLE EDSA ON VENDTECH PLATFORM)";
-            Utilities.SendEmail("vblell@gmail.com", "[URGENT] VENDTECH OUT OF FUNDS", body);
+            Utilities.SendEmail("vblell@gmail.com", "[URGENT] VENDING IS DISABLED", body);
 
         }
 
@@ -911,7 +915,7 @@ namespace VendTech.BLL.Managers
                 Amount = model.Amount,
                 MeterNumber = model.MeterNumber,
                 TransactionId = model.TransactionId.ToString(),
-                Simulate = "failed"
+                Simulate = ""
             };
         }
 

@@ -12,6 +12,10 @@ using Newtonsoft.Json;
 using VendTech.BLL.PlatformApi;
 using VendTech.BLL.Common;
 using System.Threading.Tasks;
+using System.Data.Entity.Infrastructure;
+using System.Data.SqlClient;
+using Polly;
+using System.Data.Entity.Core;
 
 namespace VendTech.BLL.Managers
 {
@@ -23,6 +27,8 @@ namespace VendTech.BLL.Managers
         private readonly IPOSManager _posManager;
         private readonly TransactionIdGenerator _transactionIdGenerator;
         private readonly VendtechEntities _context;
+
+        private readonly IAsyncPolicy _retryPolicy;
         public PlatformTransactionManager(IPlatformApiManager platformApiManager,
             IPlatformManager platformManager,
             IErrorLogManager errorLog,
@@ -36,6 +42,67 @@ namespace VendTech.BLL.Managers
             _transactionIdGenerator = transactionIdGenerator;
             _context = context;
             _posManager = posManager;
+            _retryPolicy = Policy
+
+              .Handle<DbUpdateConcurrencyException>()
+              .Or<SqlException>(ex => IsRetriableSqlException(ex))
+              .Or<EntityException>()
+              .Or<TimeoutException>()
+              .WaitAndRetryAsync(
+                  Config.MAX_RETRY_ATTEMPTS,
+                  retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
+                  onRetry: (exception, timeSpan, retryCount) =>
+                  {
+                      Utilities.LogExceptionToDatabase(
+                          exception,
+                          $"Retry {retryCount} after {timeSpan.TotalSeconds}s"
+                      );
+                  });
+        }
+
+
+        private bool IsRetriableSqlException(SqlException ex)
+        {
+            int[] retryableErrors = {
+                -2,     // Timeout
+                4060,   // Cannot open database
+                //40197,  // The service has encountered an error processing your request
+                40501,  // The service is currently busy
+               // 40613,  // Database is not currently available
+                49918,  // Cannot process request
+                //49919,  // Cannot process create or update request
+                49920,  // Service is too busy
+                11001   // Network error
+            };
+
+            return retryableErrors.Contains(ex.Number);
+        }
+
+        private async Task<T> ExecuteOperation<T>(Func<Task<T>> operation, string operationName)
+        {
+            try
+            {
+                return await _retryPolicy.ExecuteAsync(async () =>
+                {
+                    var result = await operation();
+                    return result;
+                });
+            }
+            catch (DbUpdateException ex)
+            {
+                Utilities.LogExceptionToDatabase(ex, $"Database update error during {operationName}");
+                throw new InvalidOperationException($"Failed to save changes during {operationName}. Please try again.", ex);
+            }
+            catch (TimeoutException ex)
+            {
+                Utilities.LogExceptionToDatabase(ex, $"Timeout during {operationName}");
+                throw new InvalidOperationException("The operation timed out. Please try again.", ex);
+            }
+            catch (Exception ex)
+            {
+                Utilities.LogExceptionToDatabase(ex, $"Error during {operationName}");
+                throw;
+            }
         }
 
         public PlatformTransactionModel New(long userId, int platformId, long posId, decimal amount, string beneficiary, string currency, int? apiConnId)
@@ -81,7 +148,11 @@ namespace VendTech.BLL.Managers
                             tranx.ApiConnectionId = platform.PlatformApiConnId;
                             tranx.UpdatedAt = DateTime.UtcNow;
 
-                            _context.SaveChanges();
+                            await ExecuteOperation(async () =>
+                            {
+                                return _context.SaveChanges();
+                            }, "ProcessTransactionViaApi");
+                            
                         }
                     }
                     
@@ -132,9 +203,12 @@ namespace VendTech.BLL.Managers
                         ApiLog = logJSON,
                         LogDate = DateTime.UtcNow
                     };
-
-                    _context.PlatformApiLogs.Add(log);
-                    await _context.SaveChangesAsync();
+                    await ExecuteOperation(async () =>
+                    {
+                        _context.PlatformApiLogs.Add(log);
+                       return await _context.SaveChangesAsync();
+                    }, "ProcessTransactionViaApi");
+                   
 
                     //Fetch from DB
                     tranx = await GetPendingTransactionById(transactionId);
@@ -147,8 +221,12 @@ namespace VendTech.BLL.Managers
                     tranx.ApiTransactionId = execResponse.ApiTransactionId;
                     tranx.UpdatedAt = DateTime.UtcNow;
 
-                    await _context.SaveChangesAsync();
-
+                   
+                    await ExecuteOperation(async () =>
+                    {
+                        _context.PlatformApiLogs.Add(log);
+                        return await _context.SaveChangesAsync();
+                    }, "ProcessTransactionViaApi");
                     return true;
                 }
             }
@@ -469,7 +547,10 @@ namespace VendTech.BLL.Managers
                     PlatformTransaction tranx = await _context.PlatformTransactions.FirstOrDefaultAsync(t => t.Id == tranxModel.Id);
                     tranx.TransactionDetailId = transactionDetail.TransactionDetailsId;
 
-                    await _context.SaveChangesAsync();
+                    await ExecuteOperation(async () =>
+                    {
+                        return await _context.SaveChangesAsync();
+                    }, "RechargeAirtime");
                     response = GenerateReceipt(transactionDetail);
                     Push_notification_to_user(user, model, transactionDetail.TransactionDetailsId);
                     return response;
@@ -600,8 +681,13 @@ namespace VendTech.BLL.Managers
                     TransactionId = transactionId,
                     PaymentStatus = (int)PaymentStatus.Pending
                 };
-                ctx.TransactionDetails.Add(tranxDetail);
-                await ctx.SaveChangesAsync();
+                
+                await ExecuteOperation(async () =>
+                {
+                    ctx.TransactionDetails.Add(tranxDetail);
+                    await ctx.SaveChangesAsync();
+                    return tranxDetail;
+                }, "CreateTransactionDetail");
             }
             return tranxDetail;
         }
