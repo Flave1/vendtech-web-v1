@@ -792,18 +792,18 @@ namespace VendTech.BLL.Managers
             {
                 if (trans.PaymentStatus != (int)PaymentStatus.Deducted)
                 {
-                    return await ExecuteOperation(async () =>
-                    {
-                        var currentBalance = await ctx.POS
+                    var currentBalance = await ctx.POS
                         .Where(p => p.POSId == posId)
                         .Select(p => p.Balance)
                         .FirstOrDefaultAsync();
 
-                        decimal newBalance = (currentBalance ?? 0) - trans.Amount;
-                        trans.BalanceBefore = currentBalance ?? 0;
-                        trans.CurrentVendorBalance = newBalance;
-                        trans.PaymentStatus = (int)PaymentStatus.Deducted;
+                    decimal newBalance = (currentBalance ?? 0) - trans.Amount;
+                    trans.BalanceBefore = currentBalance ?? 0;
+                    trans.CurrentVendorBalance = newBalance;
+                    trans.PaymentStatus = (int)PaymentStatus.Deducted;
 
+                    return await ExecuteOperation(async () =>
+                    {
                         string updatePosSql = "UPDATE POS SET Balance = @p0 WHERE POSID = @p1";
                         await ctx.Database.ExecuteSqlCommandAsync(updatePosSql, newBalance, posId);
 
@@ -829,17 +829,18 @@ namespace VendTech.BLL.Managers
                 if (trans.PaymentStatus == (int)PaymentStatus.Deducted)
                 {
 
+                    var currentBalance = await ctx.POS
+                    .Where(p => p.POSId == posId)
+                    .Select(p => p.Balance)
+                    .FirstOrDefaultAsync();
+
+                    decimal posBalance = currentBalance.Value + trans.Amount;
+                    trans.CurrentVendorBalance = trans.BalanceBefore;
+                    trans.PaymentStatus = (int)PaymentStatus.Refunded;
+
+
                     await ExecuteOperation(async () =>
                     {
-                        var currentBalance = await ctx.POS
-                        .Where(p => p.POSId == posId)
-                        .Select(p => p.Balance)
-                        .FirstOrDefaultAsync();
-
-                        decimal posBalance = currentBalance.Value + trans.Amount;
-                        trans.CurrentVendorBalance = trans.BalanceBefore;
-                        trans.PaymentStatus = (int)PaymentStatus.Refunded;
-
                         string updatePosSql = "UPDATE POS SET Balance = @p0 WHERE POSID = @p1";
                         await ctx.Database.ExecuteSqlCommandAsync(updatePosSql, posBalance, posId);
 

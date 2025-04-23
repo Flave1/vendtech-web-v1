@@ -151,7 +151,7 @@ namespace VendTech.Controllers
 
                 var deposit = _depositManager.GetDeposit(pd.Object.PendingDepositId);
                 emailNotification.SendEmailToUserOnDepositApproval(deposit);
-                emailNotification.SendEmailToAdminOnDepositAutoApproval(deposit, result.ID);
+                //emailNotification.SendEmailToAdminOnDepositAutoApproval(deposit, result.ID);
                 await emailNotification.SendSmsToUserOnDepositApproval(deposit);
 
                 await _depositManager.DeletePendingDeposits(deposit);
@@ -168,7 +168,7 @@ namespace VendTech.Controllers
             else
             {
                 mobileNotification.Notify(pd.Object.PendingDepositId, pd.Object.UserId, "Deposit Requested");
-                emailNotification.SendEmailToAdminOnDepositRequest(pd.Object);
+                //emailNotification.SendEmailToAdminOnDepositRequest(pd.Object);
                 PushNotification.Instance
                    .IncludeAdminNotificationCount()
                    .IncludeUserBalanceOnTheWeb(pd.Object.UserId)
