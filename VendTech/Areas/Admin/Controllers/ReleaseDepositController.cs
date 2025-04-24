@@ -205,7 +205,7 @@ namespace VendTech.Areas.Admin.Controllers
 
                     var deposit = _depositManager.GetDeposit(pds[i].PendingDepositId);
                     emailNotification.SendEmailToUserOnDepositApproval(deposit);
-                    emailNotification.SendEmailToAdminOnDepositAutoApproval(deposit, result.ID);
+                    //emailNotification.SendEmailToAdminOnDepositAutoApproval(deposit, result.ID);
                     await emailNotification.SendSmsToUserOnDepositApproval(deposit);
 
                     await _depositManager.DeletePendingDeposits(deposit);
