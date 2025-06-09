@@ -96,7 +96,7 @@ namespace VendTech.BLL.Models
         //[MaxLength(11, ErrorMessage = "Meter Number must be of 11 digits"), MinLength(11, ErrorMessage = "Meter Number must be of 11 digits")]
         public string MeterNumber { get; set; }
         public bool SaveAsNewMeter { get; set; }
-        public long TransactionId { get; set; }
+        public string TransactionId { get; set; }
         public bool IsSame_Request { get; set; } = false;
         public List<MeterRechargeApiListingModel> History { get; set; }
         public void UpdateRequestModel(string number = null, long posId = 0)
@@ -115,16 +115,21 @@ namespace VendTech.BLL.Models
 
         public void UpdateRequestModel(TransactionDetail trx, long posId)
         {
-            TransactionId = Convert.ToInt64(trx.TransactionId);
+            TransactionId = trx.TransactionId;
             POSId = posId;
         }
 
         public bool IsRequestADuplicate(TransactionDetail trx)
         {
             if (trx == null) return false;
-            if(MeterNumber == trx.MeterNumber1 && Amount == trx.Amount)
+            var referenceDate = new DateTime(2025, 4, 24);
+            if (MeterNumber == trx.MeterNumber1 && Amount == trx.Amount)
             {
-                return true;
+                if(trx.CreatedAt <= referenceDate)
+                {
+                    return true;
+                }
+                throw new ArgumentException("Please wait! There Is A Pending Transaction");
             }
             return false;
         }

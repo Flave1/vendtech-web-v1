@@ -2427,7 +2427,7 @@ namespace VendTech.BLL.Managers
             if (model.IsInitialLoad)
             {
                 query = from a in _context.Deposits
-                        where DbFunctions.TruncateTime(a.CreatedAt) == DbFunctions.TruncateTime(DateTime.UtcNow)
+                        where DbFunctions.TruncateTime(a.CreatedAt) == DbFunctions.TruncateTime(DateTime.UtcNow) && a.Status == (int)DepositPaymentStatusEnum.Released
                         select new BalanceSheetListingModel
                         {
                             DateTime = a.CreatedAt,
@@ -2443,7 +2443,7 @@ namespace VendTech.BLL.Managers
             }
             else
             {
-                query = from a in _context.Deposits
+                query = from a in _context.Deposits where a.Status == (int)DepositPaymentStatusEnum.Released
                         select new BalanceSheetListingModel
                         {
                             DateTime = a.CreatedAt,

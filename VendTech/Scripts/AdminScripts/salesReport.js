@@ -454,7 +454,6 @@ async function initTable(response) {
     const tableBody = document.getElementById("tableBody");
 
     tableBody.innerHTML = '';
-    debugger
     for (var i = 0; i < response.length; i++) {
         const tr = document.createElement("tr");
         const falseValue = false;
@@ -499,6 +498,7 @@ async function initTable(response) {
                 </strong>
              </td>
              <td style="text-align:left;"> ${statusLabel} </td>
+             <td style="text-align:left;"> ${response[i].Status} </td>
             <td style="text-align:right;"> <strong> ${response[i].Amount}</strong></td>
         `;
         tableBody.appendChild(tr);

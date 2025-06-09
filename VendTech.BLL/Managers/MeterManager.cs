@@ -216,7 +216,7 @@ namespace VendTech.BLL.Managers
         {
             var result = new PagingResult<SalesReportExcelModel>();
 
-            var query = _context.TransactionDetails.Where(p => !p.IsDeleted && p.POSId != null && p.Finalised == true);
+            var query = _context.TransactionDetails.Where(p => !p.IsDeleted && p.POSId != null && p.Finalised == true && p.Status == (int)RechargeMeterStatusEnum.Success);
 
             if (model.VendorId > 0)
             {
@@ -1320,7 +1320,7 @@ namespace VendTech.BLL.Managers
                         {
                             Utilities.LogExceptionToDatabase(new Exception($"The specified TransactionID already exists for this terminal. {DateTime.UtcNow} for traxId {model.TransactionId}"), $"Exception: {strings_result}");
                             string traxId = Utilities.NewTransactionId();
-                            model.TransactionId = Convert.ToInt64(traxId);
+                            model.TransactionId = traxId;
                             transactionDetail.TransactionId = traxId;
                             await _context.SaveChangesAsync();
                             return await MakeRechargeRequest(model, transactionDetail);
@@ -1426,7 +1426,7 @@ namespace VendTech.BLL.Managers
                 var requestModel = new RechargeMeterModel
                 {
                     UserId = pendingTrax.UserId,
-                    TransactionId = Convert.ToInt64(pendingTrax.TransactionId),
+                    TransactionId = pendingTrax.TransactionId,
                 };
 
                 var verifiedTrax = await ProcessTransaction(true, requestModel, pendingTrax, true, billVendor);
@@ -1508,7 +1508,7 @@ namespace VendTech.BLL.Managers
             if (model.IsInitialLoad)
             {
                 query = from a in _context.TransactionDetails
-                        where DbFunctions.TruncateTime(a.CreatedAt) == DbFunctions.TruncateTime(DateTime.UtcNow) && a.Finalised == true
+                        where DbFunctions.TruncateTime(a.CreatedAt) == DbFunctions.TruncateTime(DateTime.UtcNow) && a.Finalised == true && a.Status == (int)RechargeMeterStatusEnum.Success
                         select new BalanceSheetListingModel
                         {
                             DateTime = a.CreatedAt,
@@ -1526,7 +1526,7 @@ namespace VendTech.BLL.Managers
             else
             {
                 query = from a in _context.TransactionDetails
-                        where a.Finalised == true
+                        where a.Finalised == true && a.Status == (int)RechargeMeterStatusEnum.Success
                         select new BalanceSheetListingModel
                         {
                             DateTime = a.CreatedAt,
@@ -1855,7 +1855,8 @@ namespace VendTech.BLL.Managers
 
             IQueryable<TransactionDetail> query = null;
 
-            query = _context.TransactionDetails.Where(p => !p.IsDeleted && p.POSId != null && p.Finalised == true);
+            query = _context.TransactionDetails.Where(p => !p.IsDeleted && p.POSId != null && p.Finalised == true 
+            && p.Status == (int)RechargeMeterStatusEnum.Success);
             if (model.VendorId > 0)
             {
                 var user = _context.Users.FirstOrDefault(p => p.UserId == model.VendorId);
@@ -2002,7 +2003,7 @@ namespace VendTech.BLL.Managers
                 if (unclaimed_transaction != null)
                 {
                     Utilities.LogExceptionToDatabase(new Exception($"ProcessQueryVendStatus 12 for trxId {model.TransactionId}"), $"{JsonConvert.SerializeObject(model)}");
-                    model.TransactionId = Convert.ToInt64(unclaimed_transaction.TransactionId);
+                    model.TransactionId = unclaimed_transaction.TransactionId;
                     var unclaimedVo_vendStatus = await QueryVendStatus(model, unclaimed_transaction);
 
                     if (string.IsNullOrEmpty(unclaimedVo_vendStatus?.Values?.FirstOrDefault()?.Content?.VoucherPin))

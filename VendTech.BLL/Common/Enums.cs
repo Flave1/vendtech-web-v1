@@ -228,7 +228,6 @@ namespace VendTech.BLL.Models
         ELECTRICITY = 4,
         NETFLIX = 5
     }
-
     public enum StatusEnum
     {
         Active = 0,

@@ -7,5 +7,6 @@ namespace VendTech.BLL.Interfaces
     {
         Task<ReceiptModel> RechargeFromVendtechExtension(RechargeMeterModel model);
         Task<ReceiptModel> GetStatusFromVendtechExtension(string trxId, long userId);
+        Task CheckPendingTransaction();
     }
 }

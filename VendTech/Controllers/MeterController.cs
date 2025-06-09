@@ -397,13 +397,22 @@ namespace VendTech.Controllers
                 {
                     return Json(new { Success = false, Code = 302, Msg = result.ReceiptStatus.Message });
                 }
+                else if (result.ReceiptStatus.Status == "disabled")
+                {
+                    return Json(new { Success = false, Code = 403, Msg = result.ReceiptStatus.Message });
+                }
+                if (string.IsNullOrEmpty(result.ReceiptStatus.Status))
+                {
+                    return Json(new { Success = false, Code = 302, Msg = "Meter Recharge not successful" });
+                }
 
                 if (result != null)
-                {
                     return Json(new { Success = true, Code = 200, Msg = "Meter recharged successfully.", Data = result });
+                else
+                {
+                    Utilities.LogExceptionToDatabase(new Exception($"Result is null {DateTime.UtcNow} for traxId {model.TransactionId}"), $"result null: {JsonConvert.SerializeObject(model)}");
+                    return Json(new { Success = false, Code = 302, Msg = "Meter recharged not successful.", Data = result });
                 }
-                Utilities.LogExceptionToDatabase(new Exception($"Result is null {DateTime.UtcNow} for traxId {model.TransactionId}"), $"result null: {JsonConvert.SerializeObject(model)}");
-                return Json(new { Success = false, Code = 302, Msg = "Meter recharged not successful.", Data = result });
             }
             catch (Exception ex)
             {

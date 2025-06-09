@@ -59,6 +59,13 @@ namespace VendTech
             scheduler.ScheduleJob(commonJobs, commonJobsTrigger);
             ///
 
+            /// SALES
+            ITrigger salesJobsTrigger = TriggerBuilder.Create().StartNow()
+            .WithSimpleSchedule(s => s.WithIntervalInSeconds(30).RepeatForever()).Build();
+            IJobDetail salesJobs = JobBuilder.Create<EdsaTransactionSheduleJob>().Build();
+            scheduler.ScheduleJob(salesJobs, salesJobsTrigger);
+            ///
+
             AreaRegistration.RegisterAllAreas();
             GlobalConfiguration.Configure(WebApiConfig.Register);
             FilterConfig.RegisterGlobalFilters(GlobalFilters.Filters);

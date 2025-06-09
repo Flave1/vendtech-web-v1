@@ -12,6 +12,7 @@ using System.Data.Entity.Infrastructure;
 using Polly;
 using System.Data.SqlClient;
 using System.Data.Entity.Core;
+using System.Collections.Generic;
 
 namespace VendTech.BLL.Managers
 {
@@ -45,14 +46,12 @@ namespace VendTech.BLL.Managers
                     });
         }
 
-
-
         private bool IsRetriableSqlException(SqlException ex)
         {
             int[] retryableErrors = {
                 -2,     // Timeout
                 4060,   // Cannot open database
-                //40197,  // The service has encountered an error processing your request
+                40197,  // The service has encountered an error processing your request
                 40501,  // The service is currently busy
                // 40613,  // Database is not currently available
                 49918,  // Cannot process request
@@ -162,6 +161,7 @@ namespace VendTech.BLL.Managers
                     model.UpdateRequestModel(transactionDetail, model.POSId);
                     vendResponse = await MakeRechargeRequest(model, transactionDetail);
 
+                    
                     if (vendResponse is null || vendResponse?.Result is null)
                     {
                         Utilities.LogExceptionToDatabase(new Exception($"{vendResponse}"));
@@ -292,8 +292,8 @@ namespace VendTech.BLL.Managers
                             cmd.Parameters.AddWithValue("@Request", transactionDetail.Request ?? string.Empty);
                             cmd.Parameters.AddWithValue("@Response", transactionDetail.Response ?? string.Empty);
 
-                            cmd.CommandTimeout = 60;
                             await conn.OpenAsync();
+                            cmd.CommandTimeout = 60;
                             await cmd.ExecuteNonQueryAsync();
                         }
                     }
@@ -324,6 +324,7 @@ namespace VendTech.BLL.Managers
             // Extract result safely
             vendResponseResult = vendResponse?.Result;
 
+            await _posManager.RefundDeductedBalanceAsync(transactionDetail.POSId.Value, transactionDetail);
             // Build connection
             string connectionString = WebConfigurationManager.ConnectionStrings["DefaultConnection"].ToString();
             using (SqlConnection conn = new SqlConnection(connectionString))
@@ -335,7 +336,6 @@ namespace VendTech.BLL.Managers
                         VendStatusDescription = @VendStatusDescription,
                         Status = @Status,
                         Finalised = @Finalised,
-                        PaymentStatus = @PaymentStatus,
                         Request = @Request,
                         Response = @Response
                     WHERE TransactionDetailsId = @TransactionDetailsId";
@@ -343,37 +343,42 @@ namespace VendTech.BLL.Managers
                 using (SqlCommand cmd = new SqlCommand(sql, conn))
                 {
                     cmd.Parameters.AddWithValue("@VendStatus", vendResponseResult?.Status ?? (object)DBNull.Value);
-                    cmd.Parameters.AddWithValue("@VendStatusDescription", vendResponseResult?.Status ?? (object)DBNull.Value);
-                    cmd.Parameters.AddWithValue("@Status", (int)RechargeMeterStatusEnum.Failed);
-                    cmd.Parameters.AddWithValue("@Finalised", true);
-                    cmd.Parameters.AddWithValue("@PaymentStatus", (int)PaymentStatus.Failed);
+                    cmd.Parameters.AddWithValue("@VendStatusDescription", vendResponseResult?.Status ?? (object)DBNull.Value);                    
                     cmd.Parameters.AddWithValue("@TransactionDetailsId", transactionDetail.TransactionDetailsId);
                     cmd.Parameters.AddWithValue("@Request", transactionDetail.Request ?? string.Empty);
                     cmd.Parameters.AddWithValue("@Response", transactionDetail.Response ?? string.Empty);
 
+                    if(vendResponse?.Message == "Error in server handshake")
+                    {
+                        cmd.Parameters.AddWithValue("@Status", (int)RechargeMeterStatusEnum.Pending);
+                    }
+                    else if(vendResponse?.Message == "Transaction (Process ID 88) was deadlocked on lock resources with another process and has been chosen as the deadlock victim. Rerun the transaction.")
+                    {
+                        cmd.Parameters.AddWithValue("@Status", (int)RechargeMeterStatusEnum.Pending);
+                    }
+                    else if(vendResponse?.Message == "ex.Message: getData Error ex.InnerMessage: Execution Timeout Expired.  The timeout period elapsed prior to completion of the operation or the server is not responding.")
+                    {
+                        cmd.Parameters.AddWithValue("@Status", (int)RechargeMeterStatusEnum.Pending);
+                     }
+                    else
+                    {
+                        cmd.Parameters.AddWithValue("@Status", (int)RechargeMeterStatusEnum.Failed);
+                        //cmd.Parameters.AddWithValue("@PaymentStatus", (int)PaymentStatus.Failed);
+                        cmd.Parameters.AddWithValue("@Finalised", true);
+                    }
+                        
+
+                    await conn.OpenAsync();
                     await ExecuteOperation(async () =>
                     {
                         cmd.CommandTimeout = 60;
-                        await conn.OpenAsync();
                         return await cmd.ExecuteNonQueryAsync();
                     }, "ProcessFailed");
 
                 }
             }
 
-            // Reflect changes in the in-memory object
-            transactionDetail.VendStatus = vendResponseResult?.Status;
-            transactionDetail.VendStatusDescription = vendResponseResult?.Status;
-            transactionDetail.Status = (int)RechargeMeterStatusEnum.Failed;
-            transactionDetail.Finalised = true;
-            transactionDetail.PaymentStatus = (int)PaymentStatus.Failed;
-
-            // Optional: capture error message details for reporting/logging
-            await ReadErrorMessage(
-                vendResponse?.Message,
-                vendResponse.Result.Code,
-                transactionDetail
-            );
+            await ReadErrorMessage(vendResponse?.Message, vendResponse.Result.Code, transactionDetail);
         }
 
 
@@ -396,11 +401,24 @@ namespace VendTech.BLL.Managers
         }
         private async Task ReadErrorMessage(string message, int code, TransactionDetail tx)
         {
-            await FlagTransaction(tx, RechargeMeterStatusEnum.Failed);
+            if (message == "Error in server handshake")
+            {
+                throw new ArgumentException("Please Wait For 1 Minute. For This Transaction To Finalize.");
+            }
+            if(message == "Transaction (Process ID 88) was deadlocked on lock resources with another process and has been chosen as the deadlock victim. Rerun the transaction.")
+            {
+                throw new ArgumentException("Please Wait For 1 Minute. For This Transaction To Finalize.");
+            }
+            if(message == "ex.Message: getData Error ex.InnerMessage: Execution Timeout Expired.  The timeout period elapsed prior to completion of the operation or the server is not responding.")
+            {
+                throw new ArgumentException("Please Wait For 1 Minute. For This Transaction To Finalize.");
+            }
             if (message == "The request timed out with the Ouc server.")
             {
                 throw new ArgumentException(message);
             }
+
+            await FlagTransaction(tx, RechargeMeterStatusEnum.Failed);
             if (code == 4514)
             {
                 await DisablePlatform(PlatformTypeEnum.ELECTRICITY);
@@ -535,7 +553,7 @@ namespace VendTech.BLL.Managers
             }
             return transactionDetail;
         }
-            
+        
 
         public async Task<ReceiptModel> GetStatusFromVendtechExtension(string trxId, long userId)
         {
@@ -567,7 +585,7 @@ namespace VendTech.BLL.Managers
             var requestModel = new RechargeMeterModel
             {
                 UserId = pendingTrax.UserId,
-                TransactionId = Convert.ToInt64(pendingTrax.TransactionId),
+                TransactionId = pendingTrax.TransactionId,
                 POSId = pos.POSId
             };
 
@@ -715,8 +733,7 @@ namespace VendTech.BLL.Managers
                         VoucherSerialNumber = @VoucherSerialNumber,
                         VendStatus = @VendStatus,
                         Request = @Request,
-                        Response = @Response,
-                        CreatedAt = @CreatedAt
+                        Response = @Response
                     WHERE TransactionDetailsId = @TransactionDetailsId";
 
                     using (SqlCommand cmd = new SqlCommand(sql, conn))
@@ -749,13 +766,12 @@ namespace VendTech.BLL.Managers
                         cmd.Parameters.AddWithValue("@TransactionDetailsId", trans.TransactionDetailsId);
                         cmd.Parameters.AddWithValue("@Request", trans.Request ?? string.Empty);
                         cmd.Parameters.AddWithValue("@Response", trans.Response ?? string.Empty);
-                        cmd.Parameters.AddWithValue("@CreatedAt", DateTime.UtcNow);
 
-                        
+
+                        await conn.OpenAsync();
                         await ExecuteOperation(async () =>
                         {
                             cmd.CommandTimeout = 60;
-                            await conn.OpenAsync();
                             return await cmd.ExecuteNonQueryAsync();
                         }, "UpdateTransactionOnSuccess");
                     }
@@ -883,10 +899,10 @@ namespace VendTech.BLL.Managers
                         cmd.Parameters.AddWithValue("@CostOfUnits", trans.CostOfUnits);
                         cmd.Parameters.AddWithValue("@PaymentStatus", trans.PaymentStatus);
 
+                        await conn.OpenAsync();
                         await ExecuteOperation(async () =>
                         {
                             cmd.CommandTimeout = 60;
-                            await conn.OpenAsync();
                             object insertedId = await cmd.ExecuteScalarAsync();
                             trans.TransactionDetailsId = Convert.ToInt64(insertedId);
                             return trans;
@@ -895,11 +911,7 @@ namespace VendTech.BLL.Managers
                     }
                 }
 
-                using (var _context = new VendtechEntities())
-                {
-                    trans = await _context.TransactionDetails.FindAsync(trans.TransactionDetailsId);
-                }
-                return trans;
+                return await _posManager.DeductBalanceAsync(model.POSId, trans);
             }
             catch (Exception ex)
             {
@@ -907,6 +919,144 @@ namespace VendTech.BLL.Managers
                 throw;
             }
         }
+
+
+        public async Task CheckPendingTransaction()
+        {
+            //var excludedTransactionIds = new List<string>
+            //{
+            //    "354916", "394148", "395656", "397580", "398640", "387952", "388613",
+            //    "372554", "401169", "403436", "403915", "401176"
+            //};
+
+            var excludedTransactionIds = new List<string>
+            {
+                "345861", "351093", "362249", "388642", "367536", "382204", "382893",
+                "395976", "391870", "392193", "393289", "390218", "392189", "396542",
+                "396735", "398247", "398733", "362276", "351468", "359587", "389066",
+                "383123", "385344", "389057", "393155", "394014", "396231", "392025",
+                "396513", "397948", "390884", "390519", "398625", "398649", "399953",
+                "399718", "400108", "401323"
+            };
+
+            using (var DbCtx = new VendtechEntities())
+            {
+                try
+                {
+                    var now = DateTime.UtcNow;
+                    var thresholdTime = now.AddSeconds(-50);
+                    var referenceDate = new DateTime(2025, 4, 24);
+
+                    //original transaction list..................
+
+                    //var pendingTrxs = await DbCtx.TransactionDetails
+                    //    .Where(t => (t.Status == (int)RechargeMeterStatusEnum.Pending 
+                    //    && t.PlatFormId == 1)
+                    //             && t.CreatedAt <= thresholdTime
+                    //             && t.CreatedAt >= referenceDate)
+                    //    .OrderByDescending(d => d.CreatedAt)
+                    //    .ToListAsync();
+
+                    //......................................
+
+
+                    //for transaction i might need to refund.......
+
+                    //var reversalTrxs = await DbCtx.TransactionDetails
+                    //.Where(t => excludedTransactionIds.Contains(t.TransactionId) && t.Status == (int)RechargeMeterStatusEnum.Pending)
+                    //.OrderByDescending(d => d.CreatedAt)
+                    //.ToListAsync();
+                    //for (int i = 0; i < reversalTrxs.Count; i++)
+                    //{
+                    //    var tran = reversalTrxs[i];
+                    //    POS pos;
+                    //    pos = await DbCtx.POS.FirstOrDefaultAsync(p => p.VendorId == tran.UserId);
+
+                    //    await _posManager.RefundDeductedBalanceAsync(pos.POSId, tran);
+                    //}
+
+                    //..................................
+
+
+
+                    var pendingTrxs = await DbCtx.TransactionDetails
+                    .Where(t =>
+                        (
+                            (t.Status == (int)RechargeMeterStatusEnum.Pending && t.PlatFormId == 1) ||
+                            (t.Status == (int)RechargeMeterStatusEnum.Success && t.PaymentStatus != (int)PaymentStatus.Deducted && t.PlatFormId == 1)
+                        )
+                        && t.CreatedAt <= thresholdTime
+                        && t.CreatedAt >= referenceDate
+                        && !excludedTransactionIds.Contains(t.TransactionId))
+                    .OrderByDescending(d => d.CreatedAt)
+                    .ToListAsync();
+
+
+                    for (int i = 0; i < pendingTrxs.Count; i++)
+                    {
+
+                        //Utilities.LogExceptionToDatabase(new Exception("EdsaTransactionSheduleJob Run"), $"details: {pendingTrxs}");
+                        TransactionDetail pendingTrax = pendingTrxs[i];
+                        if (pendingTrax == null)
+                        {
+                            continue;
+                        }
+                        if (!string.IsNullOrEmpty(pendingTrax.MeterToken1) && pendingTrax.PaymentStatus == (int)PaymentStatus.Deducted)
+                        {
+                            continue;
+                        }
+                        if (!string.IsNullOrEmpty(pendingTrax.MeterToken1) && pendingTrax.PaymentStatus != (int)PaymentStatus.Deducted)
+                        {
+                            Utilities.LogExceptionToDatabase(new Exception("EdsaTransactionSheduleJob Run on deduction: " + pendingTrax.TransactionId));
+                            await _posManager.DeductBalanceAsync(pendingTrax.POSId.Value, pendingTrax);
+                            continue;
+                        }
+                        POS pos;
+                        pos = await DbCtx.POS.FirstOrDefaultAsync(p => p.VendorId == pendingTrax.UserId);
+
+                        if (pos == null)
+                        {
+                            continue;
+                        }
+
+                        var requestModel = new RechargeMeterModel
+                        {
+                            UserId = pendingTrax.UserId,
+                            TransactionId = pendingTrax.TransactionId,
+                            POSId = pos.POSId
+                        };
+
+                        var transaction = await ProcessTransaction(true, requestModel, pendingTrax, true);
+                        if (transaction != null && !string.IsNullOrEmpty(transaction.MeterToken1))
+                        {
+                            Common.PushNotification.Instance
+                                .IncludeAdminWidgetSales()
+                                .IncludeUserBalanceOnTheWeb(transaction.UserId)
+                                .Send();
+
+                            var deviceTokens = DbCtx.TokensManagers.Where(p => p.DeviceToken != null && p.DeviceToken != string.Empty && p.UserId == transaction.UserId).Select(p => new { p.AppType, p.DeviceToken }).ToList().Distinct();
+                            var obj = new PushNotificationModel();
+                            obj.UserId = transaction.UserId;
+                            obj.Id = transaction.TransactionDetailsId;
+                            obj.Title = "Pending Meter recharge successfully";
+                            obj.Message = $"Your pending transaction of SLe {Utilities.FormatAmount(transaction.Amount)} has successfully been processed. PIN: {transaction.MeterToken1} {transaction.MeterToken2??""} {transaction.MeterToken3 ?? ""}";
+                            obj.NotificationType = NotificationTypeEnum.MeterRecharge;
+                            foreach (var item in deviceTokens)
+                            {
+                                obj.DeviceToken = item.DeviceToken;
+                                obj.DeviceType = item.AppType.Value;
+                                Common.PushNotification.PushNotificationToMobile(obj);
+                            }
+                        }
+                    }
+                }
+                catch (Exception)
+                {
+                    throw;
+                }
+            }
+        }
+
 
         private static VtechElectricitySaleRequest Buid_new_request_object(RechargeMeterModel model)
         {

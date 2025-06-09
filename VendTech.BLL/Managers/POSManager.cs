@@ -783,78 +783,82 @@ namespace VendTech.BLL.Managers
            _context.POS.FirstOrDefault(d => d.VendorId == userId && d.Balance != null)?.Balance.Value > 1;
 
 
-        async Task<TransactionDetail> IPOSManager.DeductBalanceAsync(long posId, TransactionDetail trans)
+        public async Task<TransactionDetail> DeductBalanceAsync(long posId, TransactionDetail trans)
         {
             if (trans.TransactionDetailsId <= 0)
                 throw new ArgumentException("TransactionDetailsId Required.");
 
-            using (var ctx = new VendtechEntities())
+            if (trans.PaymentStatus == (int)PaymentStatus.Deducted)
+                return await _context.TransactionDetails.FindAsync(trans.TransactionDetailsId);
+
+            return await ExecuteOperation(async () =>
             {
-                if (trans.PaymentStatus != (int)PaymentStatus.Deducted)
+                using (var ctx = new VendtechEntities())
+                using (var dbTransaction = ctx.Database.BeginTransaction())
                 {
-                    var currentBalance = await ctx.POS
-                        .Where(p => p.POSId == posId)
-                        .Select(p => p.Balance)
+                    var pos = await ctx.POS
+                        .SqlQuery("SELECT * FROM POS WITH (ROWLOCK, UPDLOCK) WHERE POSId = @p0", posId)
                         .FirstOrDefaultAsync();
 
-                    decimal newBalance = (currentBalance ?? 0) - trans.Amount;
-                    trans.BalanceBefore = currentBalance ?? 0;
-                    trans.CurrentVendorBalance = newBalance;
-                    trans.PaymentStatus = (int)PaymentStatus.Deducted;
+                    if (pos == null)
+                        throw new Exception("POS not found");
 
-                    return await ExecuteOperation(async () =>
-                    {
-                        string updatePosSql = "UPDATE POS SET Balance = @p0 WHERE POSID = @p1";
-                        await ctx.Database.ExecuteSqlCommandAsync(updatePosSql, newBalance, posId);
+                    // 🟢 Re-fetch the TransactionDetail in this context
+                    var trackedTrans = await ctx.TransactionDetails.FindAsync(trans.TransactionDetailsId);
+                    if (trackedTrans == null)
+                        throw new Exception("Transaction not found");
 
-                        string updateTransactionSql = @"UPDATE TransactionDetails 
-                        SET BalanceBefore = @p1, CurrentVendorBalance = @p2, PaymentStatus = @p3
-                        WHERE TransactionDetailsId = @p0";
+                    trackedTrans.BalanceBefore = pos.Balance;
+                    pos.Balance -= trans.Amount;
+                    trackedTrans.CurrentVendorBalance = pos.Balance;
+                    trackedTrans.PaymentStatus = (int)PaymentStatus.Deducted;
 
-                        await ctx.Database.ExecuteSqlCommandAsync(updateTransactionSql, trans.TransactionDetailsId, trans.BalanceBefore, trans.CurrentVendorBalance, trans.PaymentStatus);
-                        return trans;
-                    }, "DeductBalanceAsync");
-                    
+                    await ctx.SaveChangesAsync();
+                    dbTransaction.Commit();
+
+                    return trackedTrans;
                 }
-            }
-            return await _context.TransactionDetails.FindAsync(trans.TransactionDetailsId);
+            }, "DeductBalanceAsync");
         }
 
-        async Task<TransactionDetail> IPOSManager.RefundDeductedBalanceAsync(long posId, TransactionDetail trans)
+        public async Task<TransactionDetail> RefundDeductedBalanceAsync(long posId, TransactionDetail trans)
         {
             if (trans.TransactionDetailsId <= 0)
                 throw new ArgumentException("TransactionDetailsId Required.");
-            using (var ctx = new VendtechEntities())
+
+            if (trans.PaymentStatus != (int)PaymentStatus.Deducted)
+                return await _context.TransactionDetails.FindAsync(trans.TransactionDetailsId);
+
+            return await ExecuteOperation(async () =>
             {
-                if (trans.PaymentStatus == (int)PaymentStatus.Deducted)
+                using (var ctx = new VendtechEntities())
+                using (var dbTransaction = ctx.Database.BeginTransaction())
                 {
+                    var pos = await ctx.POS
+                        .SqlQuery("SELECT * FROM POS WITH (ROWLOCK, UPDLOCK) WHERE POSId = @p0", posId)
+                        .FirstOrDefaultAsync();
 
-                    var currentBalance = await ctx.POS
-                    .Where(p => p.POSId == posId)
-                    .Select(p => p.Balance)
-                    .FirstOrDefaultAsync();
+                    if (pos == null)
+                        throw new Exception("POS not found");
 
-                    decimal posBalance = currentBalance.Value + trans.Amount;
-                    trans.CurrentVendorBalance = trans.BalanceBefore;
-                    trans.PaymentStatus = (int)PaymentStatus.Refunded;
+                    // Refund the amount
+                    pos.Balance += trans.Amount;
 
+                    // 🟢 Re-load the transaction entity in this context
+                    var trackedTrans = await ctx.TransactionDetails.FindAsync(trans.TransactionDetailsId);
+                    if (trackedTrans == null)
+                        throw new Exception("Transaction not found");
 
-                    await ExecuteOperation(async () =>
-                    {
-                        string updatePosSql = "UPDATE POS SET Balance = @p0 WHERE POSID = @p1";
-                        await ctx.Database.ExecuteSqlCommandAsync(updatePosSql, posBalance, posId);
+                    trackedTrans.CurrentVendorBalance = trans.BalanceBefore;
+                    trackedTrans.PaymentStatus = (int)PaymentStatus.Refunded;
 
-                        string updateTransactionSql = @"UPDATE TransactionDetails 
-                        SET CurrentVendorBalance = @p1, PaymentStatus = @p2
-                        WHERE TransactionDetailsId = @p0";
+                    await ctx.SaveChangesAsync();
+                    dbTransaction.Commit();
 
-                        await ctx.Database.ExecuteSqlCommandAsync(updateTransactionSql, trans.TransactionDetailsId, trans.CurrentVendorBalance, trans.PaymentStatus);
-                        return trans;
-                    }, "RefundDeductedBalanceAsync");
-                    
+                    return trackedTrans;
                 }
-            }
-            return await _context.TransactionDetails.FindAsync(trans.TransactionDetailsId);
+            }, "RefundDeductedBalanceAsync");
         }
+
     }
 }

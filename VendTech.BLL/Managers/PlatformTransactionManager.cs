@@ -363,9 +363,9 @@ namespace VendTech.BLL.Managers
                             }
                         }
                     }
-                    catch (Exception)
+                    catch (Exception ex)
                     {
-
+                        Utilities.LogExceptionToDatabase(new Exception("Airtime CheckPendingTransaction Error", ex));
                     }
                 }
                  
