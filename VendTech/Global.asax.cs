@@ -31,10 +31,10 @@ namespace VendTech
 
 
             /// PENDING TRANSACTIONS
-            //ITrigger pendingTransactionTrigger = TriggerBuilder.Create().StartNow()
-            //.WithSimpleSchedule(s => s.WithIntervalInSeconds(30).RepeatForever()).Build();
-            //IJobDetail pendingTransactionKob = JobBuilder.Create<PendingTransactionCheckJob>().Build();
-            //scheduler.ScheduleJob(pendingTransactionKob, pendingTransactionTrigger);
+            ITrigger pendingTransactionTrigger = TriggerBuilder.Create().StartNow()
+            .WithSimpleSchedule(s => s.WithIntervalInSeconds(30).RepeatForever()).Build();
+            IJobDetail pendingTransactionKob = JobBuilder.Create<PendingTransactionCheckJob>().Build();
+            scheduler.ScheduleJob(pendingTransactionKob, pendingTransactionTrigger);
             ///
 
 
