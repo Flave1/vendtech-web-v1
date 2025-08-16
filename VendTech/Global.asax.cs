@@ -31,25 +31,25 @@ namespace VendTech
 
 
             /// PENDING TRANSACTIONS
-            ITrigger pendingTransactionTrigger = TriggerBuilder.Create().StartNow()
-            .WithSimpleSchedule(s => s.WithIntervalInSeconds(30).RepeatForever()).Build();
-            IJobDetail pendingTransactionKob = JobBuilder.Create<PendingTransactionCheckJob>().Build();
-            scheduler.ScheduleJob(pendingTransactionKob, pendingTransactionTrigger);
+            //ITrigger pendingTransactionTrigger = TriggerBuilder.Create().StartNow()
+            //.WithSimpleSchedule(s => s.WithIntervalInSeconds(30).RepeatForever()).Build();
+            //IJobDetail pendingTransactionKob = JobBuilder.Create<PendingTransactionCheckJob>().Build();
+            //scheduler.ScheduleJob(pendingTransactionKob, pendingTransactionTrigger);
             ///
 
 
             /// LOW BALANCE CHECK
-            ITrigger balanceLowTrigger = TriggerBuilder.Create().StartNow()
-            .WithSimpleSchedule(s => s.WithIntervalInHours(12).RepeatForever()).Build();
-            IJobDetail balanceLowJob = JobBuilder.Create<BalanceLowSheduleJob>().Build();
-            scheduler.ScheduleJob(balanceLowJob, balanceLowTrigger);
+            //ITrigger balanceLowTrigger = TriggerBuilder.Create().StartNow()
+            //.WithSimpleSchedule(s => s.WithIntervalInHours(12).RepeatForever()).Build();
+            //IJobDetail balanceLowJob = JobBuilder.Create<BalanceLowSheduleJob>().Build();
+            //scheduler.ScheduleJob(balanceLowJob, balanceLowTrigger);
             ///
 
             /// UNCLEARED BALANCE
-            ITrigger unclearedDepositsTrigger = TriggerBuilder.Create().StartNow()
-            .WithSimpleSchedule(s => s.WithIntervalInHours(12).RepeatForever()).Build();
-            IJobDetail unclearedDepositsJob = JobBuilder.Create<UnclearedDepositsSheduleJob>().Build();
-            scheduler.ScheduleJob(unclearedDepositsJob, unclearedDepositsTrigger);
+            //ITrigger unclearedDepositsTrigger = TriggerBuilder.Create().StartNow()
+            //.WithSimpleSchedule(s => s.WithIntervalInHours(12).RepeatForever()).Build();
+            //IJobDetail unclearedDepositsJob = JobBuilder.Create<UnclearedDepositsSheduleJob>().Build();
+            //scheduler.ScheduleJob(unclearedDepositsJob, unclearedDepositsTrigger);
             ///
 
             /// COMMON

@@ -52,7 +52,7 @@ namespace VendTech.Controllers
             var posList = _posManager.GetPOSSelectList(LOGGEDIN_USER.UserID, LOGGEDIN_USER.AgencyId);
             ViewBag.userPos = posList;
 
-            ViewBag.IsPlatformAssigned = airtimeProducts.Count > 0;
+            ViewBag.IsPlatformAssigned = true; //airtimeProducts.Count > 0;
             JavaScriptSerializer js = new JavaScriptSerializer();
             var hostory_model = new ReportSearchModel
             {

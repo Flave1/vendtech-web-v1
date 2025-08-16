@@ -13,6 +13,7 @@ using Polly;
 using System.Data.SqlClient;
 using System.Data.Entity.Core;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace VendTech.BLL.Managers
 {
@@ -652,7 +653,12 @@ namespace VendTech.BLL.Managers
                     ShouldShowPrintButton = td?.POS?.WebPrint ?? false,
                     mobileShowSmsButton = td?.POS?.PosSms ?? false,
                     mobileShowPrintButton = td?.POS?.PosPrint ?? false,
-                    CurrentBallance = td?.POS?.Balance ?? 0
+                    CurrentBallance = td?.POS?.Balance ?? 0,
+                    ReceiptStatus = new ReceiptStatus
+                    {
+                        Message = "Successful",
+                        Status = "success"
+                    }
                 };
 
                 return receipt;
@@ -959,26 +965,6 @@ namespace VendTech.BLL.Managers
 
                     //......................................
 
-
-                    //for transaction i might need to refund.......
-
-                    //var reversalTrxs = await DbCtx.TransactionDetails
-                    //.Where(t => excludedTransactionIds.Contains(t.TransactionId) && t.Status == (int)RechargeMeterStatusEnum.Pending)
-                    //.OrderByDescending(d => d.CreatedAt)
-                    //.ToListAsync();
-                    //for (int i = 0; i < reversalTrxs.Count; i++)
-                    //{
-                    //    var tran = reversalTrxs[i];
-                    //    POS pos;
-                    //    pos = await DbCtx.POS.FirstOrDefaultAsync(p => p.VendorId == tran.UserId);
-
-                    //    await _posManager.RefundDeductedBalanceAsync(pos.POSId, tran);
-                    //}
-
-                    //..................................
-
-
-
                     var pendingTrxs = await DbCtx.TransactionDetails
                     .Where(t =>
                         (
@@ -995,7 +981,6 @@ namespace VendTech.BLL.Managers
                     for (int i = 0; i < pendingTrxs.Count; i++)
                     {
 
-                        //Utilities.LogExceptionToDatabase(new Exception("EdsaTransactionSheduleJob Run"), $"details: {pendingTrxs}");
                         TransactionDetail pendingTrax = pendingTrxs[i];
                         if (pendingTrax == null)
                         {
@@ -1003,6 +988,8 @@ namespace VendTech.BLL.Managers
                         }
                         if (!string.IsNullOrEmpty(pendingTrax.MeterToken1) && pendingTrax.PaymentStatus == (int)PaymentStatus.Deducted)
                         {
+                            pendingTrax.Status = (int)RechargeMeterStatusEnum.Success;
+                            DbCtx.SaveChanges();
                             continue;
                         }
                         if (!string.IsNullOrEmpty(pendingTrax.MeterToken1) && pendingTrax.PaymentStatus != (int)PaymentStatus.Deducted)
