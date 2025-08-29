@@ -61,7 +61,7 @@ namespace VendTech
 
             /// SALES
             ITrigger salesJobsTrigger = TriggerBuilder.Create().StartNow()
-            .WithSimpleSchedule(s => s.WithIntervalInSeconds(30).RepeatForever()).Build();
+            .WithSimpleSchedule(s => s.WithIntervalInSeconds(60).RepeatForever()).Build();
             IJobDetail salesJobs = JobBuilder.Create<EdsaTransactionSheduleJob>().Build();
             scheduler.ScheduleJob(salesJobs, salesJobsTrigger);
             ///

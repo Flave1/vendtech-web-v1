@@ -929,11 +929,6 @@ namespace VendTech.BLL.Managers
 
         public async Task CheckPendingTransaction()
         {
-            //var excludedTransactionIds = new List<string>
-            //{
-            //    "354916", "394148", "395656", "397580", "398640", "387952", "388613",
-            //    "372554", "401169", "403436", "403915", "401176"
-            //};
 
             var excludedTransactionIds = new List<string>
             {
@@ -947,6 +942,7 @@ namespace VendTech.BLL.Managers
 
             using (var DbCtx = new VendtechEntities())
             {
+                var currenctTraxid = "";
                 try
                 {
                     var now = DateTime.UtcNow;
@@ -977,10 +973,9 @@ namespace VendTech.BLL.Managers
                     .OrderByDescending(d => d.CreatedAt)
                     .ToListAsync();
 
-
                     for (int i = 0; i < pendingTrxs.Count; i++)
                     {
-
+                        currenctTraxid = pendingTrxs[i].TransactionId;
                         TransactionDetail pendingTrax = pendingTrxs[i];
                         if (pendingTrax == null)
                         {
@@ -1037,8 +1032,10 @@ namespace VendTech.BLL.Managers
                         }
                     }
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
+
+                    Utilities.LogExceptionToDatabase(ex, $"Failed to create transaction record for  {currenctTraxid}");
                     throw;
                 }
             }
